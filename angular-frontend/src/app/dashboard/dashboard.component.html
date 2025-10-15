@@ -1,0 +1,19 @@
+  <table>
+    <thead>
+      <th>Fecha de la competicion</th>
+      <th>Tipo de piscina</th>
+      <th>Ciudad</th>
+      <th>Nombre de la competicion</th>
+    </thead>
+    <tbody>
+@for(competion of competiciones; track $index){
+      <tr>
+        <td>{{competion.date}}</td>
+        <td>{{competion.course}}</td>
+        <td>{{competion.city}}</td>
+        <td>{{competion.name}}</td>
+      </tr>
+}
+  </tbody>
+</table>
+
