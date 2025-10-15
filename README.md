@@ -125,3 +125,79 @@ SwimLive/
 📦 Repositorio: https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC
 
 © 2025 — SwimLive. Proyecto académico desarrollado como parte del Trabajo de Fin de Curso
+---
+
+## 🪟 Cómo ejecutar en Windows (rápido)
+
+Estas instrucciones permiten clonar el repositorio en un equipo con Windows y levantar la API mínima y la interfaz estática para ver la aplicación localmente.
+
+Requisitos mínimos:
+
+- Node.js (recomendado LTS) y npm disponibles en PATH
+- Git (para clonar)
+- Opcional: Python 3 (para servir archivos estáticos si no quieres instalar paquetes npm adicionales)
+
+Pasos rápidos:
+
+1. Clona el repositorio:
+
+```bash
+git clone https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC.git
+cd PROYECTO-FINAL-TFC
+```
+
+2. Iniciar la API Node (carpeta `api-swim-live`):
+
+```bash
+cd api-swim-live
+# Instala dependencias exactamente según package-lock (recomendado)
+npm ci
+# Inicia la API
+node index.js
+```
+
+La API por defecto escucha en el puerto que está definido en `index.js` (si no, normalmente 3000 o 8080). Abre el navegador en http://localhost:<puerto> según corresponda.
+
+3. Ver la página estática `api-swim-live/index.html` (opciones):
+
+- Usando `npx http-server` (si no lo tienes instalado globalmente):
+
+```bash
+npx http-server . -p 8080
+# luego abrir http://localhost:8080/index.html
+```
+
+- O usando Python 3 (viene instalado en muchas máquinas):
+
+```bash
+python -m http.server 8080
+# luego abrir http://localhost:8080/index.html
+```
+
+4. Si tienes un frontend Angular (carpeta `frontend/` o similar):
+
+- Entra en la carpeta del frontend (si existe), instala dependencias y arranca el servidor de desarrollo:
+
+```bash
+cd ../frontend/ProyectoAngular || cd ../frontend
+npm ci
+npm run start # o ng serve si tu package.json lo define
+```
+
+Notas y buenas prácticas:
+
+- Nunca incluyas `node_modules/` en el repositorio (ya está en `.gitignore`).
+- Para entornos de producción o para simplificar instalaciones en Windows, considera usar Docker (instrucciones básicas en la sección siguiente).
+
+### Opción Docker (recomendado para entornos limpios)
+
+Si tienes Docker instalado puedes construir y levantar servicios sin instalar dependencias en Windows:
+
+```bash
+# desde la raíz del repo (ejemplo mínimo para api-swim-live)
+cd api-swim-live
+docker build -t swimlive-api .
+docker run -p 8080:8080 swimlive-api
+```
+
+Adapta puertos y Dockerfile según necesites. Puedo añadir un `Dockerfile` y `docker-compose.yml` de ejemplo si quieres.
