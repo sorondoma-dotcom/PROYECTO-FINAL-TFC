@@ -32,13 +32,19 @@ Este proyecto ha sido desarrollado como parte del **Trabajo de Fin de Curso**, c
 ## 📂 Estructura del proyecto
 
 SwimLive/
+
 ├── frontend/
+|
 │ └── ProyectoAngular/ # Código del frontend en Angular
+|
 │
 ├── backend/
+|
 │ ├── Model/ # Modelos de datos
+|
 │ ├── Controller/ # Controladores de la lógica del servidor
 │ └── ConnectionDB/ # Conexión con la base de datos MySQL
+|
 │
 └── api/
 └── index.js # Punto de entrada de la API (Node.js)
@@ -78,52 +84,49 @@ SwimLive/
 
    La API se ejecutará en local, lista para recibir peticiones del frontend.
 
-⚙️ Actualmente el despliegue del frontend (Angular) está en desarrollo.
-La meta final es mantener comunicación directa entre el frontend y la base de datos mediante la API.
-
 🧩 Funcionalidades principales
 
-📅 Consulta de competiciones activas por país, fecha o tipo de piscina (25 m / 50 m).
+   • 📅 Consulta de competiciones activas por país, fecha o tipo de piscina (25 m / 50 m).
 
-🏆 Visualización de resultados en tiempo real.
+  • 🏆 Visualización de resultados en tiempo real.
 
-🔍 Filtro inteligente para facilitar la búsqueda de eventos.
+  • 🔍 Filtro inteligente para facilitar la búsqueda de eventos.
 
-🧾 Integración con una base de datos para la gestión de información de atletas y resultados.
+  • 🧾 Integración con una base de datos para la gestión de información de atletas y resultados.
 
-🛠️ To-Do (pendiente de desarrollo)
+  • 🛠️ To-Do (pendiente de desarrollo)
 
- Finalizar el despliegue del frontend Angular.
+  •  Finalizar el despliegue del frontend Angular.
 
- Implementar el archivo .env para gestionar variables de entorno (DB_HOST, DB_USER, etc.).
+  •  Implementar el archivo .env para gestionar variables de entorno (DB_HOST, DB_USER, etc.).
 
- Mejorar la interfaz visual y añadir componentes interactivos.
+  • Mejorar la interfaz visual y añadir componentes interactivos.
 
- Añadir un sistema de autenticación para usuarios y entrenadores.
+  • Añadir un sistema de autenticación para usuarios y entrenadores.
 
- Incluir capturas de pantalla y demo visual.
+  • Incluir capturas de pantalla y demo visual.
 
 🤝 Cómo contribuir
 
-Este proyecto forma parte de un trabajo académico, por lo que no se aceptan contribuciones externas de momento.
-Sin embargo, se agradecen los comentarios, sugerencias o feedback constructivo a través del repositorio de GitHub.
+  • Este proyecto forma parte de un trabajo académico, por lo que no se aceptan contribuciones externas de momento.
+   Sin embargo, se agradecen los comentarios, sugerencias o feedback constructivo a través del repositorio de GitHub.
 
 ❤️ Agradecimientos
 
-Agradezco especialmente a:
+ • Agradezco especialmente a:
 
-Jordi Pozo
+ • Jordi Pozo
 
-José Antonio Carrascal Alderete
+ • José Antonio Carrascal Alderete
 
-José Luis Román Bienes
+ • José Luis Román Bienes
 
-Ana Rosa Hoyos Terán
+ • Ana Rosa Hoyos Terán
 
-por su apoyo, orientación y colaboración durante el desarrollo de este proyecto.
+ • por su apoyo, orientación y colaboración durante el desarrollo de este proyecto.
 
 🔗 Enlaces
 
 📦 Repositorio: https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC
 
-© 2025 — SwimLive. Proyecto académico desarrollado como parte del Trabajo de Fin de Curso.
+© 2025 — SwimLive. Proyecto académico desarrollado como parte del Trabajo de Fin de Curso
