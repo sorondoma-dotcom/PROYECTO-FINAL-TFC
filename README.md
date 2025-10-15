@@ -1,7 +1,7 @@
 # 🏊‍♂️ SwimLive
 
 **Trabajo de Fin de Curso (TFC)**  
-**Autor:** [sorondoma-dotcom](https://github.com/sorondoma-dotcom)  
+**Autor:** Miguel Alfredo Sorondo Hernández(https://github.com/sorondoma-dotcom)  
 **Repositorio:** [PROYECTO-FINAL-TFC](https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC.git)
 
 ---
@@ -31,25 +31,20 @@ Este proyecto ha sido desarrollado como parte del **Trabajo de Fin de Curso**, c
 
 ## 📂 Estructura del proyecto
 
+```bash
 SwimLive/
-
 ├── frontend/
-|
-│ └── ProyectoAngular/ # Código del frontend en Angular
-|
+│   └── ProyectoAngular/         # Código del frontend en Angular
 │
 ├── backend/
-|
-│ ├── Model/ # Modelos de datos
-|
-│ ├── Controller/ # Controladores de la lógica del servidor
-│ └── ConnectionDB/ # Conexión con la base de datos MySQL
-|
+│   ├── Model/                   # Modelos de datos
+│   ├── Controller/              # Controladores de la lógica del servidor
+│   └── ConnectionDB/            # Conexión con la base de datos MySQL
 │
 └── api/
-└── index.js # Punto de entrada de la API (Node.js)
+    └── index.js                 # Punto de entrada de la API (Node.js)
 
-
+```
 ---
 
 ## 🚀 Ejecución del proyecto
@@ -123,7 +118,7 @@ SwimLive/
 
  • Ana Rosa Hoyos Terán
 
- • por su apoyo, orientación y colaboración durante el desarrollo de este proyecto.
+  por su apoyo, orientación y colaboración durante el desarrollo de este proyecto.
 
 🔗 Enlaces
 
