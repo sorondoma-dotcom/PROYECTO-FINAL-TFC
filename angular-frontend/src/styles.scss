@@ -1,20 +1,17 @@
-
-// Custom Theming for Angular Material
-// For more information: https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+// Customize the entire app. Change :root to your selector if you want to scope the styles.
+:root {
+  @include mat.table-overrides((
+    background-color: rgb(240, 240, 240),
+    header-headline-color: rgb(13, 13, 13),
+  ));
+  @include mat.form-field-overrides((
+    outlined-outline-color : rgb(6, 6, 5),
+    outlined-focus-label-text-color: "Arial",
+    outlined-label-text-font: "Arial",
 
-html {
-  @include mat.theme((
-    color: (
-      theme-type: light,
-      primary: mat.$azure-palette,
-      tertiary: mat.$blue-palette,
-    ),
-    typography: Roboto,
-    density: 0,
   ));
 }
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+

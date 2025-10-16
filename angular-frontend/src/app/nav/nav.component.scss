@@ -1,0 +1,10 @@
+/* Navbar con efecto sticky suave */
+.navbar {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Cuando haces scroll, se oscurece un poco y gana sombra */
+.navbar.scrolled {
+  background-color: #0d6efd !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
