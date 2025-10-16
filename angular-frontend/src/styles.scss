@@ -1,17 +1,64 @@
 @use '@angular/material' as mat;
 
-// Customize the entire app. Change :root to your selector if you want to scope the styles.
-:root {
-  @include mat.table-overrides((
-    background-color: rgb(240, 240, 240),
-    header-headline-color: rgb(13, 13, 13),
-  ));
-  @include mat.form-field-overrides((
-    outlined-outline-color : rgb(6, 6, 5),
-    outlined-focus-label-text-color: "Arial",
-    outlined-label-text-font: "Arial",
+@include mat.core();
 
-  ));
+// Definir paletas usando la sintaxis correcta
+$swimming-primary: mat.m2-define-palette(mat.$m2-light-blue-palette, 400);
+$swimming-accent: mat.m2-define-palette(mat.$m2-cyan-palette, 300);
+$swimming-warn: mat.m2-define-palette(mat.$m2-orange-palette);
+
+// Crear tema personalizado
+$swimming-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $swimming-primary,
+    accent: $swimming-accent,
+    warn: $swimming-warn,
+  ),
+  typography: mat.m2-define-typography-config(
+    $font-family: 'JetBrains Mono, monospace',
+  ),
+  density: 0,
+));
+
+// Aplicar el tema globalmente
+@include mat.all-component-themes($swimming-theme);
+
+// Obtener colores del tema
+$primary-color: mat.m2-get-color-from-palette($swimming-primary, 400);
+$primary-lighter: mat.m2-get-color-from-palette($swimming-primary, 100);
+$primary-darker: mat.m2-get-color-from-palette($swimming-primary, 700);
+$accent-color: mat.m2-get-color-from-palette($swimming-accent, 300);
+
+// Personalización usando variables CSS de Material
+:root {
+  // Variables de tabla
+  --mdc-data-table-row-hover-state-layer-color: #{$primary-lighter};
+  --mdc-data-table-row-hover-state-layer-opacity: 0.08;
+  --mdc-data-table-header-row-text-color: #{$primary-darker};
+  --mdc-data-table-row-text-color: rgba(0, 0, 0, 0.87);
+  --mdc-data-table-divider-color: #{$primary-lighter};
+  --mdc-data-table-stroke-color: #{$primary-lighter};
+  
+  // Variables de form field
+  --mdc-outlined-text-field-outline-color: #{$primary-color};
+  --mdc-outlined-text-field-hover-outline-color: #{$primary-darker};
+  --mdc-outlined-text-field-focus-outline-color: #{$primary-color};
+  --mdc-outlined-text-field-label-text-color: #{$primary-color};
+  --mdc-outlined-text-field-input-text-color: rgba(0, 0, 0, 0.87);
+  
+  // Variables de icon button
+  --mdc-icon-button-icon-color: #{$primary-color};
+  --mdc-icon-button-hover-state-layer-color: #{$primary-lighter};
+  
+  // Variables de paginator
+  --mat-paginator-container-text-color: #{$primary-darker};
+  --mat-paginator-container-background-color: #{$primary-lighter};
 }
 
-
+// Estilos globales básicos
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  background-color: #f5f5f5;
+}
