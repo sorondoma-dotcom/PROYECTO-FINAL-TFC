@@ -1,0 +1,162 @@
+// Contenedor principal
+.container {
+  max-width: 80%;
+  margin: 40px auto;
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+}
+
+// Barra de búsqueda
+.search-bar {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.search-field {
+  width: 100%;
+  max-width: 600px;
+
+  // Espacio entre el texto del input y el botón X
+  ::ng-deep .mat-mdc-form-field-infix {
+    padding-right: 12px;
+  }
+
+  // Ajustar padding del input para dar más espacio al botón
+  ::ng-deep input.mat-mdc-input-element {
+    padding-right: 48px;
+  }
+
+  // Botón de limpiar
+  button[matSuffix] {
+    margin-right: -8px;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+// Wrapper de la tabla
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+// Estilos de la tabla
+.styled-table {
+  width: 100%;
+
+  .mat-mdc-header-cell {
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .mat-mdc-cell {
+    font-size: 14px;
+  }
+}
+
+// Filas
+.header-row {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.data-row {
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+  }
+}
+
+// ============================================
+// 🚩 CELDA DE CIUDAD CON BANDERA
+// ============================================
+.city-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.country-flag {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 20px;
+  flex-shrink: 0;
+  cursor: help;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+  vertical-align: middle;
+
+  // Efecto travieso al hover 😜
+  &:hover {
+    transform: scale(1.3) rotate(10deg);
+  }
+}
+
+.city-name {
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.87);
+  line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+}
+
+// Paginador
+.table-paginator {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+// Mensaje sin resultados
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: rgba(0, 0, 0, 0.54);
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  span {
+    font-size: 16px;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .container {
+    margin: 20px auto;
+    padding: 16px;
+  }
+
+  .search-field {
+    max-width: 100%;
+  }
+
+  .styled-table {
+    font-size: 12px;
+
+    .mat-mdc-header-cell,
+    .mat-mdc-cell {
+      padding: 8px;
+    }
+  }
+}

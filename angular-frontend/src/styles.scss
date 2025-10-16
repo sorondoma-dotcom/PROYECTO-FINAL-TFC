@@ -38,18 +38,18 @@ $accent-color: mat.m2-get-color-from-palette($swimming-accent, 300);
   --mdc-data-table-row-text-color: rgba(0, 0, 0, 0.87);
   --mdc-data-table-divider-color: #{$primary-lighter};
   --mdc-data-table-stroke-color: #{$primary-lighter};
-  
+
   // Variables de form field
   --mdc-outlined-text-field-outline-color: #{$primary-color};
   --mdc-outlined-text-field-hover-outline-color: #{$primary-darker};
   --mdc-outlined-text-field-focus-outline-color: #{$primary-color};
   --mdc-outlined-text-field-label-text-color: #{$primary-color};
   --mdc-outlined-text-field-input-text-color: rgba(0, 0, 0, 0.87);
-  
+
   // Variables de icon button
   --mdc-icon-button-icon-color: #{$primary-color};
   --mdc-icon-button-hover-state-layer-color: #{$primary-lighter};
-  
+
   // Variables de paginator
   --mat-paginator-container-text-color: #{$primary-darker};
   --mat-paginator-container-background-color: #{$primary-lighter};

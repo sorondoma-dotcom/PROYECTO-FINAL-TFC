@@ -12,6 +12,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { CountryFlagPipe } from '../pipes/country-flag.pipe';
+import { CountryCodePipe } from '../pipes/country-code.pipe';
+import { CityNamePipe } from '../pipes/city-name.pipe';
 
 @Component({
   selector: 'app-table',
@@ -22,10 +25,13 @@ import { MatButtonModule } from '@angular/material/button';
     MatTableModule,
     MatPaginatorModule,
     MatSortModule,
-    MatFormFieldModule,  // 👈 necesario para <mat-form-field>
+    MatFormFieldModule,
     MatInputModule,
-    MatIconModule,      // 👈 Para <mat-icon>
-    MatButtonModule     // 👈 Para mat-icon-button
+    MatIconModule,
+    MatButtonModule,
+    CountryFlagPipe,
+    CountryCodePipe,
+    CityNamePipe
   ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss']
@@ -33,7 +39,7 @@ import { MatButtonModule } from '@angular/material/button';
 export class TableComponent implements AfterViewInit {
   displayedColumns: string[] = ['date', 'course', 'city', 'name'];
   dataSource = new MatTableDataSource<any>([]);
-  pageSizeOptions = [10, 25, 50, 100];
+  pageSizeOptions = [20, 30, 50, 100];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -58,7 +64,7 @@ export class TableComponent implements AfterViewInit {
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
-   clearFilter(input: HTMLInputElement): void {
+  clearFilter(input: HTMLInputElement): void {
     input.value = '';
     this.dataSource.filter = '';
   }

@@ -1,10 +1,379 @@
-/* Navbar con efecto sticky suave */
-.navbar {
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+
+.sidenav-container {
+  height: 100%;
+  width: 100%;
 }
 
-/* Cuando haces scroll, se oscurece un poco y gana sombra */
-.navbar.scrolled {
-  background-color: #0d6efd !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+// ============================================
+// NAVBAR PRINCIPAL
+// ============================================
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(135deg, #03a9f4 0%, #0288d1 50%, #0277bd 100%);
+  box-shadow: 0 4px 12px rgba(3, 169, 244, 0.3);
+  height: 70px;
+  padding: 0;
+
+  // Efecto de onda al hacer scroll (puedes añadir con JS)
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(to bottom, rgba(3, 169, 244, 0.1), transparent);
+  }
+}
+
+.navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ============================================
+// LOGO SECTION
+// ============================================
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-btn {
+  display: none;
+  color: white;
+
+  @media (max-width: 960px) {
+    display: flex;
+  }
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+
+    .animate-swim {
+      animation: swim 1s ease-in-out infinite;
+    }
+  }
+}
+
+.logo-icon {
+  font-size: 36px;
+  width: 36px;
+  height: 36px;
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+// Animación d
+@keyframes swim {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-5px) rotate(-10deg); }
+  50% { transform: translateX(5px) rotate(0deg); }
+  75% { transform: translateX(-3px) rotate(10deg); }
+}
+
+.logo-text {
+  display: flex;
+  align-items: baseline;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+
+  @media (max-width: 600px) {
+    font-size: 20px;
+  }
+}
+
+.logo-swim {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.logo-live {
+  color: #ffeb3b;
+  font-weight: 800;
+  margin-left: 4px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+// ============================================
+// MENÚ DESKTOP
+// ============================================
+.desktop-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+
+  @media (max-width: 960px) {
+    display: none;
+  }
+
+  a {
+    position: relative;
+    color: white;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+
+    mat-icon {
+      margin-right: 6px;
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    // Efecto de onda hover
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+
+      &::before {
+        width: 300px;
+        height: 300px;
+      }
+    }
+
+    // Link activo
+    &.active-nav-link {
+      background-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 10%;
+        right: 10%;
+        height: 3px;
+        background-color: #ffeb3b;
+        border-radius: 2px;
+        animation: slideIn 0.3s ease;
+      }
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+// ============================================
+// BOTONES DE ACCIÓN
+// ============================================
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  button {
+    color: white;
+  }
+}
+
+.theme-toggle {
+  transition: transform 0.6s ease;
+
+  &:hover {
+    transform: rotate(180deg);
+  }
+}
+
+.notification-btn {
+  position: relative;
+
+  &:hover {
+    animation: shake 0.5s ease;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-5deg); }
+  50% { transform: translateX(5px) rotate(5deg); }
+  75% { transform: translateX(-3px) rotate(-3deg); }
+}
+
+.cta-button {
+  background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%) !important;
+  color: #0277bd !important;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(255, 235, 59, 0.4);
+  transition: all 0.3s ease;
+
+  mat-icon {
+    margin-right: 6px;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 235, 59, 0.6);
+  }
+
+  &:active {
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 768px) {
+    span {
+      display: none;
+    }
+
+    mat-icon {
+      margin-right: 0;
+    }
+  }
+}
+
+// ============================================
+// SIDENAV MÓVIL
+// ============================================
+.mobile-sidenav {
+  width: 280px;
+  background: linear-gradient(180deg, #0288d1 0%, #0277bd 100%);
+  color: white;
+  padding: 0;
+}
+
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px;
+  background-color: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .logo-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .close-btn {
+    color: white;
+  }
+}
+
+mat-nav-list {
+  padding-top: 8px;
+
+  a {
+    color: white !important;
+    margin: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      transform: translateX(8px);
+    }
+
+    &.active-link {
+      background-color: rgba(255, 255, 255, 0.25) !important;
+      border-left: 4px solid #ffeb3b;
+    }
+
+    mat-icon {
+      color: white;
+      margin-right: 16px;
+    }
+  }
+}
+
+// ============================================
+// CONTENIDO DE LA PÁGINA
+// ============================================
+.page-content {
+  min-height: calc(100vh - 70px);
+  background-color: #f5f5f5;
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 960px) {
+  .navbar-container {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    height: 60px;
+  }
+
+  .action-buttons {
+    gap: 4px;
+
+    .theme-toggle {
+      display: none;
+    }
+  }
+}
+
+// ============================================
+// TEMA OSCURO (opcional, para el toggle)
+// ============================================
+:host-context(.dark-theme) {
+  .navbar {
+    background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #01579b 100%);
+  }
+
+  .page-content {
+    background-color: #212121;
+  }
 }
