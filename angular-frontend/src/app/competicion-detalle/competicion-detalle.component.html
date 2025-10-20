@@ -1,0 +1,157 @@
+<div class="detalle-container">
+  <!-- Botón de volver -->
+  <div class="header-actions">
+    <button mat-raised-button color="primary" (click)="volver()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a competiciones
+    </button>
+  </div>
+
+  <!-- Estado de carga -->
+  @if(loading) {
+  <div class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Cargando detalles de la competición...</p>
+  </div>
+  }
+
+  <!-- Mensaje de error -->
+  @if(error && !loading) {
+  <mat-card class="error-card">
+    <mat-card-content>
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ error }}</p>
+      <button mat-raised-button color="accent" (click)="cargarDetalles()">
+        Reintentar
+      </button>
+    </mat-card-content>
+  </mat-card>
+  }
+
+  <!-- Contenido de la competición -->
+  @if(detalles && !loading && !error) {
+  <div class="content-wrapper">
+    <!-- Información general -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>emoji_events</mat-icon>
+          {{ detalles.informacion.titulo }}
+        </mat-card-title>
+        <mat-card-subtitle>{{
+          detalles.informacion.subtitulo
+        }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          @if(detalles.informacion.fecha) {
+          <div class="info-item">
+            <mat-icon>calendar_today</mat-icon>
+            <span
+              ><strong>Fecha:</strong> {{ detalles.informacion.fecha }}</span
+            >
+          </div>
+          } @if(detalles.informacion.ciudad) {
+          <div class="info-item">
+            <mat-icon>location_on</mat-icon>
+            <span
+              ><strong>Ciudad:</strong> {{ detalles.informacion.ciudad }}</span
+            >
+          </div>
+          }
+          <div class="info-item">
+            <mat-icon>pool</mat-icon>
+            <span
+              ><strong>Total de estilos:</strong>
+              {{ detalles.totalEstilos }}</span
+            >
+          </div>
+          <div class="info-item">
+            <mat-icon>link</mat-icon>
+            <span><strong>ID:</strong> {{ detalles.competicionId }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Eventos por estilo -->
+    @if(detalles.eventosPorEstilo && detalles.eventosPorEstilo.length > 0) {
+      @for(estilo of detalles.eventosPorEstilo; track $index) {
+      <mat-card class="estilo-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>waves</mat-icon>
+            {{ estilo.estilo }}
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="generos-container">
+            <!-- Masculino -->
+            <div class="genero-column masculino">
+              <h3 class="genero-title">
+                <mat-icon>male</mat-icon>
+                Masculino
+              </h3>
+              @if(estilo.masculino && estilo.masculino.length > 0) {
+                @for(evento of estilo.masculino; track $index) {
+                <div class="evento-row" [class.par]="$index % 2 === 0">
+                  <span class="dato distancia">{{ evento.distancia }}</span>
+                  <span class="dato tipo">{{ evento.tipo }}</span>
+                  <span class="dato categoria">{{ evento.categoria }}</span>
+                  <span class="dato hora">{{ evento.hora }}</span>
+                  <span class="dato info">{{ evento.info }}</span>
+                </div>
+                }
+              } @else {
+                <p class="no-eventos">No hay eventos</p>
+              }
+            </div>
+
+            <!-- Femenino -->
+            <div class="genero-column femenino">
+              <h3 class="genero-title">
+                <mat-icon>female</mat-icon>
+                Femenino
+              </h3>
+              @if(estilo.femenino && estilo.femenino.length > 0) {
+                @for(evento of estilo.femenino; track $index) {
+                <div class="evento-row" [class.par]="$index % 2 === 0">
+                  <span class="dato distancia">{{ evento.distancia }}</span>
+                  <span class="dato tipo">{{ evento.tipo }}</span>
+                  <span class="dato categoria">{{ evento.categoria }}</span>
+                  <span class="dato hora">{{ evento.hora }}</span>
+                  <span class="dato info">{{ evento.info }}</span>
+                </div>
+                }
+              } @else {
+                <p class="no-eventos">No hay eventos</p>
+              }
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+      }
+    } @else {
+    <mat-card class="no-eventos-card">
+      <mat-card-content>
+        <mat-icon>info</mat-icon>
+        <p>No se encontraron eventos para esta competición</p>
+      </mat-card-content>
+    </mat-card>
+    }
+
+    <!-- Información adicional -->
+    <mat-card class="footer-card">
+      <mat-card-content>
+        <div class="footer-info">
+          <mat-icon>access_time</mat-icon>
+          <span
+            >Última actualización:
+            {{ detalles.timestamp | date : "medium" }}</span
+          >
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+  }
+</div>

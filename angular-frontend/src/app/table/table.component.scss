@@ -79,38 +79,114 @@
 // 🚩 CELDA DE CIUDAD CON BANDERA
 // ============================================
 .city-cell {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.country-flag {
-  font-size: 20px;
-  line-height: 1;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 20px;
-  flex-shrink: 0;
-  cursor: help;
-  transition: transform 0.3s ease;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
-  vertical-align: middle;
+  gap: 8px;
+  width: 100%;
 
-  // Efecto travieso al hover 😜
-  &:hover {
-    transform: scale(1.3) rotate(10deg);
+  .country-flag {
+    font-size: 24px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 24px;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+
+    // Forzar renderizado de emoji
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "EmojiSymbols", sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    &:hover {
+      transform: scale(1.3);
+    }
+  }
+
+  .city-name {
+    font-weight: 500;
+    line-height: 1.5;
+    flex: 1;
   }
 }
 
-.city-name {
-  font-weight: 500;
-  color: rgba(0, 0, 0, 0.87);
-  line-height: 1.5;
+// ============================================
+// 🔗 ENLACE DE COMPETICIÓN BONITO
+// ============================================
+.competition-link {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  text-decoration: none;
+  color: #1976d2;
+  font-weight: 600;
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(33, 150, 243, 0.08) 100%);
+  border: 2px solid rgba(25, 118, 210, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  // Efecto de brillo animado
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(33, 150, 243, 0.15) 100%);
+    border-color: rgba(25, 118, 210, 0.5);
+    color: #0d47a1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.25);
+
+    // Activar efecto de brillo
+    &::before {
+      left: 100%;
+    }
+
+    .external-icon {
+      transform: translate(3px, -3px) rotate(15deg);
+      color: #0d47a1;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(25, 118, 210, 0.2);
+  }
+
+  .external-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #42a5f5;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  // Animación de pulso sutil
+  animation: subtle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes subtle-pulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(25, 118, 210, 0.25);
+  }
 }
 
 // Paginador
@@ -157,6 +233,18 @@
     .mat-mdc-header-cell,
     .mat-mdc-cell {
       padding: 8px;
+    }
+  }
+
+  .competition-link {
+    padding: 6px 12px;
+    font-size: 13px;
+    gap: 6px;
+
+    .external-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
     }
   }
 }

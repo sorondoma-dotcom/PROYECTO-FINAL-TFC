@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { CountryCodePipe } from '../pipes/country-code.pipe';
 import { CityNamePipe } from '../pipes/city-name.pipe';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-table',
@@ -44,7 +45,10 @@ export class TableComponent implements AfterViewInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  constructor(private datos: DatosService) {
+  constructor(
+    private datos: DatosService,
+    private router: Router
+  ) {
     this.cargarCompeticiones();
   }
 
@@ -67,5 +71,14 @@ export class TableComponent implements AfterViewInit {
   clearFilter(input: HTMLInputElement): void {
     input.value = '';
     this.dataSource.filter = '';
+  }
+
+  verDetallesCompeticion(competicion: any, event: Event): void {
+    event.preventDefault(); // Evitar que se abra el enlace externo
+    
+    if (competicion.id && competicion.hasResults) {
+      // Navegar a la ruta de detalles con el ID
+      this.router.navigate(['/competicion', competicion.id]);
+    }
   }
 }

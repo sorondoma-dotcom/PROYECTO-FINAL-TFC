@@ -2,61 +2,91 @@
   <div class="search-bar">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Filtrar competiciones</mat-label>
-      <input matInput (keyup)="applyFilter($event)" placeholder="Buscar..." #filterInput />
-      <button mat-icon-button matSuffix aria-label="Limpiar" (click)="clearFilter(filterInput)">
+      <input
+        matInput
+        (keyup)="applyFilter($event)"
+        placeholder="Buscar..."
+        #filterInput
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        aria-label="Limpiar"
+        (click)="clearFilter(filterInput)"
+      >
         <mat-icon>close</mat-icon>
       </button>
     </mat-form-field>
   </div>
 
   @if(dataSource.data && dataSource.data.length > 0){
-    <div class="table-wrapper">
-      <table mat-table [dataSource]="dataSource" matSort class="styled-table">
+  <div class="table-wrapper">
+    <table mat-table [dataSource]="dataSource" matSort class="styled-table">
+      <!-- Fecha -->
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
+        <td mat-cell *matCellDef="let c">{{ c.date }}</td>
+      </ng-container>
 
-        <!-- Fecha -->
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
-          <td mat-cell *matCellDef="let c">{{ c.date }}</td>
-        </ng-container>
+      <!-- Tipo -->
+      <ng-container matColumnDef="course">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
+        <td mat-cell *matCellDef="let c">{{ c.course }}</td>
+      </ng-container>
 
-        <!-- Tipo -->
-        <ng-container matColumnDef="course">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
-          <td mat-cell *matCellDef="let c">{{ c.course }}</td>
-        </ng-container>
-
-        <!-- Ciudad -->
-        <ng-container matColumnDef="city">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Ciudad</th>
-          <td mat-cell *matCellDef="let c" class="city-cell">
+      <!-- Ciudad -->
+      <ng-container matColumnDef="city">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ciudad</th>
+        <td mat-cell *matCellDef="let c">
+          <div class="city-cell">
             @if(c.city | countryCode; as code) {
-              <p class="country-flag" [attr.title]="code">
-                {{ code | countryFlag }}
-              </p>
+            <span class="country-flag" [attr.title]="code">
+              {{ code | countryFlag }}
+            </span>
             }
             <span class="city-name">{{ c.city | cityName }}</span>
-          </td>
-        </ng-container>
+          </div>
+        </td>
+      </ng-container>
 
-        <!-- Nombre -->
-        <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
-          <td mat-cell *matCellDef="let c">{{ c.name }}</td>
-        </ng-container>
+      <!-- Nombre -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+        <td mat-cell *matCellDef="let c">
+          @if(c.id && c.hasResults) {
+          <a
+            href="javascript:void(0)"
+            (click)="verDetallesCompeticion(c, $event)"
+            class="competition-link"
+          >
+            {{ c.name }}
+            <mat-icon class="external-icon">visibility</mat-icon>
+          </a>
+          } @else {
+          <span>{{ c.name }}</span>
+          }
+        </td>
+      </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns" class="header-row"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="data-row"></tr>
-      </table>
-
-
-    </div>
+      <tr
+        mat-header-row
+        *matHeaderRowDef="displayedColumns"
+        class="header-row"
+      ></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="data-row"
+      ></tr>
+    </table>
+  </div>
   }
-    <mat-paginator
-      [pageSizeOptions]="pageSizeOptions"
-      showFirstLastButtons
-      class="table-paginator">
-    </mat-paginator>
-
+  <mat-paginator
+    [pageSizeOptions]="pageSizeOptions"
+    showFirstLastButtons
+    class="table-paginator"
+  >
+  </mat-paginator>
 
   <ng-template #noResults>
     <div class="no-results">
