@@ -2,24 +2,41 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const NodeCache = require('node-cache');
 
 const app = express();
 const PORT = 3000;
+
+// 1. Añadir User-Agent identificable y respetuoso
+const USER_AGENT = 'TFC-Natacion-Bot/1.0 (Proyecto universitario; contacto@email.com)';
+
+// 2. Implementar rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // máximo 100 peticiones por ventana
+  message: 'Demasiadas peticiones, por favor intenta más tarde'
+});
 
 // Habilitar CORS para todas las peticiones
 app.use(cors());
 
 // Middleware para parsear JSON
 app.use(express.json());
+app.use('/api/', limiter);
+
+// Cache de 1 hora
+const cache = new NodeCache({ stdTTL: 3600 });
 
 // Ruta principal
 app.get('/', (req, res) => {
   res.json({
-    message: 'API de Web Scraping',
+    message: 'API de Web Scraping - Proyecto Académico',
+    disclaimer: 'Este servicio extrae datos públicos con fines educativos. No afiliado con SwimRankings ni RFEN.',
     endpoints: {
-      ejemplo: '/api/scrape?url=https://live.swimrankings.net/',
       natacion: '/api/natacion',
-      competicion: '/api/natacion/:id'
+      competicion: '/api/natacion/:id',
+      nacionales: '/api/natacion-nacional'
     }
   });
 });
@@ -94,12 +111,19 @@ app.get('/api/scrape', async (req, res) => {
 // Endpoint específico: scraping de competiciones de natación en vivo
 app.get('/api/natacion', async (req, res) => {
   try {
-    const url = 'https://live.swimrankings.net/';
+    // Verificar cache primero
+    const cacheKey = 'competiciones';
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
-    // Configurar headers para simular un navegador
+    // Si no hay cache, hacer scraping
+    const url = 'https://live.swimrankings.net/';
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': USER_AGENT
       }
     });
     
@@ -201,6 +225,14 @@ app.get('/api/natacion', async (req, res) => {
         }
       });
     }
+
+    // Guardar en cache
+    cache.set(cacheKey, {
+      success: true,
+      timestamp: new Date().toISOString(),
+      total: competiciones.length,
+      competiciones: competiciones
+    });
 
     res.json({
       success: true,
@@ -337,6 +369,264 @@ app.get('/api/natacion/:id', async (req, res) => {
   }
 });
 
+// Nuevo endpoint: scraping de rankings SwimSwam
+app.get('/api/rankings', async (req, res) => {
+  try {
+    // Verificar cache primero
+    const cacheKey = 'rankings-swimswam';
+    const cachedData = cache.get(cacheKey);
+    
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    const url = 'https://swimswam.com/ranking/';
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': USER_AGENT
+      }
+    });
+    
+    const $ = cheerio.load(response.data);
+
+    const rankings = [];
+
+    // Buscar todos los contenedores de rankings
+    $('.ranking-block, .ranking-table, [class*="ranking"]').each((index, element) => {
+      const $block = $(element);
+      
+      // Extraer título del ranking (ej: "2025-2026 LCM Men 100 FREE")
+      let titulo = $block.find('h2, h3, h4, .title, .ranking-title').first().text().trim();
+      
+      // Si no encuentra título en el bloque, buscar el título anterior más cercano
+      if (!titulo) {
+        titulo = $block.prevAll('h2, h3, h4').first().text().trim();
+      }
+
+      // Parsear el título para extraer información
+      const tituloMatch = titulo.match(/(\d{4}-\d{4})?\s*(LCM|SCM|SCY)?\s*(Men|Women|Mixed)?\s*(\d+)\s*(\w+)/i);
+      
+      let temporada = '';
+      let piscina = '';
+      let genero = '';
+      let distancia = '';
+      let estilo = '';
+
+      if (tituloMatch) {
+        temporada = tituloMatch[1] || '';
+        piscina = tituloMatch[2] || '';
+        genero = tituloMatch[3] || '';
+        distancia = tituloMatch[4] || '';
+        estilo = tituloMatch[5] || '';
+      }
+
+      const nadadores = [];
+
+      // Buscar tabla dentro del bloque
+      $block.find('table tbody tr, .ranking-row, [class*="athlete"]').each((idx, row) => {
+        const $row = $(row);
+        const celdas = $row.find('td, .cell, [class*="col"]');
+        
+        if (celdas.length >= 4) {
+          // Formato típico: Posición | Nombre | País | Tiempo | Fecha
+          const posicion = $(celdas[0]).text().trim();
+          const nombre = $(celdas[1]).text().trim();
+          const pais = $(celdas[2]).text().trim();
+          const tiempo = $(celdas[3]).text().trim();
+          const fecha = celdas.length > 4 ? $(celdas[4]).text().trim() : '';
+
+          if (nombre && tiempo) {
+            nadadores.push({
+              posicion: posicion.replace(/\D/g, ''), // Eliminar caracteres no numéricos
+              nombre: nombre,
+              pais: pais,
+              tiempo: tiempo,
+              fecha: fecha
+            });
+          }
+        } else {
+          // Formato alternativo: buscar spans o divs con clases específicas
+          const nombre = $row.find('.name, .athlete-name, [class*="name"]').text().trim();
+          const pais = $row.find('.country, .nat, [class*="country"]').text().trim();
+          const tiempo = $row.find('.time, .mark, [class*="time"]').text().trim();
+          const fecha = $row.find('.date, [class*="date"]').text().trim();
+          const posicion = $row.find('.rank, .pos, [class*="rank"]').text().trim();
+
+          if (nombre && tiempo) {
+            nadadores.push({
+              posicion: posicion.replace(/\D/g, '') || (idx + 1).toString(),
+              nombre: nombre,
+              pais: pais,
+              tiempo: tiempo,
+              fecha: fecha
+            });
+          }
+        }
+      });
+
+      // Buscar enlace "View Top X" o "Ver más"
+      const verMasLink = $block.find('a[href*="ranking"], a:contains("View"), a:contains("Ver")').attr('href');
+      let urlCompleta = '';
+      
+      if (verMasLink) {
+        urlCompleta = verMasLink.startsWith('http') 
+          ? verMasLink 
+          : `https://swimswam.com${verMasLink}`;
+      }
+
+      if (nadadores.length > 0) {
+        rankings.push({
+          titulo: titulo,
+          temporada: temporada,
+          piscina: piscina, // LCM (50m), SCM (25m), SCY (25 yardas)
+          genero: genero,
+          distancia: distancia,
+          estilo: estilo,
+          totalMostrados: nadadores.length,
+          nadadores: nadadores,
+          urlCompleta: urlCompleta
+        });
+      }
+    });
+
+    // Si no encuentra con el método anterior, intentar scraping más agresivo del HTML raw
+    if (rankings.length === 0) {
+      const textoCompleto = $('body').text();
+      const lineas = textoCompleto.split('\n').map(l => l.trim()).filter(l => l);
+      
+      let rankingActual = null;
+      
+      for (let i = 0; i < lineas.length; i++) {
+        const linea = lineas[i];
+        
+        // Detectar título de ranking
+        const matchTitulo = linea.match(/(\d{4}-\d{4})?\s*(LCM|SCM|SCY)?\s*(Men|Women|Mixed)?\s*(\d+)\s*(FREE|BACK|BREAST|FLY|IM)/i);
+        
+        if (matchTitulo) {
+          // Guardar ranking anterior si existe
+          if (rankingActual && rankingActual.nadadores.length > 0) {
+            rankings.push(rankingActual);
+          }
+          
+          // Iniciar nuevo ranking
+          rankingActual = {
+            titulo: linea,
+            temporada: matchTitulo[1] || '',
+            piscina: matchTitulo[2] || '',
+            genero: matchTitulo[3] || '',
+            distancia: matchTitulo[4] || '',
+            estilo: matchTitulo[5] || '',
+            nadadores: [],
+            urlCompleta: ''
+          };
+          continue;
+        }
+        
+        // Detectar línea de nadador (formato: número + texto + país + tiempo)
+        if (rankingActual) {
+          const matchNadador = linea.match(/^(\d+)\s+(.+?)\s+([A-Z]{3})\s+(\d{1,2}:?\d{2}\.\d{2})\s+(\d{2}\/\d{2})?/);
+          
+          if (matchNadador) {
+            rankingActual.nadadores.push({
+              posicion: matchNadador[1],
+              nombre: matchNadador[2].trim(),
+              pais: matchNadador[3],
+              tiempo: matchNadador[4],
+              fecha: matchNadador[5] || ''
+            });
+          }
+        }
+      }
+      
+      // Agregar último ranking
+      if (rankingActual && rankingActual.nadadores.length > 0) {
+        rankings.push(rankingActual);
+      }
+    }
+
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      url: url,
+      totalRankings: rankings.length,
+      rankings: rankings
+    };
+
+    // Guardar en cache
+    cache.set(cacheKey, result);
+
+    res.json(result);
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener rankings',
+      mensaje: error.message,
+      detalles: error.stack
+    });
+  }
+});
+
+// Nuevo endpoint: obtener ranking específico con más detalle
+app.get('/api/rankings/:temporada/:piscina/:genero/:distancia/:estilo', async (req, res) => {
+  try {
+    const { temporada, piscina, genero, distancia, estilo } = req.params;
+    
+    // Construir URL específica si SwimSwam tiene ese patrón
+    // Ejemplo: https://swimswam.com/ranking/2025-2026-lcm-men-100-free/
+    const urlSlug = `${temporada}-${piscina}-${genero}-${distancia}-${estilo}`.toLowerCase();
+    const url = `https://swimswam.com/ranking/${urlSlug}/`;
+
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': USER_AGENT
+      }
+    });
+    
+    const $ = cheerio.load(response.data);
+
+    const ranking = {
+      temporada,
+      piscina: piscina.toUpperCase(),
+      genero: genero.charAt(0).toUpperCase() + genero.slice(1),
+      distancia,
+      estilo: estilo.toUpperCase(),
+      nadadores: []
+    };
+
+    // Extraer tabla completa
+    $('table tbody tr').each((idx, row) => {
+      const $row = $(row);
+      const celdas = $row.find('td');
+      
+      if (celdas.length >= 4) {
+        ranking.nadadores.push({
+          posicion: $(celdas[0]).text().trim().replace(/\D/g, ''),
+          nombre: $(celdas[1]).text().trim(),
+          pais: $(celdas[2]).text().trim(),
+          tiempo: $(celdas[3]).text().trim(),
+          fecha: celdas.length > 4 ? $(celdas[4]).text().trim() : '',
+          club: celdas.length > 5 ? $(celdas[5]).text().trim() : ''
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      url: url,
+      ranking: ranking
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener ranking específico',
+      mensaje: error.message
+    });
+  }
+});
+
 // Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`🚀 API de Web Scraping corriendo en http://localhost:${PORT}`);
@@ -344,6 +634,9 @@ app.listen(PORT, () => {
   console.log(`   - GET http://localhost:${PORT}/`);
   console.log(`   - GET http://localhost:${PORT}/api/scrape?url=URL_AQUI`);
   console.log(`   - GET http://localhost:${PORT}/api/natacion`);
-  console.log(`   - GET http://localhost:${PORT}/api/natacion/:id (ej: /api/natacion/47807)`);
+  console.log(`   - GET http://localhost:${PORT}/api/natacion/:id`);
+  console.log(`   - GET http://localhost:${PORT}/api/natacion-nacional`);
+  console.log(`   - GET http://localhost:${PORT}/api/rankings`);
+  console.log(`   - GET http://localhost:${PORT}/api/rankings/:temporada/:piscina/:genero/:distancia/:estilo`);
 });
 
