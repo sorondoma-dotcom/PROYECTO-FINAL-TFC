@@ -223,7 +223,9 @@ app.get('/api/natacion', async (req, res) => {
 app.get('/api/natacion/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const url = `https://live.swimrankings.net/${id}/`;
+    const baseHost = 'https://live.swimrankings.net';
+    const baseUrl = `${baseHost}/${id}/`;
+    const url = `${baseUrl}`;
 
     const response = await axios.get(url, {
       headers: {
@@ -233,7 +235,6 @@ app.get('/api/natacion/:id', async (req, res) => {
     
     const $ = cheerio.load(response.data);
 
-    // Información general de la competición
     const infoCompeticion = {
       titulo: $('h1').first().text().trim(),
       subtitulo: $('h2').first().text().trim(),
@@ -241,65 +242,75 @@ app.get('/api/natacion/:id', async (req, res) => {
       ciudad: $('.location, [class*="location"]').first().text().trim(),
     };
 
-    // Extraer eventos organizados por estilo
     const eventosPorEstilo = [];
     let estiloActual = null;
 
+    // Función auxiliar para normalizar y enriquecer los enlaces PDF
+    const extraerEnlacesPDF = (celda) => {
+      const enlaces = [];
+      $(celda).find('a[href$=".pdf"]').each((i, link) => {
+        const raw = ($(link).attr('href') || '').trim();
+        if (!raw) return;
+
+        // Normalizar a URL absoluta con el formato deseado
+        const absUrl = raw.startsWith('http')
+          ? raw
+          : (raw.startsWith('/')
+              ? `${baseHost}${raw}`
+              : `${baseUrl}${raw}`); // ej: StartList_24.pdf -> https://live.swimrankings.net/{id}/StartList_24.pdf
+
+        const file = absUrl.split('/').pop() || '';
+        const m = file.match(/(StartList|ResultList|Results|Result)_(\d+)\.pdf/i);
+
+        enlaces.push({
+          texto: ($(link).text() || '').trim() || undefined,
+          url: absUrl,
+          file,
+          tipo: m ? (m[1].toLowerCase().includes('start') ? 'salidas' : 'resultados') : undefined,
+          index: m ? parseInt(m[2], 10) : undefined
+        });
+      });
+      return enlaces;
+    };
+
     $('table tbody tr').each((index, element) => {
       const $row = $(element);
-      
-      // Detectar fila de título de género (Masc./Fem.)
-      if ($row.hasClass('trTitle1')) {
-        // Esta es la fila de género, la ignoramos pero indica inicio de sección
-        return;
-      }
-      
-      // Detectar fila de título de estilo (Libre, Espalda, etc.)
+      if ($row.hasClass('trTitle1')) return;
+
       if ($row.hasClass('trTitle2')) {
         const estiloMasc = $row.find('td').eq(0).text().trim();
-        const estiloFem = $row.find('td').eq(1).text().trim();
-        
-        estiloActual = {
-          estilo: estiloMasc, // Ambos son iguales
-          masculino: [],
-          femenino: []
-        };
-        
+        estiloActual = { estilo: estiloMasc, masculino: [], femenino: [] };
         eventosPorEstilo.push(estiloActual);
         return;
       }
-      
-      // Detectar filas vacías (separadores)
+
       const celdas = $row.find('td');
-      if (celdas.length === 0 || $row.text().trim() === '') {
-        return;
-      }
-      
-      // Extraer datos de eventos (masculino y femenino en la misma fila)
+      if (celdas.length === 0 || $row.text().trim() === '') return;
+
       if (estiloActual && celdas.length >= 11) {
-        // Masculino (primeras 5 columnas)
         const eventoMasc = {
           distancia: $(celdas[0]).text().trim(),
           tipo: $(celdas[1]).text().trim(),
           categoria: $(celdas[2]).text().trim(),
-          hora: $(celdas[3]).text().trim(),
-          info: $(celdas[4]).text().trim()
+          hora: $(celdas[3]).text().trim().replace(/\s+/g, ' '),
+          info: $(celdas[4]).text().trim(),
+          pdfSalidas: extraerEnlacesPDF(celdas[3]),
+          pdfResultados: extraerEnlacesPDF(celdas[4])
         };
-        
-        // Femenino (columnas 6-10)
+
         const eventoFem = {
           distancia: $(celdas[6]).text().trim(),
           tipo: $(celdas[7]).text().trim(),
           categoria: $(celdas[8]).text().trim(),
-          hora: $(celdas[9]).text().trim(),
-          info: $(celdas[10]).text().trim()
+          hora: $(celdas[9]).text().trim().replace(/\s+/g, ' '),
+          info: $(celdas[10]).text().trim(),
+          pdfSalidas: extraerEnlacesPDF(celdas[9]),
+          pdfResultados: extraerEnlacesPDF(celdas[10])
         };
-        
-        // Solo agregar si tienen datos válidos
+
         if (eventoMasc.distancia && eventoMasc.distancia !== '.........') {
           estiloActual.masculino.push(eventoMasc);
         }
-        
         if (eventoFem.distancia && eventoFem.distancia !== '.........') {
           estiloActual.femenino.push(eventoFem);
         }
@@ -310,10 +321,10 @@ app.get('/api/natacion/:id', async (req, res) => {
       success: true,
       timestamp: new Date().toISOString(),
       competicionId: id,
-      url: url,
+      url,
       informacion: infoCompeticion,
       totalEstilos: eventosPorEstilo.length,
-      eventosPorEstilo: eventosPorEstilo
+      eventosPorEstilo
     });
 
   } catch (error) {

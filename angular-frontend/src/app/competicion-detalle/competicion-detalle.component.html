@@ -76,62 +76,143 @@
 
     <!-- Eventos por estilo -->
     @if(detalles.eventosPorEstilo && detalles.eventosPorEstilo.length > 0) {
-      @for(estilo of detalles.eventosPorEstilo; track $index) {
-      <mat-card class="estilo-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>waves</mat-icon>
-            {{ estilo.estilo }}
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="generos-container">
-            <!-- Masculino -->
-            <div class="genero-column masculino">
-              <h3 class="genero-title">
-                <mat-icon>male</mat-icon>
-                Masculino
-              </h3>
-              @if(estilo.masculino && estilo.masculino.length > 0) {
-                @for(evento of estilo.masculino; track $index) {
-                <div class="evento-row" [class.par]="$index % 2 === 0">
-                  <span class="dato distancia">{{ evento.distancia }}</span>
-                  <span class="dato tipo">{{ evento.tipo }}</span>
-                  <span class="dato categoria">{{ evento.categoria }}</span>
-                  <span class="dato hora">{{ evento.hora }}</span>
-                  <span class="dato info">{{ evento.info }}</span>
-                </div>
-                }
-              } @else {
-                <p class="no-eventos">No hay eventos</p>
-              }
-            </div>
+    @for(estilo of detalles.eventosPorEstilo; track $index) {
+    <mat-card class="estilo-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>waves</mat-icon>
+          {{ estilo.estilo }}
+        </mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="generos-container">
+          <!-- Masculino -->
+          <div class="genero-column masculino">
+            <h3 class="genero-title">
+              <mat-icon>male</mat-icon>
+              Masculino
+            </h3>
+            @if(estilo.masculino && estilo.masculino.length > 0) { @for(evento
+            of estilo.masculino; track $index) {
+            <div class="evento-row" [class.par]="$index % 2 === 0">
+              <div class="evento-info">
+                <span class="dato distancia">{{ evento.distancia }}</span>
+                <span class="dato tipo">{{ evento.tipo }}</span>
+                <span class="dato categoria">{{ evento.categoria }}</span>
+              </div>
 
-            <!-- Femenino -->
-            <div class="genero-column femenino">
-              <h3 class="genero-title">
-                <mat-icon>female</mat-icon>
-                Femenino
-              </h3>
-              @if(estilo.femenino && estilo.femenino.length > 0) {
-                @for(evento of estilo.femenino; track $index) {
-                <div class="evento-row" [class.par]="$index % 2 === 0">
-                  <span class="dato distancia">{{ evento.distancia }}</span>
-                  <span class="dato tipo">{{ evento.tipo }}</span>
-                  <span class="dato categoria">{{ evento.categoria }}</span>
+              <div class="evento-enlaces">
+                <!-- Enlaces de PDF para Salidas (MASCULINO) -->
+                @if(evento.pdfSalidas && evento.pdfSalidas.length > 0) {
+                  <div class="pdf-links salidas">
+                    <mat-icon class="pdf-icon">list_alt</mat-icon>
+                    @for(pdf of evento.pdfSalidas; track pdf.url) {
+                      <button
+                        mat-stroked-button
+                        class="pdf-link"
+                        (click)="verPDF(pdf.url, 'salidas', evento.distancia + ' ' + evento.tipo + ' - Salidas', $event)"
+                        aria-label="Ver lista de salidas"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                        {{ pdf.texto || "Ver salidas" }}
+                      </button>
+                    }
+                  </div>
+                } @else if(evento.hora && evento.hora !== '.........') {
                   <span class="dato hora">{{ evento.hora }}</span>
-                  <span class="dato info">{{ evento.info }}</span>
-                </div>
                 }
-              } @else {
-                <p class="no-eventos">No hay eventos</p>
-              }
+
+                <!-- Enlaces de PDF para Resultados (MASCULINO) -->
+                @if(evento.pdfResultados && evento.pdfResultados.length > 0) {
+                  <div class="pdf-links resultados">
+                    <mat-icon class="pdf-icon">emoji_events</mat-icon>
+                    @for(pdf of evento.pdfResultados; track pdf.url) {
+                      <button
+                        mat-stroked-button
+                        class="pdf-link"
+                        (click)="verPDF(pdf.url, 'resultados', evento.distancia + ' ' + evento.tipo + ' - Resultados', $event)"
+                        aria-label="Ver resultados"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                        {{ pdf.texto || "Ver resultados" }}
+                      </button>
+                    }
+                  </div>
+                } @else if(evento.info && evento.info !== '.........') {
+                <span class="dato info">{{ evento.info }}</span>
+                }
+              </div>
             </div>
+            } } @else {
+            <p class="no-eventos">No hay eventos</p>
+            }
           </div>
-        </mat-card-content>
-      </mat-card>
-      }
-    } @else {
+
+          <!-- Femenino -->
+          <div class="genero-column femenino">
+            <h3 class="genero-title">
+              <mat-icon>female</mat-icon>
+              Femenino
+            </h3>
+            @if(estilo.femenino && estilo.femenino.length > 0) { @for(evento of
+            estilo.femenino; track $index) {
+            <div class="evento-row" [class.par]="$index % 2 === 0">
+              <div class="evento-info">
+                <span class="dato distancia">{{ evento.distancia }}</span>
+                <span class="dato tipo">{{ evento.tipo }}</span>
+                <span class="dato categoria">{{ evento.categoria }}</span>
+              </div>
+
+              <div class="evento-enlaces">
+                <!-- Enlaces de PDF para Salidas (FEMENINO) -->
+                @if(evento.pdfSalidas && evento.pdfSalidas.length > 0) {
+                  <div class="pdf-links salidas">
+                    <mat-icon class="pdf-icon">list_alt</mat-icon>
+                    @for(pdf of evento.pdfSalidas; track pdf.url) {
+                      <button
+                        mat-stroked-button
+                        class="pdf-link"
+                        (click)="verPDF(pdf.url, 'salidas', evento.distancia + ' ' + evento.tipo + ' - Salidas', $event)"
+                        aria-label="Ver lista de salidas"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                        {{ pdf.texto || "Ver salidas" }}
+                      </button>
+                    }
+                  </div>
+                } @else if(evento.hora && evento.hora !== '.........') {
+                  <span class="dato hora">{{ evento.hora }}</span>
+                }
+
+                <!-- Enlaces de PDF para Resultados (FEMENINO) -->
+                @if(evento.pdfResultados && evento.pdfResultados.length > 0) {
+                  <div class="pdf-links resultados">
+                    <mat-icon class="pdf-icon">emoji_events</mat-icon>
+                    @for(pdf of evento.pdfResultados; track pdf.url) {
+                      <button
+                        mat-stroked-button
+                        class="pdf-link"
+                        (click)="verPDF(pdf.url, 'resultados', evento.distancia + ' ' + evento.tipo + ' - Resultados', $event)"
+                        aria-label="Ver resultados"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                        {{ pdf.texto || "Ver resultados" }}
+                      </button>
+                    }
+                  </div>
+                } @else if(evento.info && evento.info !== '.........') {
+                  <span class="dato info">{{ evento.info }}</span>
+                }
+              </div>
+            </div>
+            } } @else {
+            <p class="no-eventos">No hay eventos</p>
+            }
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+    } } @else {
     <mat-card class="no-eventos-card">
       <mat-card-content>
         <mat-icon>info</mat-icon>

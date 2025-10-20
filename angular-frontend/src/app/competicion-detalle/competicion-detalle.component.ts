@@ -5,7 +5,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DatosService } from '../datos.service';
+import { PdfViewerDialogComponent } from '../pdf-viewer-dialog/pdf-viewer-dialog.component';
 
 @Component({
   selector: 'app-competicion-detalle',
@@ -15,7 +17,8 @@ import { DatosService } from '../datos.service';
     MatProgressSpinnerModule,
     MatCardModule,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    MatDialogModule
   ],
   templateUrl: './competicion-detalle.component.html',
   styleUrls: ['./competicion-detalle.component.scss']
@@ -29,7 +32,8 @@ export class CompeticionDetalleComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private datos: DatosService
+    private datos: DatosService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -59,6 +63,18 @@ export class CompeticionDetalleComponent implements OnInit {
 
   volver(): void {
     this.router.navigate(['/']);
+  }
+
+  verPDF(urlPdf: string, tipo: string, titulo: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.dialog.open(PdfViewerDialogComponent, {
+      width: '95%',
+      maxWidth: '1400px',
+      height: '90vh',
+      data: { url: urlPdf, tipo, titulo }
+    });
   }
 
   // Método para obtener los campos del evento como array
