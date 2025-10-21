@@ -42,6 +42,7 @@ export class NavComponent {
   toggleMenu() {
     this.menuOpen = !this.menuOpen;
   }
+  
 
   toggleTheme() {
     this.isDarkMode = !this.isDarkMode;

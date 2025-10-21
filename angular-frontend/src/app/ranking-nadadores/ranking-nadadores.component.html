@@ -1,0 +1,79 @@
+<div class="ranking-container">
+  <form class="filters" (ngSubmit)="cargarRankings(); $event.preventDefault();">
+    <label>
+      Sexo
+      <select [(ngModel)]="gender" name="gender">
+        <option *ngFor="let g of genders" [value]="g.val">{{ g.label }}</option>
+      </select>
+    </label>
+
+    <label>
+      Distancia
+      <select [(ngModel)]="distance" name="distance">
+        <option *ngFor="let d of distances" [value]="d">{{ d }} m</option>
+      </select>
+    </label>
+
+    <label>
+      Estilo
+      <select [(ngModel)]="stroke" name="stroke">
+        <option *ngFor="let s of strokes" [value]="s.val">{{ s.label }}</option>
+      </select>
+    </label>
+
+    <label>
+      Piscina
+      <select [(ngModel)]="poolConfiguration" name="poolConfiguration">
+        <option *ngFor="let p of pools" [value]="p.val">{{ p.label }}</option>
+      </select>
+    </label>
+
+    <label>
+      Límite
+      <input type="number" [(ngModel)]="limit" name="limit" min="1" max="200">
+    </label>
+
+    <button type="submit" class="btn">Buscar</button>
+  </form>
+
+  <div *ngIf="loading" class="loading">Cargando...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <table *ngIf="!loading && nadadores.length > 0" class="ranking-table">
+    <thead>
+      <tr>
+        <th>Overall Rank</th>
+        <th>Country</th>
+        <th>Name</th>
+        <th>Age*</th>
+        <th>Time</th>
+        <th>Points</th>
+        <th>Tag</th>
+        <th>Competition</th>
+        <th>Location</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+    @for(n of nadadores; track $index) {
+      <tr>
+        <td>{{ n.overallRank }}</td>
+        <td>{{ n.country }}</td>
+        <td>{{ n.name }}</td>
+        <td>{{ n.age }}</td>
+        <td>{{ n.time }}</td>
+        <td>{{ n.points }}</td>
+        <td>{{ n.tag }}</td>
+        <td>{{ n.competition }}</td>
+        <td>{{ n.location }}</td>
+        <td>{{ n.date }}</td>
+      </tr>
+    }
+    </tbody>
+  </table>
+  @if (!loading && (!nadadores || nadadores.length === 0)){
+    <div class="age-note"> 
+        No hay resultados
+    </div>
+  }
+</div>
