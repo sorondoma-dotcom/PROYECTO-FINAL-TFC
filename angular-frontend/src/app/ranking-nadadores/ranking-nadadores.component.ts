@@ -2,8 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { DatosService } from '../datos.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
-
-// Angular Material imports
+import { TimelineChartComponent } from '../timeline-chart/timeline-chart.component';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
@@ -26,9 +25,10 @@ import { MatIconModule } from '@angular/material/icon';
     MatButtonModule,
     MatTableModule,
     MatProgressSpinnerModule,
-    MatIconModule
+    MatIconModule,
+    TimelineChartComponent
   ],
-  styleUrls: ['./ranking-nadadores.component.scss']
+  styleUrls: ['./ranking-nadadores.component.scss'],
 })
 export class RankingNadadoresComponent implements OnInit {
   // filtros
@@ -44,8 +44,11 @@ export class RankingNadadoresComponent implements OnInit {
   error: string | null = null;
 
   // opciones mínimas para selects
-  genders = [{ val: 'F', label: 'Femenino' }, { val: 'M', label: 'Masculino' }];
-  distances = ['50','100','200','400','800','1500'];
+  genders = [
+    { val: 'F', label: 'Femenino' },
+    { val: 'M', label: 'Masculino' },
+  ];
+  distances = ['50', '100', '200', '400', '800', '1500'];
   strokes = [
     { val: 'BACKSTROKE', label: 'Backstroke' },
     { val: 'BREASTSTROKE', label: 'Breaststroke' },
@@ -53,10 +56,14 @@ export class RankingNadadoresComponent implements OnInit {
     { val: 'MEDLEY', label: 'Medley' },
     { val: 'FREESTYLE', label: 'Freestyle' },
     { val: 'FREESTYLE_RELAY', label: 'Freestyle Relay' },
-    { val: 'MEDLEY_RELAY', label: 'Medley Relay' }
+    { val: 'MEDLEY_RELAY', label: 'Medley Relay' },
   ];
-  pools = [{ val: 'LCM', label: '50m (LCM)' }, { val: 'SCM', label: '25m (SCM)' }];
-
+  pools = [
+    { val: 'LCM', label: '50m (LCM)' },
+    { val: 'SCM', label: '25m (SCM)' },
+  ];
+  selectedTimeline: { name: string; times: any[] } | null = null;
+  
   constructor(private datosService: DatosService) {}
 
   ngOnInit(): void {
@@ -68,32 +75,47 @@ export class RankingNadadoresComponent implements OnInit {
     this.error = null;
     this.nadadores = [];
 
-    this.datosService.getRankings({
-      gender: this.gender,
-      distance: this.distance,
-      stroke: this.stroke,
-      poolConfiguration: this.poolConfiguration,
-      limit: this.limit
-    }).subscribe({
-      next: (res) => {
-        // respuesta esperada: { rankings: [...] } o directamente rankings en root
-        this.nadadores = res?.rankings ?? res?.data ?? [];
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = err?.message || 'Error al obtener rankings';
-        this.loading = false;
-      }
-    });
+    this.datosService
+      .getRankings({
+        gender: this.gender,
+        distance: this.distance,
+        stroke: this.stroke,
+        poolConfiguration: this.poolConfiguration,
+        limit: this.limit,
+      })
+      .subscribe({
+        next: (res) => {
+          // respuesta esperada: { rankings: [...] } o directamente rankings en root
+          this.nadadores = res?.rankings ?? res?.data ?? [];
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = err?.message || 'Error al obtener rankings';
+          this.loading = false;
+        },
+      });
   }
 
+
+  verTimeline(nadador: any) {
+    // Filtra todos los tiempos de ese nadador
+    const tiempos = this.nadadores.filter((nd) => nd.name === nadador.name);
+    this.selectedTimeline = { name: nadador.name, times: tiempos };
+  }
+
+  // Para cerrar el timeline
+  cerrarTimeline() {
+    this.selectedTimeline = null;
+  }
   get filteredStrokes() {
     const dist = Number(this.distance);
     if (dist > 400) {
-      return this.strokes.filter(s => s.val === 'FREESTYLE');
+      return this.strokes.filter((s) => s.val === 'FREESTYLE');
     }
     if (dist === 400) {
-      return this.strokes.filter(s => s.val === 'FREESTYLE' || s.val === 'MEDLEY');
+      return this.strokes.filter(
+        (s) => s.val === 'FREESTYLE' || s.val === 'MEDLEY'
+      );
     }
     return this.strokes;
   }

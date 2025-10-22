@@ -382,61 +382,40 @@ app.get('/api/world-aquatics/rankings', async (req, res) => {
     
     // Hacer clic en el botón "Show More" hasta cargar todos
     let clickCount = 0;
-    const maxClicks = 100; // Aumentado a 100 para asegurar
+    const maxClicks = 100;
     let previousCount = 0;
     let sameCountAttempts = 0;
-    
+
     while (clickCount < maxClicks) {
-      // Contar cuántas filas hay ahora
+      // Contar filas actuales
       const currentCount = await page.evaluate(() => {
         const tabla = document.querySelector('table');
         if (!tabla) return 0;
         return tabla.querySelectorAll('tbody tr').length;
       });
       
-      console.log(`   Filas actuales: ${currentCount}`);
-      
-      // Si el contador no cambia después de 3 intentos, probablemente ya no hay más
       if (currentCount === previousCount) {
         sameCountAttempts++;
-        if (sameCountAttempts >= 3) {
-          console.log(`✅ No hay más datos (contador estable en ${currentCount} filas)`);
-          break;
-        }
+        if (sameCountAttempts >= 3) break;
       } else {
         sameCountAttempts = 0;
         previousCount = currentCount;
       }
-      
-      // Intentar hacer clic en "Show More"
-      const hasMoreButton = await page.evaluate(() => {
-        const showMoreBtn = document.querySelector('.js-show-more-button, button.load-more-button, button.js-show-more-button, .load-more-button');
-        
-        if (showMoreBtn && !showMoreBtn.disabled && showMoreBtn.offsetParent !== null) {
-          // Hacer scroll al botón por si está fuera de vista
-          showMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          
-          // Esperar un momento antes de hacer clic
-          setTimeout(() => {
-            showMoreBtn.click();
-          }, 500);
-          
-          return true;
-        }
-        
-        return false;
-      });
-      
-      if (!hasMoreButton) {
-        console.log(`✅ Botón "Show More" no encontrado o deshabilitado (después de ${clickCount} clics)`);
-        break;
+
+      // Buscar el botón "Show More"
+      const showMoreBtn = await page.$('.js-show-more-button, .load-more-button');
+      if (showMoreBtn) {
+        await showMoreBtn.evaluate(btn => btn.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await showMoreBtn.click();
+        clickCount++;
+        await new Promise(resolve => setTimeout(resolve, 4000));
+      } else {
+        // Si no hay botón, intenta hacer scroll para cargar más
+        await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        clickCount++;
       }
-      
-      clickCount++;
-      console.log(`   Clic #${clickCount} en "Show More"`);
-      
-      // Esperar más tiempo para que carguen los datos (aumentado)
-      await new Promise(resolve => setTimeout(resolve, 3000)); // 3 segundos
     }
     
     if (clickCount >= maxClicks) {
@@ -545,6 +524,74 @@ app.get('/api/world-aquatics/rankings', async (req, res) => {
   }
 });
 
+// ENDPOINT: World Aquatics Athletes (Nadadores)
+app.get('/api/world-aquatics/athletes', async (req, res) => {
+  try {
+    const {
+      gender = '',
+      discipline = 'SW',
+      nationality = '',
+      name = ''
+    } = req.query;
+
+    const cacheKey = `athletes-${gender}-${discipline}-${nationality}-${name}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    const url = `https://www.worldaquatics.com/swimming/athletes?gender=${gender}&discipline=${discipline}&nationality=${nationality}&name=${encodeURIComponent(name)}`;
+
+    console.log('📡 Scraping World Aquatics Athletes:', url);
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(USER_AGENT);
+
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+    await new Promise(resolve => setTimeout(resolve, 6000)); // Espera para cargar datos
+
+    // Extraer datos de los nadadores
+    const atletas = await page.evaluate(() => {
+      const resultado = [];
+      const cards = document.querySelectorAll('.athlete-card, .athlete-list-card');
+      cards.forEach(card => {
+        const name = card.querySelector('.athlete-card__name, .athlete-list-card__name')?.textContent.trim() || '';
+        const nationality = card.querySelector('.athlete-card__country, .athlete-list-card__country')?.textContent.trim() || '';
+        const birth = card.querySelector('.athlete-card__birth, .athlete-list-card__birth')?.textContent.trim() || '';
+        const profileUrl = card.querySelector('a')?.href || '';
+        const imageUrl = card.querySelector('img')?.src || '';
+        resultado.push({ name, nationality, birth, profileUrl, imageUrl });
+      });
+      return resultado;
+    });
+
+    await browser.close();
+
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      url,
+      total: atletas.length,
+      atletas
+    };
+
+    cache.set(cacheKey, result);
+    res.json(result);
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener atletas de World Aquatics',
+      mensaje: error.message
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 API corriendo en http://localhost:${PORT}`);
   console.log(`📝 Endpoints:`);
@@ -552,4 +599,6 @@ app.listen(PORT, () => {
   console.log(`   - GET /api/natacion/:id`);
   console.log(`   - GET /api/world-aquatics/rankings`);
   console.log(`       Parámetros: ?gender=F|M&distance=50-1500&stroke=BACKSTROKE|BREASTSTROKE|etc&poolConfiguration=LCM|SCM`);
+  console.log(`   - GET /api/world-aquatics/athletes`);
+  console.log(`       Parámetros: ?gender=F|M&discipline=SW&nationality=&name=`);
 });
