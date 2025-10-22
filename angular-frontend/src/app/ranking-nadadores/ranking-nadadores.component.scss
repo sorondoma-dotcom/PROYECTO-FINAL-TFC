@@ -1,0 +1,141 @@
+.ranking-container {
+  padding: 2rem 1.5rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+  max-width: 1500px;
+  margin: 2rem auto;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  margin-bottom: 2rem;
+  align-items: flex-end;
+  background: #f5f7fa;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.03);
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+  color: #333;
+  min-width: 120px;
+  font-weight: 500;
+}
+
+.filters select,
+.filters input {
+  margin-top: 0.3rem;
+  padding: 0.5rem 0.7rem;
+  font-size: 1rem;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  background: #f9fafb;
+  transition: border-color 0.2s;
+  outline: none;
+}
+.filters select:focus,
+.filters input:focus {
+  border-color: #1976d2;
+}
+
+.btn {
+  padding: 0.6rem 1.4rem;
+  background: linear-gradient(90deg, #1976d2 60%, #42a5f5 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px 0 rgba(25, 118, 210, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.btn:hover {
+  background: linear-gradient(90deg, #1565c0 60%, #1976d2 100%);
+  box-shadow: 0 4px 16px 0 rgba(25, 118, 210, 0.13);
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1rem;
+  background: #fafbfc;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(33, 150, 243, 0.06);
+}
+
+.ranking-table th,
+.ranking-table td {
+  border-bottom: 1px solid #e3e7ed;
+  padding: 0.7rem 1rem;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.ranking-table th {
+  background: #1976d2;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.ranking-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ranking-table tr:hover td {
+  background: #e3f2fd;
+  transition: background 0.2s;
+}
+
+.loading, .error, .age-note {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.loading {
+  color: #1976d2;
+}
+
+.error {
+  color: #b00020;
+  background: #ffebee;
+  border-left: 4px solid #b00020;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+}
+
+.age-note {
+  color: #607d8b;
+  background: #f1f8e9;
+  border-left: 4px solid #8bc34a;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+}
+
+@media (max-width: 900px) {
+  .ranking-container {
+    padding: 1rem 0.3rem;
+  }
+  .filters {
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 0.7rem 0.5rem;
+  }
+  .ranking-table th, .ranking-table td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.95rem;
+  }
+}

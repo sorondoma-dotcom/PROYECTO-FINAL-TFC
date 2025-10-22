@@ -12,9 +12,9 @@
     <mat-nav-list>
       @for (item of menuItems; track item.route) {
         <a mat-list-item
-           [routerLink]="item.route"
-           routerLinkActive="active-link"
-           (click)="sidenav.close()">
+          routerLink="{{ item.route }}"
+          routerLinkActive="active-link"
+          (click)="sidenav.close()">
           <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
           <span matListItemTitle>{{ item.label }}</span>
         </a>
@@ -46,10 +46,10 @@
         <nav class="desktop-menu">
           @for (item of menuItems; track item.route) {
             <a mat-button
-               [routerLink]="item.route"
-               routerLinkActive="active-nav-link"
-               [matTooltip]="item.label"
-               matTooltipPosition="below">
+              routerLink="{{ item.route }}"
+              routerLinkActive="active-nav-link"
+              [matTooltip]="item.label"
+              matTooltipPosition="below">
               <mat-icon>{{ item.icon }}</mat-icon>
               <span>{{ item.label }}</span>
             </a>
@@ -86,7 +86,7 @@
 
     <!-- Aquí va el contenido de la página -->
     <div class="page-content">
-      <ng-content></ng-content>
+      <router-outlet></router-outlet>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

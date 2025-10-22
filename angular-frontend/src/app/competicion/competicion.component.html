@@ -68,6 +68,16 @@
         </td>
       </ng-container>
 
+      <!-- En directo -->
+      <ng-container matColumnDef="live">
+        <th mat-header-cell *matHeaderCellDef>En directo</th>
+        <td mat-cell *matCellDef="let c">
+          @if(isLive(c.date)) {
+            <span class="live-indicator">LIVE</span>
+          }
+        </td>
+      </ng-container>
+
       <tr
         mat-header-row
         *matHeaderRowDef="displayedColumns"

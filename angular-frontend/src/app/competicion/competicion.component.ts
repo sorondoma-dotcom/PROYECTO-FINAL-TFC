@@ -18,7 +18,7 @@ import { CityNamePipe } from '../pipes/city-name.pipe';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-table',
+  selector: 'app-competicion',
   standalone: true,
   imports: [
     CommonModule,
@@ -34,11 +34,11 @@ import { Router } from '@angular/router';
     CountryCodePipe,
     CityNamePipe
   ],
-  templateUrl: './table.component.html',
-  styleUrls: ['./table.component.scss']
+  templateUrl: './competicion.component.html',
+  styleUrls: ['./competicion.component.scss']
 })
-export class TableComponent implements AfterViewInit {
-  displayedColumns: string[] = ['date', 'course', 'city', 'name'];
+export class CompeticionComponent implements AfterViewInit {
+  displayedColumns: string[] = ['date', 'course', 'city', 'name', 'live'];
   dataSource = new MatTableDataSource<any>([]);
   pageSizeOptions = [20, 30, 50, 100];
 
@@ -80,5 +80,17 @@ export class TableComponent implements AfterViewInit {
       // Navegar a la ruta de detalles con el ID
       this.router.navigate(['/competicion', competicion.id]);
     }
+  }
+
+  isLive(dateStr: string): boolean {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const [day, mon, year] = dateStr.split(' ');
+    const monthIndex = months.indexOf(mon);
+    if (monthIndex === -1) return false;
+    const compDate = new Date(Number(year), monthIndex, Number(day));
+    const today = new Date();
+    return compDate.getDate() === today.getDate() &&
+           compDate.getMonth() === today.getMonth() &&
+           compDate.getFullYear() === today.getFullYear();
   }
 }

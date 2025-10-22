@@ -1,13 +1,34 @@
 import { Component, OnInit } from '@angular/core';
 import { DatosService } from '../datos.service';
-import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { CountryFlagPipe } from '../pipes/country-flag.pipe';
+
+// Angular Material imports
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatIconModule } from '@angular/material/icon';
+
 @Component({
   selector: 'app-ranking-nadadores',
+  standalone: true,
   templateUrl: './ranking-nadadores.component.html',
-  imports: [BrowserModule, FormsModule, ReactiveFormsModule],
-  styleUrls: ['./ranking-nadadores.component.css']
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    CountryFlagPipe,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatInputModule,
+    MatButtonModule,
+    MatTableModule,
+    MatProgressSpinnerModule,
+    MatIconModule
+  ],
+  styleUrls: ['./ranking-nadadores.component.scss']
 })
 export class RankingNadadoresComponent implements OnInit {
   // filtros
@@ -64,5 +85,16 @@ export class RankingNadadoresComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  get filteredStrokes() {
+    const dist = Number(this.distance);
+    if (dist > 400) {
+      return this.strokes.filter(s => s.val === 'FREESTYLE');
+    }
+    if (dist === 400) {
+      return this.strokes.filter(s => s.val === 'FREESTYLE' || s.val === 'MEDLEY');
+    }
+    return this.strokes;
   }
 }

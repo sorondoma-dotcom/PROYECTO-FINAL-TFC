@@ -1,0 +1,38 @@
+.dashboard-container {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 18px;
+}
+
+.dashboard-toolbar {
+  border-radius: 12px 12px 0 0;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.dashboard-card {
+  min-height: 180px;
+  border-radius: 14px;
+  padding: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+}

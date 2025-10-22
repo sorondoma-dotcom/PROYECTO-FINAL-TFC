@@ -216,6 +216,25 @@
   }
 }
 
+// Indicador en vivo
+.live-indicator {
+  color: #fff;
+  background: #43ea43;
+  font-weight: bold;
+  padding: 0.2em 0.8em;
+  border-radius: 12px;
+  animation: blink 1s infinite;
+  box-shadow: 0 0 8px #43ea43;
+  letter-spacing: 0.08em;
+  font-size: 1em;
+  display: inline-block;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .container {
