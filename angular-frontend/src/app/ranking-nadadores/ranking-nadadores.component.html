@@ -136,10 +136,4 @@
   }
 </div>
 
-@if(selectedTimeline) {
-  <app-timeline-chart 
-    [name]="selectedTimeline.name" 
-    [times]="selectedTimeline.times" 
-    (close)="cerrarTimeline()">
-  </app-timeline-chart>
-}
+<!-- El timeline ahora se muestra en un MatDialog al pulsar el botón 'Timeline' -->

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { DatosService } from '../datos.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
@@ -10,6 +11,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-ranking-nadadores',
@@ -26,7 +28,7 @@ import { MatIconModule } from '@angular/material/icon';
     MatTableModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    TimelineChartComponent
+    MatDialogModule
   ],
   styleUrls: ['./ranking-nadadores.component.scss'],
 })
@@ -63,8 +65,8 @@ export class RankingNadadoresComponent implements OnInit {
     { val: 'SCM', label: '25m (SCM)' },
   ];
   selectedTimeline: { name: string; times: any[] } | null = null;
-  
-  constructor(private datosService: DatosService) {}
+
+  constructor(private datosService: DatosService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.cargarRankings();
@@ -98,9 +100,17 @@ export class RankingNadadoresComponent implements OnInit {
 
 
   verTimeline(nadador: any) {
-    // Filtra todos los tiempos de ese nadador
     const tiempos = this.nadadores.filter((nd) => nd.name === nadador.name);
-    this.selectedTimeline = { name: nadador.name, times: tiempos };
+    // Abrir diálogo con el componente TimelineChartComponent
+    this.dialog.open(TimelineChartComponent, {
+      width: '720px',
+      maxWidth: '95vw',
+      data: {
+        name: nadador.name,
+        times: tiempos,
+      },
+      // los componentes standalone pueden necesitar que el diálogo los trate como componentes normales
+    });
   }
 
   // Para cerrar el timeline
