@@ -4,9 +4,20 @@
       <mat-icon color="accent">timeline</mat-icon>
       Tiempos de {{ name }}
     </mat-card-title>
-    <button mat-icon-button (click)="closeDialog()" style="margin-left:auto;">
+    <div style="display:flex; align-items:center; margin-left:auto; gap:8px;">
+      <mat-form-field appearance="outline" style="width:140px;">
+        <mat-label>Año</mat-label>
+        <mat-select [(ngModel)]="selectedYear" (selectionChange)="drawGoogleLineChart()">
+          <mat-option value="null">Todos</mat-option>
+          @for(y of years; track $index) {
+            <mat-option  value="{{y }}">{{ y }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <button mat-icon-button (click)="closeDialog()">
       <mat-icon>close</mat-icon>
-    </button>
+      </button>
+    </div>
   </mat-card-header>
   <mat-card-content>
     <div class="real-chart">

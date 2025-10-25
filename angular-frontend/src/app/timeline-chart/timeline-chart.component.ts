@@ -4,10 +4,13 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-timeline-chart',
-  imports: [MatCardModule, MatButtonModule, MatIconModule],
+  imports: [MatCardModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatSelectModule, FormsModule],
   templateUrl: './timeline-chart.component.html',
   styleUrls: ['./timeline-chart.component.scss']
 })
@@ -15,7 +18,9 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
   @ViewChild('googleLineChart', { static: false }) chartDiv!: ElementRef;
 
   async ngOnChanges(changes: SimpleChanges) {
+    // Cuando cambian los inputs, recargar Google Charts y recalcular años
     await loadGoogleCharts();
+    this.computeYearsFromTimes();
     setTimeout(() => this.drawGoogleLineChart(), 0);
   }
 
@@ -24,7 +29,8 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
   }
 
   drawGoogleLineChart() {
-    console.log('[TimelineChart] drawGoogleLineChart', { times: this.times });
+    const timesToPlot = this.getFilteredTimes();
+    console.log('[TimelineChart] drawGoogleLineChart', { times: this.times, filtered: timesToPlot, selectedYear: this.selectedYear });
     if (!window.google || !window.google.charts) {
       console.warn('[TimelineChart] Google Charts no está cargado');
       return;
@@ -35,7 +41,7 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
       return; // Solo dibuja si existe el div
     }
     const dataArr: (string | number)[][] = [['Fecha', 'Tiempo']];
-    this.times.forEach(t => {
+    timesToPlot.forEach(t => {
       let timeStr = t.time || '';
       timeStr = timeStr.replace('WR', '').trim();
       let timeFloat = this.parseTimeToFloat(timeStr);
@@ -50,7 +56,8 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
       width: '100%',
       height: 320,
       hAxis: { title: 'Fecha' },
-      vAxis: { title: 'Tiempo (segundos)' }
+      // Invertimos el eje Y para que tiempos menores queden "arriba" (mejor)
+      vAxis: { title: 'Tiempo (segundos)', direction: -1 }
     };
     const chart = new window.google.visualization.LineChart(chartContainer);
     chart.draw(data, options);
@@ -70,6 +77,37 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
   @Input() times: any[] = [];
   @Output() close = new EventEmitter<void>();
 
+  // Filtro por año
+  years: number[] = [];
+  selectedYear: number | null = null;
+
+  computeYearsFromTimes() {
+    console.log(this.times);
+    const yearsSet = new Set<number>();
+    (this.times || []).forEach(t => {
+      const y = this.getYearFromString(t.date );
+      if (y) yearsSet.add(y);
+    });
+    // Ordenar de más reciente a más antiguo para mostrar primero los años más nuevos
+    this.years = Array.from(yearsSet).sort((a,b) => b - a);
+  }
+
+  getYearFromString(s: any): number | null {
+    if (!s) return null;
+    // Intentar parseo mediante Date
+    const d = new Date(String(s));
+    if (!isNaN(d.getTime())) return d.getFullYear();
+    // Fallback: extraer 4 dígitos
+    const m = String(s).match(/(19|20)\d{2}/);
+    if (m) return parseInt(m[0], 10);
+    return null;
+  }
+
+  getFilteredTimes() {
+    if (!this.selectedYear) return this.times || [];
+    return (this.times || []).filter(t => this.getYearFromString(t.date) === this.selectedYear);
+  }
+
   // Inyección opcional de datos cuando se abre como MatDialog
   constructor(
     @Inject(MAT_DIALOG_DATA) public dialogData: any,
@@ -81,6 +119,10 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
       this.times = dialogData.times ?? this.times;
     }
     console.log('[TimelineChart] Constructor', { name: this.name, times: this.times });
+    // Si los datos vienen por MAT_DIALOG_DATA, calcular los años inmediatamente
+    if (this.times && this.times.length) {
+      this.computeYearsFromTimes();
+    }
     // Esperar a que el modal esté abierto para dibujar la gráfica
     if (this.dialogRef && this.dialogRef.afterOpened) {
       this.dialogRef.afterOpened().subscribe(() => {
