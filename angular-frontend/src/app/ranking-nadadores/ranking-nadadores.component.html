@@ -4,7 +4,7 @@
       <mat-label>Sexo</mat-label>
       <mat-select [(ngModel)]="gender" name="gender">
         @for(g of genders; track $index){
-          <mat-option [value]="g.val">{{ g.label }}</mat-option>
+          <mat-option value="{{g.val}}">{{ g.label }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -13,7 +13,7 @@
       <mat-label>Distancia</mat-label>
       <mat-select [(ngModel)]="distance" name="distance">
         @for(d of distances; track $index){
-          <mat-option [value]="d">{{ d }} m</mat-option>
+          <mat-option value="{{d}}">{{ d }} m</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -22,7 +22,7 @@
       <mat-label>Estilo</mat-label>
       <mat-select [(ngModel)]="stroke" name="stroke">
         @for(s of filteredStrokes; track s.val){
-          <mat-option [value]="s.val">{{ s.label }}</mat-option>
+          <mat-option value="{{s.val}}">{{ s.label }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -31,7 +31,7 @@
       <mat-label>Piscina</mat-label>
       <mat-select [(ngModel)]="poolConfiguration" name="poolConfiguration">
         @for(p of pools; track $index){
-          <mat-option [value]="p.val">{{ p.label }}</mat-option>
+          <mat-option value="{{p.val}}">{{ p.label }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -136,4 +136,3 @@
   }
 </div>
 
-<!-- El timeline ahora se muestra en un MatDialog al pulsar el botón 'Timeline' -->
