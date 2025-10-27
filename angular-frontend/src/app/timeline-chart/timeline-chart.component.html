@@ -8,7 +8,7 @@
       <mat-form-field appearance="outline" style="width:140px;">
         <mat-label>Año</mat-label>
         <mat-select [(ngModel)]="selectedYear" (selectionChange)="drawGoogleLineChart()">
-          <mat-option value="null">Todos</mat-option>
+          <mat-option value="{{null}}">Todos</mat-option>
           @for(y of years; track $index) {
             <mat-option  value="{{y }}">{{ y }}</mat-option>
           }

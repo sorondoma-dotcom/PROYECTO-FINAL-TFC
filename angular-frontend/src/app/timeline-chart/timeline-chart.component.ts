@@ -56,7 +56,6 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
       width: '100%',
       height: 320,
       hAxis: { title: 'Fecha' },
-      // Invertimos el eje Y para que tiempos menores queden "arriba" (mejor)
       vAxis: { title: 'Tiempo (segundos)', direction: -1 }
     };
     const chart = new window.google.visualization.LineChart(chartContainer);
@@ -105,7 +104,9 @@ export class TimelineChartComponent implements AfterViewInit, OnChanges {
 
   getFilteredTimes() {
     if (!this.selectedYear) return this.times || [];
-    return (this.times || []).filter(t => this.getYearFromString(t.date) === this.selectedYear);
+    // Convertir selectedYear a number para comparar correctamente
+    const year = Number(this.selectedYear);
+    return (this.times || []).filter(t => this.getYearFromString(t.date) === year);
   }
 
   // Inyección opcional de datos cuando se abre como MatDialog
