@@ -84,10 +84,9 @@ html, body {
    MODO OSCURO
    =========================================================== */
 .dark-theme {
-  @include mat.all-component-colors($dark-theme);
-
   background-color: #121212;
   color: #e0e0e0;
 
+  @include mat.all-component-colors($dark-theme);
   @include components.dark-styles();
 }

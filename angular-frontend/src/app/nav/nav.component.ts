@@ -47,8 +47,11 @@ export class NavComponent {
   }
 
   ngOnInit(): void {
-    this.isDarkMode = localStorage.getItem('theme') === 'dark';
-    if (this.isDarkMode) document.body.classList.add('dark-theme');
+    // Proteger acceso a localStorage en entornos no browser (SSR/tests)
+    if (isPlatformBrowser(this.platformId)) {
+      this.isDarkMode = localStorage.getItem('theme') === 'dark';
+      if (this.isDarkMode) document.body.classList.add('dark-theme');
+    }
   }
 
    theme: string = 'light';
