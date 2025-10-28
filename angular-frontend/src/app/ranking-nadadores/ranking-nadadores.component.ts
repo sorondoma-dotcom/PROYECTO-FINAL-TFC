@@ -28,7 +28,7 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatTableModule,
     MatProgressSpinnerModule,
     MatIconModule,
-    MatDialogModule
+    MatDialogModule,
   ],
   styleUrls: ['./ranking-nadadores.component.scss'],
 })
@@ -71,8 +71,8 @@ export class RankingNadadoresComponent implements OnInit {
   ngOnInit(): void {
     this.cargarRankings();
   }
-
   cargarRankings(): void {
+    if (this.loading) return; // Evita llamadas simultáneas
     this.loading = true;
     this.error = null;
     this.nadadores = [];
@@ -87,8 +87,8 @@ export class RankingNadadoresComponent implements OnInit {
       })
       .subscribe({
         next: (res) => {
-          // respuesta esperada: { rankings: [...] } o directamente rankings en root
-          this.nadadores = res?.rankings ?? res?.data ?? [];
+          const datos = res?.rankings ?? res?.data ?? [];
+          this.nadadores = datos.slice(0, this.limit);
           this.loading = false;
         },
         error: (err) => {
@@ -98,6 +98,16 @@ export class RankingNadadoresComponent implements OnInit {
       });
   }
 
+  onSubmit(event: Event) {
+    event.preventDefault();
+    this.cargarRankings();
+  }
+
+  validarLimite(): void {
+    if (this.limit > 200) {
+      this.limit = 200; // opcional: puedes forzar que no pase de 200
+    }
+  }
 
   verTimeline(nadador: any) {
     const tiempos = this.nadadores.filter((nd) => nd.name === nadador.name);

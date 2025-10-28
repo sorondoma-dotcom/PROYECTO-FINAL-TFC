@@ -3,7 +3,7 @@
   max-width: 80%;
   margin: 40px auto;
   padding: 24px;
-  background-color: white;
+  background-color: var(--ranking-container-bg);
   border-radius: 8px;
 }
 
@@ -65,12 +65,12 @@
 
 // Filas
 .header-row {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: var(--ranking-container-bg);
 }
 
 .data-row {
   &:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: var(--ranking-container-bg-hover);
     cursor: pointer;
   }
 }
@@ -218,7 +218,7 @@
 
 // Indicador en vivo
 .live-indicator {
-  color: #fff;
+  color: --ranking-container-bg;
   background: #43ea43;
   font-weight: bold;
   padding: 0.2em 0.8em;

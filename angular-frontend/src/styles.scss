@@ -1,64 +1,93 @@
+/* ===========================================================
+   GLOBAL THEME CONFIGURATION
+   =========================================================== */
+
 @use '@angular/material' as mat;
 
+/* === Importa configuraciones === */
+@use './theme/palettes' as palettes;
+@use './theme/typography' as typography;
+@use './theme/components' as components;
+@use './theme/variables' as variables;
+
+/* === Material Core === */
 @include mat.core();
 
-// Definir paletas usando la sintaxis correcta
-$swimming-primary: mat.m2-define-palette(mat.$m2-light-blue-palette, 400);
-$swimming-accent: mat.m2-define-palette(mat.$m2-cyan-palette, 300);
-$swimming-warn: mat.m2-define-palette(mat.$m2-orange-palette);
 
-// Crear tema personalizado
-$swimming-theme: mat.m2-define-light-theme((
-  color: (
-    primary: $swimming-primary,
-    accent: $swimming-accent,
-    warn: $swimming-warn,
-  ),
-  typography: mat.m2-define-typography-config(
-    $font-family: 'JetBrains Mono, monospace',
-  ),
-  density: 0,
-));
-
-// Aplicar el tema globalmente
-@include mat.all-component-themes($swimming-theme);
-
-// Obtener colores del tema
-$primary-color: mat.m2-get-color-from-palette($swimming-primary, 400);
-$primary-lighter: mat.m2-get-color-from-palette($swimming-primary, 100);
-$primary-darker: mat.m2-get-color-from-palette($swimming-primary, 700);
-$accent-color: mat.m2-get-color-from-palette($swimming-accent, 300);
-
-// Personalización usando variables CSS de Material
-:root {
-  // Variables de tabla
-  --mdc-data-table-row-hover-state-layer-color: #{$primary-lighter};
-  --mdc-data-table-row-hover-state-layer-opacity: 0.08;
-  --mdc-data-table-header-row-text-color: #{$primary-darker};
-  --mdc-data-table-row-text-color: rgba(0, 0, 0, 0.87);
-  --mdc-data-table-divider-color: #{$primary-lighter};
-  --mdc-data-table-stroke-color: #{$primary-lighter};
-
-  // Variables de form field
-  --mdc-outlined-text-field-outline-color: #{$primary-color};
-  --mdc-outlined-text-field-hover-outline-color: #{$primary-darker};
-  --mdc-outlined-text-field-focus-outline-color: #{$primary-color};
-  --mdc-outlined-text-field-label-text-color: #{$primary-color};
-  --mdc-outlined-text-field-input-text-color: rgba(0, 0, 0, 0.87);
-
-  // Variables de icon button
-  --mdc-icon-button-icon-color: #{$primary-color};
-  --mdc-icon-button-hover-state-layer-color: #{$primary-lighter};
-
-  // Variables de paginator
-  --mat-paginator-container-text-color: #{$primary-darker};
-  --mat-paginator-container-background-color: #{$primary-lighter};
+html, body {
+  margin: 0;
+  height: 100%;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'JetBrains Mono', monospace;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-// Estilos globales básicos
+mat-card {
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button {
+  background-color: var(--color-primary);
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: none;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: var(--color-primary-dark);
+}
+
+
+/* === Tema claro === */
+$light-theme: mat.m2-define-light-theme((
+  color: (
+    primary: palettes.$primary,
+    accent: palettes.$accent,
+    warn: palettes.$warn,
+  ),
+  typography: typography.$config,
+));
+
+/* === Tema oscuro === */
+$dark-theme: mat.m2-define-dark-theme((
+  color: (
+    primary: palettes.$primary,
+    accent: palettes.$accent,
+    warn: palettes.$warn,
+  ),
+  typography: typography.$config,
+));
+
+/* === Tema por defecto (claro) === */
+@include mat.all-component-themes($light-theme);
+
+/* === Estilos globales === */
 html, body {
   height: 100%;
   margin: 0;
   font-family: 'JetBrains Mono', monospace;
   background-color: #f5f5f5;
+  color: #212121;
+}
+
+/* ===========================================================
+   COMPONENTES MATERIALES PERSONALIZADOS
+   =========================================================== */
+@include components.global-styles();
+
+/* ===========================================================
+   MODO OSCURO
+   =========================================================== */
+.dark-theme {
+  @include mat.all-component-colors($dark-theme);
+
+  background-color: #121212;
+  color: #e0e0e0;
+
+  @include components.dark-styles();
 }

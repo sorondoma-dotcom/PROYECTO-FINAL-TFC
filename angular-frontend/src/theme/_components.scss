@@ -1,0 +1,70 @@
+@use '@angular/material' as mat;
+
+/* === Estilos globales para tablas, inputs, botones === */
+@mixin global-styles() {
+  /* Botones */
+  .mat-mdc-raised-button, .mat-mdc-stroked-button, .mat-mdc-outlined-button {
+    border-radius: 8px !important;
+    font-weight: 600;
+    text-transform: none;
+  }
+
+  /* Inputs y selects */
+  .mat-mdc-form-field {
+    margin-right: 1rem;
+    .mat-mdc-text-field-wrapper {
+      border-radius: 8px !important;
+    }
+  }
+
+  /* Tablas */
+  .mat-mdc-table {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fafbfc;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+    th.mat-mdc-header-cell {
+      background: mat.m2-get-color-from-palette(mat.$m2-light-blue-palette, 600);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    td.mat-mdc-cell {
+      color: #212121;
+    }
+
+    tr:hover td {
+      background: rgba(33, 150, 243, 0.08);
+    }
+  }
+}
+
+/* === Estilos oscuros === */
+@mixin dark-styles() {
+  .mat-mdc-table {
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+
+    th.mat-mdc-header-cell {
+      background-color: #1565c0;
+    }
+
+    td.mat-mdc-cell {
+      color: #e0e0e0;
+    }
+
+    tr:hover td {
+      background-color: rgba(66, 165, 245, 0.15);
+    }
+  }
+
+  .mat-mdc-form-field {
+    color: #e0e0e0;
+  }
+
+  .mat-mdc-select-panel {
+    background-color: #2a2a2a !important;
+    color: #fff !important;
+  }
+}

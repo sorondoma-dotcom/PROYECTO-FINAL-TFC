@@ -1,0 +1,8 @@
+@use '@angular/material' as mat;
+
+$config: mat.m2-define-typography-config(
+  $font-family: 'JetBrains Mono, monospace',
+  $headline-1: mat.m2-define-typography-level(96px, 96px, 300),
+  $headline-2: mat.m2-define-typography-level(60px, 60px, 300),
+  $body-1: mat.m2-define-typography-level(16px, 24px, 400),
+);

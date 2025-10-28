@@ -11,13 +11,15 @@
 
     <mat-nav-list>
       @for (item of menuItems; track item.route) {
-        <a mat-list-item
-          routerLink="{{ item.route }}"
-          routerLinkActive="active-link"
-          (click)="sidenav.close()">
-          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
-        </a>
+      <a
+        mat-list-item
+        routerLink="{{ item.route }}"
+        routerLinkActive="active-link"
+        (click)="sidenav.close()"
+      >
+        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+        <span matListItemTitle>{{ item.label }}</span>
+      </a>
       }
     </mat-nav-list>
   </mat-sidenav>
@@ -45,35 +47,44 @@
         <!-- Menú desktop -->
         <nav class="desktop-menu">
           @for (item of menuItems; track item.route) {
-            <a mat-button
-              routerLink="{{ item.route }}"
-              routerLinkActive="active-nav-link"
-              [matTooltip]="item.label"
-              matTooltipPosition="below">
-              <mat-icon>{{ item.icon }}</mat-icon>
-              <span>{{ item.label }}</span>
-            </a>
+          <a
+            mat-button
+            routerLink="{{ item.route }}"
+            routerLinkActive="active-nav-link"
+            [matTooltip]="item.label"
+            matTooltipPosition="below"
+          >
+            <mat-icon>{{ item.icon }}</mat-icon>
+            <span>{{ item.label }}</span>
+          </a>
           }
         </nav>
 
         <!-- Botones de acción -->
         <div class="action-buttons">
-          <button mat-icon-button
-                  (click)="toggleTheme()"
-                  [matTooltip]="isDarkMode ? 'Modo claro' : 'Modo oscuro'"
-                  class="theme-toggle">
-            <mat-icon>{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
+          <button
+            mat-icon-button
+            (click)="toggleTheme()"
+            [matTooltip]="isDarkMode ? 'Modo claro' : 'Modo oscuro'"
+            class="theme-toggle"
+          >
+            <mat-icon>{{ isDarkMode ? "light_mode" : "dark_mode" }}</mat-icon>
           </button>
 
-          <button mat-icon-button
-                  matTooltip="Notificaciones"
-                  class="notification-btn"
-                  aria-label="Notificaciones, 3 nuevas">
-            <mat-icon [matBadge]="3"
-                      matBadgeColor="warn"
-                      matBadgeSize="small"
-                      aria-hidden="false"
-                      [attr.aria-label]="'Tienes 3 notificaciones nuevas'">notifications</mat-icon>
+          <button
+            mat-icon-button
+            matTooltip="Notificaciones"
+            class="notification-btn"
+            aria-label="Notificaciones, 3 nuevas"
+          >
+            <mat-icon
+              [matBadge]="3"
+              matBadgeColor="warn"
+              matBadgeSize="small"
+              aria-hidden="false"
+              [attr.aria-label]="'Tienes 3 notificaciones nuevas'"
+              >notifications</mat-icon
+            >
           </button>
 
           <button mat-raised-button color="primary" class="cta-button">
@@ -90,4 +101,3 @@
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>
-
