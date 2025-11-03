@@ -26,7 +26,8 @@ export class DatosService {
     limit?: number,
     year?: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    clearCache?: boolean
   }): Observable<any> {
     let httpParams = new HttpParams()
       .set('gender', params.gender)
@@ -38,6 +39,7 @@ export class DatosService {
     if (params.year) httpParams = httpParams.set('year', params.year);
     if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
+    if (params.clearCache) httpParams = httpParams.set('clearCache', 'true');
 
     return this.http.get(this.rankingsUrl, { params: httpParams });
   }

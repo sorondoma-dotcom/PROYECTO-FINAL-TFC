@@ -1,1 +1,233 @@
-<p>Bienvenido al panel de control de la API de Natación</p>
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1>🏊‍♂️ Panel de Control - SwimLive</h1>
+    <p class="subtitle">Bienvenido al dashboard de competiciones de natación</p>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Cargando datos...</p>
+    </div>
+  }
+
+  <!-- Stats Cards -->
+  @if (!loading) {
+    <div class="dashboard-grid">
+      <!-- Total Competiciones -->
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-content">
+            <div class="stat-icon total">
+              <mat-icon>pool</mat-icon>
+            </div>
+            <div class="stat-info">
+              <h3>{{ stats.totalCompeticiones }}</h3>
+              <p>Total Competiciones</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Competiciones en Directo -->
+      <mat-card class="dashboard-card stat-card live">
+        <mat-card-content>
+          <div class="stat-content">
+            <div class="stat-icon live">
+              <mat-icon>live_tv</mat-icon>
+            </div>
+            <div class="stat-info">
+              <h3>{{ stats.competicionesLive }}</h3>
+              <p>En Directo Hoy</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Competiciones 25m -->
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-content">
+            <div class="stat-icon">
+              <mat-icon>straighten</mat-icon>
+            </div>
+            <div class="stat-info">
+              <h3>{{ stats.competiciones25m }}</h3>
+              <p>Piscina 25m</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Competiciones 50m -->
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-content">
+            <div class="stat-icon">
+              <mat-icon>waves</mat-icon>
+            </div>
+            <div class="stat-info">
+              <h3>{{ stats.competiciones50m }}</h3>
+              <p>Piscina 50m</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Con Resultados -->
+      <mat-card class="dashboard-card stat-card">
+        <mat-card-content>
+          <div class="stat-content">
+            <div class="stat-icon results">
+              <mat-icon>emoji_events</mat-icon>
+            </div>
+            <div class="stat-info">
+              <h3>{{ stats.competicionesConResultados }}</h3>
+              <p>Con Resultados</p>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Acceso Rápido -->
+      <mat-card class="dashboard-card stat-card action-card">
+        <mat-card-content>
+          <div class="stat-content">
+            <div class="stat-icon">
+              <mat-icon>dashboard</mat-icon>
+            </div>
+            <div class="stat-info">
+              <h3>Explorar</h3>
+              <p>Ver todas las competiciones</p>
+            </div>
+          </div>
+          <div class="stat-action">
+            <button mat-raised-button color="primary" routerLink="/competiciones">
+              <mat-icon>arrow_forward</mat-icon>
+              Ir a Competiciones
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Competiciones Destacadas -->
+    @if (competicionesDestacadas.length > 0) {
+      <div class="featured-section">
+        <h2>🌟 Competiciones Destacadas</h2>
+        <div class="featured-grid">
+          @for (comp of competicionesDestacadas; track comp.id || comp.name) {
+            <mat-card class="featured-card">
+              <mat-card-header>
+                <div class="card-header-content">
+                  @if (comp.city | countryCode; as code) {
+                    <span class="country-flag" [attr.title]="code">
+                      {{ code | countryFlag }}
+                    </span>
+                  }
+                  <div class="card-title">
+                    <mat-card-title>{{ comp.name | cityName }}</mat-card-title>
+                    <mat-card-subtitle>{{ comp.city | cityName }}</mat-card-subtitle>
+                  </div>
+                </div>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="card-details">
+                  <div class="detail-item">
+                    <mat-icon>event</mat-icon>
+                    <span>{{ comp.date }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <mat-icon>{{ getCourseIcon(comp.course) }}</mat-icon>
+                    <span>{{ comp.course }}</span>
+                  </div>
+                  @if (isLive(comp.date)) {
+                    <mat-chip class="live-chip">
+                      <mat-icon>live_tv</mat-icon>
+                      LIVE
+                    </mat-chip>
+                  }
+                  @if (comp.hasResults) {
+                    <mat-chip class="results-chip">
+                      <mat-icon>emoji_events</mat-icon>
+                      Resultados
+                    </mat-chip>
+                  }
+                </div>
+              </mat-card-content>
+              @if (comp.id && comp.hasResults) {
+                <mat-card-actions>
+                  <button mat-button color="primary" [routerLink]="['/competicion', comp.id]">
+                    Ver Detalles
+                    <mat-icon>arrow_forward</mat-icon>
+                  </button>
+                </mat-card-actions>
+              }
+            </mat-card>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Nadadores destacados por prueba -->
+    <div class="featured-section">
+      <h2>🏅 Nadadores destacados por prueba</h2>
+
+      @if (errorRankings && eventosTop.length === 0) {
+        <mat-card class="error-card">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon>warning</mat-icon>
+              <p>{{ errorRankings }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      } @else if (errorRankings && eventosTop.length > 0) {
+        <mat-card class="warning-card">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon>info</mat-icon>
+              <p>{{ errorRankings }}</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      @if (eventosTop && eventosTop.length > 0) {
+        <div class="featured-grid">
+          @for (ev of eventosTop; track ev.key) {
+            <mat-card class="featured-card">
+              <mat-card-header>
+                <div class="card-header-content">
+                  <div class="card-title">
+                    <mat-card-title>{{ ev.title }}</mat-card-title>
+                    <mat-card-subtitle>{{ ev.poolConfiguration }} • {{ ev.gender }}</mat-card-subtitle>
+                  </div>
+                </div>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="card-details">
+                  @for (t of ev.top; track t.name) {
+                    <div class="detail-item">
+                      @if (getPaisRanking(t)) {
+                        <span class="country-flag" [attr.title]="getPaisRanking(t)">
+                          {{ getPaisRanking(t) | countryFlag }}
+                        </span>
+                      }
+                      <span class="athlete-name">{{ getNombreRanking(t) }}</span>
+                      @if (getEtiquetaRanking(t)) {
+                        <span class="athlete-mark">{{ getEtiquetaRanking(t) }}</span>
+                      }
+                    </div>
+                  }
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

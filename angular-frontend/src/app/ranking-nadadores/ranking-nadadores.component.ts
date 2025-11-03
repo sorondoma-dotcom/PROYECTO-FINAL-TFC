@@ -38,12 +38,13 @@ export class RankingNadadoresComponent implements OnInit {
   distance = '100';
   stroke = 'BACKSTROKE';
   poolConfiguration: 'LCM' | 'SCM' = 'LCM';
-  limit = 50;
+  limit = 10;
 
   // datos
   nadadores: any[] = [];
   loading = false;
   error: string | null = null;
+  previousLimit: number = 10;
 
   // opciones mínimas para selects
   genders = [
@@ -69,9 +70,10 @@ export class RankingNadadoresComponent implements OnInit {
   constructor(private datosService: DatosService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
+    this.previousLimit = this.limit;
     this.cargarRankings();
   }
-  cargarRankings(): void {
+  cargarRankings(clearCache: boolean = false): void {
     if (this.loading) return; // Evita llamadas simultáneas
     this.loading = true;
     this.error = null;
@@ -84,29 +86,34 @@ export class RankingNadadoresComponent implements OnInit {
         stroke: this.stroke,
         poolConfiguration: this.poolConfiguration,
         limit: this.limit,
+        clearCache: clearCache,
       })
       .subscribe({
         next: (res) => {
           const datos = res?.rankings ?? res?.data ?? [];
           this.nadadores = datos.slice(0, this.limit);
           this.loading = false;
+          this.previousLimit = this.limit;
         },
         error: (err) => {
           this.error = err?.message || 'Error al obtener rankings';
           this.loading = false;
         },
       });
+    console.log(this.nadadores);
   }
 
   onSubmit(event: Event) {
     event.preventDefault();
-    this.cargarRankings();
+    const shouldClearCache = this.limit !== this.previousLimit;
+    this.cargarRankings(shouldClearCache);
   }
 
   validarLimite(): void {
     if (this.limit > 200) {
       this.limit = 200; // opcional: puedes forzar que no pase de 200
     }
+    // No disparamos búsqueda automática; solo se aplica al pulsar "Buscar"
   }
 
   verTimeline(nadador: any) {
