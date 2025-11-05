@@ -1,107 +1,155 @@
-<div class="container mat-elevation-z8">
-  <div class="search-bar">
+<div class="competitions-container mat-elevation-z8">
+  <section class="filters">
+    <mat-form-field appearance="outline">
+      <mat-label>Año</mat-label>
+      <mat-select [(ngModel)]="selectedYear" (selectionChange)="onFiltersChanged()">
+        @for (year of yearOptions; track year) {
+          <mat-option [value]="year">{{ year }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Disciplina</mat-label>
+      <mat-select [(ngModel)]="selectedDiscipline" (selectionChange)="onFiltersChanged()">
+        @for (option of disciplineOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
     <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Filtrar competiciones</mat-label>
+      <mat-label>Buscar competiciones</mat-label>
       <input
         matInput
-        (keyup)="applyFilter($event)"
-        placeholder="Buscar..."
-        #filterInput
+        placeholder="Nombre, ciudad o país"
+        [(ngModel)]="filterText"
+        (ngModelChange)="applyFilters()"
       />
-      <button
-        mat-icon-button
-        matSuffix
-        aria-label="Limpiar"
-        (click)="clearFilter(filterInput)"
-      >
-        <mat-icon>close</mat-icon>
-      </button>
+      @if(filterText){
+        <button mat-icon-button matSuffix type="button" (click)="clearFilter()">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
     </mat-form-field>
-  </div>
 
-  @if(dataSource.data && dataSource.data.length > 0){
-  <div class="table-wrapper">
-    <table mat-table [dataSource]="dataSource" matSort class="styled-table">
-      <!-- Fecha -->
-      <ng-container matColumnDef="date">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Fecha</th>
-        <td mat-cell *matCellDef="let c">{{ c.date }}</td>
-      </ng-container>
+    <button mat-stroked-button color="primary" type="button" (click)="onRefresh()">
+      <mat-icon>refresh</mat-icon>
+      Recargar
+    </button>
+  </section>
 
-      <!-- Tipo -->
-      <ng-container matColumnDef="course">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</th>
-        <td mat-cell *matCellDef="let c">{{ c.course }}</td>
-      </ng-container>
-
-      <!-- Ciudad -->
-      <ng-container matColumnDef="city">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Ciudad</th>
-        <td mat-cell *matCellDef="let c">
-          <div class="city-cell">
-            @if(c.city | countryCode; as code) {
-            <span class="country-flag" [attr.title]="code">
-              {{ code | countryFlag }}
-            </span>
-            }
-            <span class="city-name">{{ c.city | cityName }}</span>
-          </div>
-        </td>
-      </ng-container>
-
-      <!-- Nombre -->
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
-        <td mat-cell *matCellDef="let c">
-          @if(c.id && c.hasResults) {
-          <a
-            href="javascript:void(0)"
-            (click)="verDetallesCompeticion(c, $event)"
-            class="competition-link"
-          >
-            {{ c.name }}
-            <mat-icon class="external-icon">visibility</mat-icon>
-          </a>
-          } @else {
-          <span>{{ c.name }}</span>
-          }
-        </td>
-      </ng-container>
-
-      <!-- En directo -->
-      <ng-container matColumnDef="live">
-        <th mat-header-cell *matHeaderCellDef>En directo</th>
-        <td mat-cell *matCellDef="let c">
-          @if(isLive(c.date)) {
-            <span class="live-indicator">LIVE</span>
-          }
-        </td>
-      </ng-container>
-
-      <tr
-        mat-header-row
-        *matHeaderRowDef="displayedColumns"
-        class="header-row"
-      ></tr>
-      <tr
-        mat-row
-        *matRowDef="let row; columns: displayedColumns"
-        class="data-row"
-      ></tr>
-    </table>
-  </div>
-  }
-  <mat-paginator
-    [pageSizeOptions]="pageSizeOptions"
-    showFirstLastButtons
-    class="table-paginator"
-  >
-  </mat-paginator>
-
-  <ng-template #noResults>
-    <div class="no-results">
-      <mat-icon>search_off</mat-icon>
-      <span>No se encontraron competiciones</span>
+  @if (loading) {
+    <div class="state-block loading">
+      <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
+      <span>Cargando competiciones...</span>
     </div>
-  </ng-template>
+  } @else if (error) {
+    <div class="state-block error">
+      <mat-icon color="warn">error</mat-icon>
+      <span>{{ error }}</span>
+      <button mat-button color="primary" type="button" (click)="onRefresh()">Reintentar</button>
+    </div>
+  } @else {
+    @if (groupedCompetitions.length > 0) {
+      <section class="groups">
+        @for (group of groupedCompetitions; track group.key) {
+          <article class="group">
+            <header class="group__header">
+              <h2>{{ group.label }}</h2>
+            </header>
+            <div class="group__list">
+              @for (competition of group.competitions; track competition.url || competition.name) {
+                <mat-card class="competition-card">
+                  <div class="competition-card__header">
+                    <div class="competition-card__header-content">
+                      <div class="competition-card__titles">
+                        <h3 class="competition-card__name">{{ competition.name }}</h3>
+                        @if (competition.stage) {
+                          <span class="competition-card__stage">{{ competition.stage }}</span>
+                        }
+                      </div>
+                    </div>
+                    @if (competition.logo) {
+                      <img
+                        [src]="competition.logo"
+                        [alt]="competition.name"
+                        class="competition-card__logo"
+                        loading="lazy"
+                      />
+                    }
+                  </div>
+
+                  <div class="competition-card__body">
+                    <div class="info-row">
+                      <mat-icon>event</mat-icon>
+                      <span>{{ competition.date || (competition.startDate | date:'d MMM y') }}</span>
+                    </div>
+
+                    @if (competition.startDate && competition.endDate) {
+                      <div class="info-row secondary">
+                        <mat-icon>schedule</mat-icon>
+                        <span>
+                          {{ competition.startDate | date:'d MMM y' }}
+                          <span class="separator">→</span>
+                          {{ competition.endDate | date:'d MMM y' }}
+                        </span>
+                      </div>
+                    }
+
+                    @if (competition.city || competition.poolName || competition.countryCode) {
+                      <div class="info-row">
+                        <mat-icon>place</mat-icon>
+                        <span class="location">
+                          @if (competition.flagImage) {
+                            <img
+                              [src]="competition.flagImage"
+                              [alt]="competition.countryCode || 'Bandera'"
+                              class="location__flag"
+                              loading="lazy"
+                            />
+                          } @else if (competition.countryCode) {
+                            <span class="location__flag">{{ competition.countryCode | countryFlag }}</span>
+                          }
+                          <span>
+                            {{ competition.city | cityName }}
+                            @if (competition.poolName) {
+                              <span class="separator">·</span>
+                              {{ competition.poolName }}
+                            }
+                          </span>
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="competition-card__actions">
+                    @if (competition.url) {
+                      <a
+                        mat-stroked-button
+                        color="primary"
+                        [href]="competition.url"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Ver en World Aquatics
+                        <mat-icon>open_in_new</mat-icon>
+                      </a>
+                    } @else {
+                      <span class="competition-card__placeholder">Sin enlace disponible</span>
+                    }
+                  </div>
+                </mat-card>
+              }
+            </div>
+          </article>
+        }
+      </section>
+    } @else {
+      <div class="state-block empty">
+        <mat-icon>event_busy</mat-icon>
+        <span>No hay competiciones para los filtros seleccionados.</span>
+      </div>
+    }
+  }
 </div>

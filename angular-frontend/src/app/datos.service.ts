@@ -14,9 +14,9 @@ export class DatosService {
   getDatosApi(){
     return this.http.get(this.url);
   }
-  // getCompeticionDetalle(id: string): Observable<any> {
-  //   return this.http.get(`${this.url}/${id}`);
-  // }
+  getCompeticionDetalle(id: string): Observable<any> {
+    return this.http.get(`${this.url}/${id}`);
+  }
 
   // nuevo método: obtiene rankings desde la API pasando filtros
   getRankings(params: {

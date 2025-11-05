@@ -20,4 +20,14 @@ async function athletes(req, res) {
   }
 }
 
-module.exports = { rankings, athletes };
+async function competitions(req, res) {
+  try {
+    const params = req.query || {};
+    const result = await worldService.fetchCompetitionsList(params);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Error al obtener competiciones de World Aquatics', mensaje: error.message });
+  }
+}
+
+module.exports = { rankings, athletes, competitions };

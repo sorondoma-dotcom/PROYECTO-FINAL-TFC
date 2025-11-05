@@ -1,7 +1,7 @@
 {
   "name": "api-swim-live",
   "version": "1.0.0",
-  "description": "API de web scraping para competiciones de natación",
+  "description": "API de web scraping para competiciones de natacion",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -24,7 +24,8 @@
     "morgan": "^1.10.0",
     "dotenv": "^16.4.5",
     "node-cache": "^5.1.2",
-    "puppeteer": "^24.25.0"
+    "puppeteer": "^24.25.0",
+    "pino": "^9.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

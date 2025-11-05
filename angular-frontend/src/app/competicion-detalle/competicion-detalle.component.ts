@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -44,21 +44,9 @@ export class CompeticionDetalleComponent implements OnInit {
   }
 
   cargarDetalles(): void {
-    this.loading = true;
-    this.error = '';
-
-    this.datos.getCompeticionDetalle(this.competicionId).subscribe({
-      next: (data: any) => {
-        this.detalles = data;
-        this.loading = false;
-        console.log('Detalles cargados:', data);
-      },
-      error: (err) => {
-        this.error = 'Error al cargar los detalles de la competición';
-        this.loading = false;
-        console.error(err);
-      }
-    });
+    this.loading = false;
+    this.error = 'El detalle de la competicion esta temporalmente deshabilitado.';
+    this.detalles = null;
   }
 
   volver(): void {
@@ -77,7 +65,7 @@ export class CompeticionDetalleComponent implements OnInit {
     });
   }
 
-  // Método para obtener los campos del evento como array
+  // Metodo para obtener los campos del evento como array
   obtenerCampos(evento: any): Array<{key: string, value: any}> {
     return Object.keys(evento).map(key => ({
       key: key,
@@ -85,7 +73,7 @@ export class CompeticionDetalleComponent implements OnInit {
     }));
   }
 
-  // Método para formatear los labels de los campos
+  // Metodo para formatear los labels de los campos
   formatearLabel(key: string): string {
     // Eliminar 'campo_' y capitalizar
     const label = key.replace('campo_', 'Campo ');

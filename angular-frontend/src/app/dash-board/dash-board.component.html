@@ -209,7 +209,7 @@
               </mat-card-header>
               <mat-card-content>
                 <div class="card-details">
-                  @for (t of ev.top; track t.name) {
+                  @for (t of ev.top; track $index) {
                     <div class="detail-item">
                       @if (getPaisRanking(t)) {
                         <span class="country-flag" [attr.title]="getPaisRanking(t)">

@@ -1,166 +1,287 @@
-const axios = require('axios');
+﻿const axios = require('axios');
 const cheerio = require('cheerio');
 const cache = require('../../lib/cache');
 const { USER_AGENT } = require('../../lib/constants');
+const logger = require('../../lib/logger');
 
-async function fetchCompetitions() {
-  const cacheKey = 'competiciones';
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) return cachedData;
+const BASE_HOST = 'https://live.swimrankings.net';
+const DEFAULT_CACHE_TTL = Number.parseInt(process.env.NATACION_CACHE_TTL || '900', 10);
+const DETAIL_CACHE_TTL = Number.parseInt(process.env.NATACION_DETAIL_CACHE_TTL || `${DEFAULT_CACHE_TTL}`, 10);
+const HTTP_TIMEOUT = Number.parseInt(process.env.NATACION_HTTP_TIMEOUT || '15000', 10);
 
-  const url = 'https://live.swimrankings.net/';
-  const response = await axios.get(url, { headers: { 'User-Agent': USER_AGENT } });
-  const $ = cheerio.load(response.data);
-  const competiciones = [];
-
-  $('table tbody tr').each((index, element) => {
-    const $row = $(element);
-    const celdas = $row.find('td');
-    if (celdas.length >= 4) {
-      let enlace = $row.find('a').first().attr('href') || '';
-      if (!enlace) enlace = $(celdas[3]).find('a').attr('href') || '';
-
-      let urlResultados = '';
-      let competicionId = '';
-      if (enlace) {
-        if (enlace.startsWith('http')) urlResultados = enlace;
-        else if (enlace.startsWith('/')) urlResultados = `https://live.swimrankings.net${enlace}`;
-        else urlResultados = `https://live.swimrankings.net/${enlace}`;
-
-        const match = enlace.match(/\/(\d+)\/?/);
-        if (match) competicionId = match[1];
-      }
-
-      const competicion = {
-        id: competicionId,
-        date: $(celdas[0]).text().trim(),
-        course: $(celdas[1]).text().trim(),
-        city: $(celdas[2]).text().trim(),
-        name: $(celdas[3]).text().trim(),
-        urlResultados,
-        hasResults: !!enlace
-      };
-
-      if (competicion.date || competicion.name) competiciones.push(competicion);
-    }
-  });
-
-  if (competiciones.length === 0) {
-    $('.table tr, .results tr, [class*="result"] tr').each((index, element) => {
-      const $row = $(element);
-      const celdas = $row.find('td');
-      if (celdas.length >= 4) {
-        let enlace = $row.find('a').first().attr('href') || '';
-        if (!enlace) enlace = $(celdas[3]).find('a').attr('href') || '';
-
-        let urlResultados = '';
-        let competicionId = '';
-        if (enlace) {
-          if (enlace.startsWith('http')) urlResultados = enlace;
-          else if (enlace.startsWith('/')) urlResultados = `https://live.swimrankings.net${enlace}`;
-          else urlResultados = `https://live.swimrankings.net/${enlace}`;
-
-          const match = enlace.match(/\/(\d+)\/?/);
-          if (match) competicionId = match[1];
-        }
-
-        competiciones.push({
-          id: competicionId,
-          date: $(celdas[0]).text().trim(),
-          course: $(celdas[1]).text().trim(),
-          city: $(celdas[2]).text().trim(),
-          name: $(celdas[3]).text().trim(),
-          urlResultados,
-          hasResults: !!enlace
-        });
-      }
-    });
+const client = axios.create({
+  baseURL: BASE_HOST,
+  timeout: HTTP_TIMEOUT,
+  headers: {
+    'User-Agent': USER_AGENT,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
   }
+});
 
-  const result = { success: true, timestamp: new Date().toISOString(), total: competiciones.length, competiciones };
-  cache.set(cacheKey, result);
-  return result;
+function createServiceError(message, statusCode, cause) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  if (cause) error.cause = cause;
+  return error;
 }
 
-async function fetchCompetitionById(id) {
-  const baseHost = 'https://live.swimrankings.net';
-  const baseUrl = `${baseHost}/${id}/`;
-  const url = `${baseUrl}`;
+function buildAbsoluteUrl(href, base) {
+  if (!href) return '';
+  try {
+    return new URL(href, base).href;
+  } catch (err) {
+    return '';
+  }
+}
 
-  const response = await axios.get(url, { headers: { 'User-Agent': USER_AGENT } });
-  const $ = cheerio.load(response.data);
+function extractCompetitionLink(rawHref) {
+  const href = buildAbsoluteUrl(rawHref, BASE_HOST);
+  const match = (rawHref || '').match(/\/(\d{2,})/);
+  const competitionId = match ? match[1] : '';
+  return { href, competitionId };
+}
+
+function cleanText(value) {
+  return (value || '').replace(/\s+/g, ' ').trim();
+}
+
+function toCacheMetadata(ttlSeconds) {
+  const cachedAt = new Date();
+  return {
+    ttlSeconds,
+    cachedAt: cachedAt.toISOString(),
+    expiresAt: new Date(cachedAt.getTime() + ttlSeconds * 1000).toISOString()
+  };
+}
+
+function cloneWithCacheHit(payload, hit) {
+  return {
+    ...payload,
+    cacheHit: hit
+  };
+}
+
+async function fetchHtml(path, traceId) {
+  try {
+    const response = await client.get(path, {
+      headers: { 'User-Agent': USER_AGENT }
+    });
+    return response.data;
+  } catch (error) {
+    const status = error.response?.status === 404 ? 404 : 502;
+    logger.error({ err: error, traceId, path }, 'Fallo al descargar HTML desde SwimRankings');
+    throw createServiceError('No se pudo obtener la información de natación', status, error);
+  }
+}
+
+function parseCompetitionRows($, selector) {
+  const items = [];
+  $(selector).each((_, element) => {
+    const $row = $(element);
+    const cells = $row.find('td');
+    if (cells.length < 4) return;
+
+    const primaryLink = $row.find('a').first().attr('href');
+    const fallbackLink = $(cells[3]).find('a').first().attr('href');
+    const targetLink = primaryLink || fallbackLink || '';
+    const { href, competitionId } = extractCompetitionLink(targetLink);
+
+    const competition = {
+      id: competitionId,
+      date: cleanText($(cells[0]).text()),
+      course: cleanText($(cells[1]).text()),
+      city: cleanText($(cells[2]).text()),
+      name: cleanText($(cells[3]).text()),
+      urlResultados: href || undefined,
+      hasResults: Boolean(targetLink)
+    };
+
+    if (!competition.date && !competition.name) return;
+
+    if (!competition.id && href) {
+      const fallbackId = href.match(/\/(\d{2,})/);
+      if (fallbackId) competition.id = fallbackId[1];
+    }
+
+    items.push(competition);
+  });
+
+  return items;
+}
+
+function mergeCompetitions(list) {
+  const unique = new Map();
+  list.forEach((item) => {
+    const key = item.id || `${item.date}-${item.name}`;
+    if (!unique.has(key)) unique.set(key, item);
+  });
+  return Array.from(unique.values());
+}
+
+function extractPdfLinks($, cell, baseUrl) {
+  const links = [];
+  $(cell).find('a[href$=".pdf"]').each((_, link) => {
+    const $link = $(link);
+    const href = $link.attr('href');
+    const absoluteUrl = buildAbsoluteUrl(href, baseUrl);
+    if (!absoluteUrl) return;
+
+    const file = absoluteUrl.split('/').pop() || '';
+    const typeMatch = file.match(/(StartList|Start|ResultList|Result|Results)/i);
+    const indexMatch = file.match(/_(\d+)\.pdf$/i);
+
+    links.push({
+      texto: cleanText($link.text()),
+      url: absoluteUrl,
+      file,
+      tipo: typeMatch ? (typeMatch[1].toLowerCase().includes('start') ? 'salidas' : 'resultados') : undefined,
+      index: indexMatch ? Number.parseInt(indexMatch[1], 10) : undefined
+    });
+  });
+  return links;
+}
+
+function parseCompetitionDetail($, id) {
+  const baseUrl = `${BASE_HOST}/${id}/`;
 
   const infoCompeticion = {
-    titulo: $('h1').first().text().trim(),
-    subtitulo: $('h2').first().text().trim(),
-    fecha: $('.date, [class*="date"]').first().text().trim(),
-    ciudad: $('.location, [class*="location"]').first().text().trim()
+    titulo: cleanText($('h1').first().text()),
+    subtitulo: cleanText($('h2').first().text()),
+    fecha: cleanText($('.date, [class*="date"]').first().text()),
+    ciudad: cleanText($('.location, [class*="location"]').first().text())
   };
 
   const eventosPorEstilo = [];
   let estiloActual = null;
 
-  const extraerEnlacesPDF = (celda) => {
-    const enlaces = [];
-    $(celda).find('a[href$=".pdf"]').each((i, link) => {
-      const raw = ($(link).attr('href') || '').trim();
-      if (!raw) return;
-
-      const absUrl = raw.startsWith('http') ? raw : (raw.startsWith('/') ? `${baseHost}${raw}` : `${baseUrl}${raw}`);
-      const file = absUrl.split('/').pop() || '';
-      const m = file.match(/(StartList|ResultList|Results|Result)_(\d+)\.pdf/i);
-
-      enlaces.push({
-        texto: ($(link).text() || '').trim() || undefined,
-        url: absUrl,
-        file,
-        tipo: m ? (m[1].toLowerCase().includes('start') ? 'salidas' : 'resultados') : undefined,
-        index: m ? parseInt(m[2], 10) : undefined
-      });
-    });
-    return enlaces;
-  };
-
-  $('table tbody tr').each((index, element) => {
+  $('table tbody tr').each((_, element) => {
     const $row = $(element);
+
     if ($row.hasClass('trTitle1')) return;
+
     if ($row.hasClass('trTitle2')) {
-      const estiloMasc = $row.find('td').eq(0).text().trim();
-      estiloActual = { estilo: estiloMasc, masculino: [], femenino: [] };
+      const estilo = cleanText($row.find('td').eq(0).text());
+      estiloActual = { estilo, masculino: [], femenino: [] };
       eventosPorEstilo.push(estiloActual);
       return;
     }
 
-    const celdas = $row.find('td');
-    if (celdas.length === 0 || $row.text().trim() === '') return;
+    const cells = $row.find('td');
+    if (!estiloActual || cells.length < 11) return;
 
-    if (estiloActual && celdas.length >= 11) {
-      const eventoMasc = {
-        distancia: $(celdas[0]).text().trim(),
-        tipo: $(celdas[1]).text().trim(),
-        categoria: $(celdas[2]).text().trim(),
-        hora: $(celdas[3]).text().trim().replace(/\s+/g, ' '),
-        info: $(celdas[4]).text().trim(),
-        pdfSalidas: extraerEnlacesPDF(celdas[3]),
-        pdfResultados: extraerEnlacesPDF(celdas[4])
-      };
+    const eventoMasc = {
+      distancia: cleanText($(cells[0]).text()),
+      tipo: cleanText($(cells[1]).text()),
+      categoria: cleanText($(cells[2]).text()),
+      hora: cleanText($(cells[3]).text()),
+      info: cleanText($(cells[4]).text()),
+      pdfSalidas: extractPdfLinks($, cells[3], baseUrl),
+      pdfResultados: extractPdfLinks($, cells[4], baseUrl)
+    };
 
-      const eventoFem = {
-        distancia: $(celdas[6]).text().trim(),
-        tipo: $(celdas[7]).text().trim(),
-        categoria: $(celdas[8]).text().trim(),
-        hora: $(celdas[9]).text().trim().replace(/\s+/g, ' '),
-        info: $(celdas[10]).text().trim(),
-        pdfSalidas: extraerEnlacesPDF(celdas[9]),
-        pdfResultados: extraerEnlacesPDF(celdas[10])
-      };
+    const eventoFem = {
+      distancia: cleanText($(cells[6]).text()),
+      tipo: cleanText($(cells[7]).text()),
+      categoria: cleanText($(cells[8]).text()),
+      hora: cleanText($(cells[9]).text()),
+      info: cleanText($(cells[10]).text()),
+      pdfSalidas: extractPdfLinks($, cells[9], baseUrl),
+      pdfResultados: extractPdfLinks($, cells[10], baseUrl)
+    };
 
-      if (eventoMasc.distancia && eventoMasc.distancia !== '.........') estiloActual.masculino.push(eventoMasc);
-      if (eventoFem.distancia && eventoFem.distancia !== '.........') estiloActual.femenino.push(eventoFem);
-    }
+    if (eventoMasc.distancia && eventoMasc.distancia !== '.........') estiloActual.masculino.push(eventoMasc);
+    if (eventoFem.distancia && eventoFem.distancia !== '.........') estiloActual.femenino.push(eventoFem);
   });
 
-  return { success: true, timestamp: new Date().toISOString(), competicionId: id, url, informacion: infoCompeticion, total: eventosPorEstilo.length, eventosPorEstilo };
+  return { infoCompeticion, eventosPorEstilo };
+}
+
+async function fetchCompetitions(options = {}, traceId) {
+  const { refresh = false, cacheTtl } = options;
+  const cacheKey = 'competiciones';
+  const ttlSeconds = Number.isFinite(cacheTtl) && cacheTtl > 0 ? cacheTtl : DEFAULT_CACHE_TTL;
+
+  if (!refresh) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      logger.debug({ traceId }, 'Devolviendo competiciones desde caché');
+      return cloneWithCacheHit(cached, true);
+    }
+  } else {
+    cache.del(cacheKey);
+    logger.debug({ traceId }, 'Caché de competiciones invalidada por petición');
+  }
+
+  const html = await fetchHtml('/', traceId);
+  const $ = cheerio.load(html);
+
+  const primary = parseCompetitionRows($, 'table tbody tr');
+  const secondary = primary.length > 0 ? [] : parseCompetitionRows($, '.table tr, .results tr, [class*="result"] tr');
+  const competiciones = mergeCompetitions([...primary, ...secondary]);
+  const timestamp = new Date().toISOString();
+
+  const payload = {
+    success: true,
+    timestamp,
+    total: competiciones.length,
+    competiciones,
+    cache: {
+      ...toCacheMetadata(ttlSeconds)
+    },
+    cacheHit: false
+  };
+
+  cache.set(cacheKey, payload, ttlSeconds);
+  logger.info({ traceId, total: payload.total }, 'Competencias obtenidas desde origen');
+
+  return payload;
+}
+
+async function fetchCompetitionById(id, traceId, options = {}) {
+  const { refresh = false, cacheTtl } = options;
+  const cacheKey = `competicion-${id}`;
+  const ttlSeconds = Number.isFinite(cacheTtl) && cacheTtl > 0 ? cacheTtl : DETAIL_CACHE_TTL;
+
+  if (!refresh) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      logger.debug({ traceId, id }, 'Detalle de competición desde caché');
+      return cloneWithCacheHit(cached, true);
+    }
+  } else {
+    cache.del(cacheKey);
+    logger.debug({ traceId, id }, 'Caché de detalle invalidada por petición');
+  }
+
+  const path = `/${id}/`;
+  const html = await fetchHtml(path, traceId);
+  const $ = cheerio.load(html);
+
+  const { infoCompeticion, eventosPorEstilo } = parseCompetitionDetail($, id);
+  if (!infoCompeticion.titulo) {
+    logger.warn({ traceId, id }, 'No se encontró el título de la competición');
+  }
+
+  const timestamp = new Date().toISOString();
+  const payload = {
+    success: true,
+    timestamp,
+    competicionId: id,
+    url: `${BASE_HOST}/${id}/`,
+    informacion: infoCompeticion,
+    total: eventosPorEstilo.length,
+    eventosPorEstilo,
+    cache: {
+      ...toCacheMetadata(ttlSeconds)
+    },
+    cacheHit: false
+  };
+
+  cache.set(cacheKey, payload, ttlSeconds);
+  logger.info({ traceId, id, total: payload.total }, 'Detalle de competición obtenido desde origen');
+
+  return payload;
 }
 
 module.exports = { fetchCompetitions, fetchCompetitionById };

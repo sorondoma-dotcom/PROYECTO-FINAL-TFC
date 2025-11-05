@@ -1,106 +1,187 @@
-import { Pipe, PipeTransform } from '@angular/core';
+﻿import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
   name: 'countryFlag',
   standalone: true
 })
 export class CountryFlagPipe implements PipeTransform {
+  private static readonly DEFAULT_FLAG = String.fromCodePoint(0x1F310);
 
-  // Mapeo de códigos de país de 3 letras (IOC) a códigos ISO alpha-2 para banderas
-  private countryCodeMap: { [key: string]: string } = {
-    // Países más comunes en natación
-    'ESP': 'ES', 'ESPAÑA': 'ES', 'SPAIN': 'ES',
-    'FRA': 'FR', 'FRANCIA': 'FR', 'FRANCE': 'FR',
-    'USA': 'US', 'EEUU': 'US', 'UNITED STATES': 'US',
-    'GBR': 'GB', 'UK': 'GB', 'REINO UNIDO': 'GB', 'UNITED KINGDOM': 'GB',
-    'ITA': 'IT', 'ITALIA': 'IT', 'ITALY': 'IT',
-    'GER': 'DE', 'ALE': 'DE', 'ALEMANIA': 'DE', 'GERMANY': 'DE',
-    'POR': 'PT', 'PORTUGAL': 'PT',
-    'NED': 'NL', 'HOLANDA': 'NL', 'NETHERLANDS': 'NL', 'PAÍSES BAJOS': 'NL',
-    'BEL': 'BE', 'BÉLGICA': 'BE', 'BELGIUM': 'BE',
-    'SUI': 'CH', 'SUIZA': 'CH', 'SWITZERLAND': 'CH',
-    'AUS': 'AU', 'AUSTRALIA': 'AU',
-    'CAN': 'CA', 'CANADÁ': 'CA', 'CANADA': 'CA',
-    'JPN': 'JP', 'JAPÓN': 'JP', 'JAPAN': 'JP',
-    'CHN': 'CN', 'CHINA': 'CN',
-    'BRA': 'BR', 'BRASIL': 'BR', 'BRAZIL': 'BR',
-    'ARG': 'AR', 'ARGENTINA': 'AR',
-    'MEX': 'MX', 'MÉXICO': 'MX', 'MEXICO': 'MX',
-    'RUS': 'RU', 'RUSIA': 'RU', 'RUSSIA': 'RU',
-    'SWE': 'SE', 'SUECIA': 'SE', 'SWEDEN': 'SE',
-    'NOR': 'NO', 'NORUEGA': 'NO', 'NORWAY': 'NO',
-    'DEN': 'DK', 'DIN': 'DK', 'DINAMARCA': 'DK', 'DENMARK': 'DK',
-    'FIN': 'FI', 'FINLANDIA': 'FI', 'FINLAND': 'FI',
-    'POL': 'PL', 'POLONIA': 'PL', 'POLAND': 'PL',
-    'HUN': 'HU', 'HUNGRÍA': 'HU', 'HUNGARY': 'HU',
-    'CZE': 'CZ', 'CHEQUIA': 'CZ', 'CZECH REPUBLIC': 'CZ',
-    'AUT': 'AT', 'AUSTRIA': 'AT',
-    'GRE': 'GR', 'GRECIA': 'GR', 'GREECE': 'GR',
-    'TUR': 'TR', 'TURQUÍA': 'TR', 'TURKEY': 'TR',
-    'RSA': 'ZA', 'SUDÁFRICA': 'ZA', 'SOUTH AFRICA': 'ZA',
-    'NZL': 'NZ', 'NUEVA ZELANDA': 'NZ', 'NEW ZEALAND': 'NZ',
-    'KOR': 'KR', 'COREA': 'KR', 'SOUTH KOREA': 'KR',
-    'IND': 'IN', 'INDIA': 'IN',
-    'IRL': 'IE', 'IRLANDA': 'IE', 'IRELAND': 'IE',
-    'SCO': 'GB', 'ESCOCIA': 'GB', 'SCOTLAND': 'GB',
-    'WAL': 'GB', 'GALES': 'GB', 'WALES': 'GB',
-    'ROM': 'RO', 'RUMANIA': 'RO', 'ROMANIA': 'RO',
-    'UKR': 'UA', 'UCRANIA': 'UA', 'UKRAINE': 'UA',
-    'SRB': 'RS', 'SERBIA': 'RS',
-    'CRO': 'HR', 'CROACIA': 'HR', 'CROATIA': 'HR',
-    'SVK': 'SK', 'ESLOVAQUIA': 'SK', 'SLOVAKIA': 'SK',
-    'SVN': 'SI', 'ESLOVENIA': 'SI', 'SLOVENIA': 'SI',
-    'BUL': 'BG', 'BULGARIA': 'BG',
-    'ISL': 'IS', 'ISLANDIA': 'IS', 'ICELAND': 'IS',
-    'LTU': 'LT', 'LITUANIA': 'LT', 'LITHUANIA': 'LT',
-    'LAT': 'LV', 'LET': 'LV', 'LETONIA': 'LV', 'LATVIA': 'LV',
-    'EST': 'EE', 'ESTONIA': 'EE'
+  private readonly iso3ToIso2: Record<string, string> = {
+    ARG: 'AR',
+    AUS: 'AU',
+    AUT: 'AT',
+    BEL: 'BE',
+    BGR: 'BG',
+    BRA: 'BR',
+    CAN: 'CA',
+    CHE: 'CH',
+    CHN: 'CN',
+    COL: 'CO',
+    CRO: 'HR',
+    CZE: 'CZ',
+    DEN: 'DK',
+    ESP: 'ES',
+    EST: 'EE',
+    FIN: 'FI',
+    FRA: 'FR',
+    GBR: 'GB',
+    GER: 'DE',
+    GRC: 'GR',
+    HKG: 'HK',
+    HUN: 'HU',
+    IND: 'IN',
+    IRL: 'IE',
+    ISL: 'IS',
+    ISR: 'IL',
+    ITA: 'IT',
+    JPN: 'JP',
+    KOR: 'KR',
+    LTU: 'LT',
+    LUX: 'LU',
+    LVA: 'LV',
+    MEX: 'MX',
+    MKD: 'MK',
+    MNE: 'ME',
+    NED: 'NL',
+    NOR: 'NO',
+    NZL: 'NZ',
+    POL: 'PL',
+    POR: 'PT',
+    ROU: 'RO',
+    ROM: 'RO',
+    RSA: 'ZA',
+    RUS: 'RU',
+    SLO: 'SI',
+    SRB: 'RS',
+    SUI: 'CH',
+    SVK: 'SK',
+    SVN: 'SI',
+    SWE: 'SE',
+    TUR: 'TR',
+    UKR: 'UA',
+    URY: 'UY',
+    USA: 'US'
   };
 
-  /**
-   * Transforma un código de país en un emoji de bandera
-   * @param countryCode Código del país (ej: "NED", "ESP", "FRA")
-   * @returns Emoji de la bandera del país
-   */
+  private readonly aliasToIso2: Record<string, string> = {
+    ALEMANIA: 'DE',
+    ALE: 'DE',
+    ARGENTINA: 'AR',
+    AUSTRALIA: 'AU',
+    AUSTRIA: 'AT',
+    BELGICA: 'BE',
+    BELGIUM: 'BE',
+    BRASIL: 'BR',
+    BRAZIL: 'BR',
+    CANADA: 'CA',
+    CHINA: 'CN',
+    COREADELSUR: 'KR',
+    CROACIA: 'HR',
+    CROATIA: 'HR',
+    DINAMARCA: 'DK',
+    DENMARK: 'DK',
+    ESPANA: 'ES',
+    SPAIN: 'ES',
+    ESTONIA: 'EE',
+    FINLANDIA: 'FI',
+    FINLAND: 'FI',
+    FRANCIA: 'FR',
+    FRANCE: 'FR',
+    GALES: 'GB',
+    GREECE: 'GR',
+    HONGKONG: 'HK',
+    HUNGRIA: 'HU',
+    HUNGARY: 'HU',
+    INDIA: 'IN',
+    IRLANDA: 'IE',
+    IRELAND: 'IE',
+    ISLANDIA: 'IS',
+    ICELAND: 'IS',
+    ITALIA: 'IT',
+    ITALY: 'IT',
+    JAPON: 'JP',
+    JAPAN: 'JP',
+    MACEDONIADELNORTE: 'MK',
+    NORTHMACEDONIA: 'MK',
+    MEXICO: 'MX',
+    NUEVAZELANDA: 'NZ',
+    NEWZEALAND: 'NZ',
+    NORUEGA: 'NO',
+    NORWAY: 'NO',
+    PAISESBAJOS: 'NL',
+    NETHERLANDS: 'NL',
+    PORTUGAL: 'PT',
+    RUMANIA: 'RO',
+    ROMANIA: 'RO',
+    SERBIA: 'RS',
+    SOUTHAFRICA: 'ZA',
+    SUDAFRICA: 'ZA',
+    SUECIA: 'SE',
+    SWEDEN: 'SE',
+    SUIZA: 'CH',
+    SWITZERLAND: 'CH',
+    TURQUIA: 'TR',
+    TURKEY: 'TR',
+    UCRANIA: 'UA',
+    UKRAINE: 'UA',
+    UNITEDKINGDOM: 'GB',
+    REINOUNIDO: 'GB',
+    UNITEDSTATES: 'US',
+    EEUU: 'US',
+    ESTADOSUNIDOS: 'US'
+  };
+
   transform(countryCode: string | null | undefined): string {
-    if (!countryCode) return '🌍';
+    if (!countryCode) return CountryFlagPipe.DEFAULT_FLAG;
 
-    const normalized = countryCode.toUpperCase().trim();
-    
-    // Primero intentar encontrar en el mapa
-    let isoCode = this.countryCodeMap[normalized];
-    
-    // Si no está en el mapa y ya es de 2 caracteres, usarlo directamente
-    if (!isoCode && normalized.length === 2) {
-      isoCode = normalized;
-    }
-    
-    // Si no tenemos código ISO, retornar mundo
+    const isoCode = this.resolveIsoAlpha2(countryCode);
     if (!isoCode) {
-      console.warn(`Código de país no reconocido: ${countryCode}`);
-      return '🌍';
+      console.warn('Codigo de pais no reconocido: ' + countryCode);
+      return CountryFlagPipe.DEFAULT_FLAG;
     }
 
-    // Convertir código ISO alpha-2 a emoji de bandera
-    // Los emojis de banderas son combinaciones de Regional Indicator Symbols
-    // La fórmula correcta es: 0x1F1E6 + (charCode - 65)
-    if (isoCode.length === 2) {
-      const first = isoCode.charCodeAt(0);
-      const second = isoCode.charCodeAt(1);
-      
-      // Validar que sean letras mayúsculas (A=65, Z=90)
-      if (first < 65 || first > 90 || second < 65 || second > 90) {
-        console.warn(`Código ISO inválido: ${isoCode}`);
-        return '🌍';
-      }
+    return this.isoToFlag(isoCode);
+  }
 
-      // Convertir a Regional Indicator Symbols
-      const firstSymbol = 0x1F1E6 + (first - 65);
-      const secondSymbol = 0x1F1E6 + (second - 65);
-      
-      return String.fromCodePoint(firstSymbol, secondSymbol);
+  private resolveIsoAlpha2(rawValue: string): string | null {
+    const trimmed = rawValue.trim();
+    if (!trimmed) return null;
+
+    const upper = trimmed.toUpperCase();
+    if (/^[A-Z]{2}$/.test(upper)) {
+      return upper;
     }
 
-    return '🌍'; // Emoji por defecto si no se encuentra
+    if (/^[A-Z]{3}$/.test(upper)) {
+      const iso = this.iso3ToIso2[upper];
+      if (iso) return iso;
+    }
+
+    const normalized = this.normalizeForAlias(upper);
+    if (normalized.length) {
+      const iso = this.aliasToIso2[normalized];
+      if (iso) return iso;
+    }
+
+    return null;
+  }
+
+  private normalizeForAlias(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Z]/g, '');
+  }
+
+  private isoToFlag(iso: string): string {
+    if (!/^[A-Z]{2}$/.test(iso)) {
+      console.warn('Codigo ISO invalido para bandera: ' + iso);
+      return CountryFlagPipe.DEFAULT_FLAG;
+    }
+
+    const first = 0x1F1E6 + (iso.charCodeAt(0) - 65);
+    const second = 0x1F1E6 + (iso.charCodeAt(1) - 65);
+    return String.fromCodePoint(first, second);
   }
 }

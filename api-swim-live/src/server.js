@@ -1,14 +1,18 @@
-const app = require('./app');
+﻿const app = require('./app');
 const { PORT } = require('../lib/constants');
+const logger = require('../lib/logger');
 
-const PORTVAL = process.env.PORT || PORT || 3000;
+const port = Number(process.env.PORT || PORT || 3000);
 
-app.listen(PORTVAL, () => {
-  console.log(`🚀 API corriendo en http://localhost:${PORTVAL}`);
-  console.log(`📝 Endpoints:`);
-  console.log(`   - GET /api/natacion`);
-  console.log(`   - GET /api/natacion/:id`);
-  console.log(`   - GET /api/world-aquatics/rankings`);
-  console.log(`   - GET /api/world-aquatics/athletes`);
-  console.log(`   - GET /api/scrape?url=...`);
+app.listen(port, () => {
+  logger.info({ port }, 'API corriendo');
+  logger.info({
+    endpoints: [
+      'GET /api/natacion',
+      'GET /api/natacion/:id',
+      'GET /api/world-aquatics/rankings',
+      'GET /api/world-aquatics/athletes',
+      'GET /api/scrape?url=...'
+    ]
+  }, 'Endpoints disponibles');
 });
