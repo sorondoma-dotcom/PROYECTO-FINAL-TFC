@@ -56,6 +56,8 @@ interface CompetitionGroup {
   styleUrls: ['competicion.component.scss']
 })
 export class CompeticionComponent implements OnInit {
+  private readonly yearRangeStart = 2019;
+  private readonly yearRangeEnd = 2025;
   private readonly monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -69,7 +71,7 @@ export class CompeticionComponent implements OnInit {
   filterText = '';
 
   selectedYear = new Date().getFullYear();
-  yearOptions: number[] = [this.selectedYear];
+  yearOptions: number[] = [];
   selectedDiscipline = 'SW';
   readonly disciplineOptions = [
     { value: 'SW', label: 'Natación' },
@@ -84,6 +86,8 @@ export class CompeticionComponent implements OnInit {
   constructor(private datos: DatosService) {}
 
   ngOnInit(): void {
+    // Inicializa el selector de años con el rango fijo 2019–2025
+    this.updateYearOptions([]);
     this.loadCompetitions();
   }
 
@@ -241,19 +245,13 @@ export class CompeticionComponent implements OnInit {
   }
 
   private updateYearOptions(list: Competition[]): void {
-    const years = new Set<number>();
-    list.forEach(competition => {
-      const year = this.parseYearNumber(competition);
-      if (year !== null) {
-        years.add(year);
-      }
-    });
+    // Establece siempre el rango de años permitido: 2019–2025
+    this.yearOptions = this.buildYearRange(this.yearRangeStart, this.yearRangeEnd);
 
-    if (!years.has(this.selectedYear)) {
-      years.add(this.selectedYear);
+    // Asegura que el año seleccionado esté dentro del rango
+    if (!this.yearOptions.includes(this.selectedYear)) {
+      this.selectedYear = this.yearRangeEnd;
     }
-
-    this.yearOptions = Array.from(years).sort((a, b) => a - b);
   }
 
   private parseYearNumber(competition: Competition): number | null {
@@ -328,5 +326,13 @@ export class CompeticionComponent implements OnInit {
     }
 
     return null;
+  }
+
+  private buildYearRange(start: number, end: number): number[] {
+    const result: number[] = [];
+    for (let y = start; y <= end; y++) {
+      result.push(y);
+    }
+    return result;
   }
 }
