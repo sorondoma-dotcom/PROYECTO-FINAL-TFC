@@ -137,13 +137,49 @@ export class ResultadoPruebaComponent implements OnInit {
           return;
         }
 
-        const allowedDisciplines = new Set(['SW', 'SWIMMING']);
+        // Filtrar SOLO eventos de la sección "Swimming"
+        // Basándose en la estructura HTML con títulos h2 de disciplinas
         this.events = rawEvents.filter((event: any) => {
-          if (!event?.discipline) return true;
-          return allowedDisciplines.has(event.discipline.toUpperCase());
+          const title = (event?.title || '').toLowerCase();
+          
+          // Incluir solo eventos cuyo título pertenece a natación
+          const swimmingKeywords = [
+            'freestyle',
+            'backstroke',
+            'breaststroke',
+            'butterfly',
+            'medley',
+            'relay'
+          ];
+
+          // Excluir explícitamente otras disciplinas
+          const excludedKeywords = [
+            'waterpolo', 'water polo',
+            'diving', 'springboard', 'platform', 'synchron',
+            'artistic', 'solo', 'duet', 'team',
+            'open water', 'openwater', '5km', '10km', '25km',
+            'high diving', 'highdiving', '20m', '27m'
+          ];
+
+          // Si contiene palabras excluidas, descartar
+          const isExcluded = excludedKeywords.some(keyword => 
+            title.includes(keyword)
+          );
+          
+          if (isExcluded) {
+            return false;
+          }
+
+          // Si contiene palabras de natación, incluir
+          const isSwimming = swimmingKeywords.some(keyword => 
+            title.includes(keyword)
+          );
+
+          return isSwimming;
         });
 
-        console.log(`✅ ${this.events.length} eventos cargados`);
+        console.log(`✅ ${this.events.length} eventos de natación cargados`);
+        console.log('📋 Eventos filtrados:', this.events.map(e => e.title));
 
         if (response?.competition) {
           this.competition = {

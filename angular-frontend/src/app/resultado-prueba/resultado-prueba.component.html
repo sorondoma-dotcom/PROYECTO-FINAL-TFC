@@ -59,11 +59,14 @@
   <div class="results-layout">
     <section class="events-panel">
       <div class="events-panel__header">
-        <h2>Pruebas ({{ events.length }})</h2>
+        <div class="events-panel__title-section">
+          <h2>Pruebas de Natación</h2>
+          <span class="events-panel__badge">{{ events.length }} eventos</span>
+        </div>
         <input
           type="text"
           class="events-filter"
-          placeholder="Buscar por prueba..."
+          placeholder="Buscar por estilo (Freestyle, Backstroke...)..."
           [(ngModel)]="filterText"
         />
       </div>
