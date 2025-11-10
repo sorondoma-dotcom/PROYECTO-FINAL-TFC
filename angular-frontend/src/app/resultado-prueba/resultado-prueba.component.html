@@ -78,13 +78,16 @@
           [class.is-selected]="event.eventGuid === selectedEventGuid"
           (click)="selectEvent(event)"
         >
-          <div class="event-pill__text">
-            <span class="event-pill__title">{{ event.title }}</span>
-            @if(event.subtitle){
-            <small class="event-pill__subtitle">
-              {{ event.subtitle }}
-            </small>
-            }
+          <div class="event-pill__content">
+            <mat-icon class="event-pill__icon">{{ getEventIcon(event) }}</mat-icon>
+            <div class="event-pill__text">
+              <span class="event-pill__title">{{ event.title }}</span>
+              @if(event.subtitle){
+              <small class="event-pill__subtitle">
+                {{ event.subtitle }}
+              </small>
+              }
+            </div>
           </div>
           <span class="event-pill__units">
             {{ event.units?.length || 0 }} series

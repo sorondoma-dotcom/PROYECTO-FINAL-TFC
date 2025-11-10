@@ -1,5 +1,5 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, DestroyRef, PLATFORM_ID, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,7 +30,7 @@ import {
   templateUrl: './resultado-prueba.component.html',
   styleUrls: ['./resultado-prueba.component.scss']
 })
-export class ResultadoPruebaComponent {
+export class ResultadoPruebaComponent implements OnInit {
   private readonly datos = inject(DatosService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -86,6 +86,10 @@ export class ResultadoPruebaComponent {
         }
         this.loadEvents();
       });
+  }
+
+  ngOnInit(): void {
+    // Lógica de inicialización si es necesaria
   }
 
   get filteredEvents(): ResultEventSummary[] {
@@ -282,6 +286,42 @@ export class ResultadoPruebaComponent {
 
   trackByColumn(index: number, _cell: string): number {
     return index;
+  }
+
+  /**
+   * Retorna el ícono Material según el tipo de prueba
+   */
+  getEventIcon(event: any): string {
+    const title = event.title?.toLowerCase() || '';
+
+    // Natación
+    if (title.includes('nado') || title.includes('freestyle') || title.includes('backstroke') || 
+        title.includes('breaststroke') || title.includes('butterfly') || title.includes('medley')) {
+      return 'pool';
+    }
+
+    // Saltos/Clavados
+    if (title.includes('clavado') || title.includes('diving') || title.includes('salto')) {
+      return 'downhill_skiing';
+    }
+
+    // Sincronizado
+    if (title.includes('sincronizado') || title.includes('synchronized')) {
+      return 'groups';
+    }
+
+    // Waterpolo
+    if (title.includes('waterpolo') || title.includes('water polo')) {
+      return 'sports_basketball';
+    }
+
+    // Maratón acuática
+    if (title.includes('maratón') || title.includes('marathon') || title.includes('10km')) {
+      return 'directions_run';
+    }
+
+    // Por defecto
+    return 'waves';
   }
 
   private get isBrowser(): boolean {
