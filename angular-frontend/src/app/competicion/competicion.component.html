@@ -4,7 +4,7 @@
       <mat-label>Año</mat-label>
       <mat-select [(ngModel)]="selectedYear" (selectionChange)="onFiltersChanged()">
         @for (year of yearOptions; track year) {
-          <mat-option [value]="year">{{ year }}</mat-option>
+          <mat-option value="{{year}}">{{ year }}</mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -12,9 +12,9 @@
     <mat-form-field appearance="outline">
       <mat-label>Disciplina</mat-label>
       <mat-select [(ngModel)]="selectedDiscipline" (selectionChange)="onFiltersChanged()">
-        @for (option of disciplineOptions; track option.value) {
-          <mat-option [value]="option.value">{{ option.label }}</mat-option>
-        }
+        
+          <mat-option value="{{disciplineOptions[0].value}}">{{ disciplineOptions[0].value }}</mat-option>
+        
       </mat-select>
     </mat-form-field>
 
