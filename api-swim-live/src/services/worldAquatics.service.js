@@ -5,6 +5,9 @@ const cache = require("../../lib/cache");
 const logger = require("../../lib/logger");
 const { USER_AGENT } = require("../../lib/constants");
 
+const delay = (ms = 500) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 async function fetchRankings(params = {}) {
   let browser = null;
   try {
@@ -743,4 +746,624 @@ async function fetchCompetitionsList(params = {}) {
   }
 }
 
-module.exports = { fetchRankings, fetchAthletes, fetchCompetitionsList };
+async function fetchCompetitionEvents(options = {}) {
+  const { slug = "", url = "", refresh = false } = options;
+
+  const parts = parseCompetitionPath(slug || url);
+  if (!parts?.competitionId) {
+    throw new Error("No se pudo determinar el identificador de la competición");
+  }
+
+  const requestUrl = buildCompetitionResultsUrl(parts);
+  console.log("🌐 URL de competición:", requestUrl);
+  
+  const cacheKey = `world-aquatics-competition-events-${buildCompetitionCacheKey(parts)}`;
+  
+  if (!refresh) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      logger.debug({ cacheKey }, "Eventos de competición obtenidos desde caché");
+      return cached;
+    }
+  }
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(USER_AGENT);
+    
+    console.log("📄 Navegando a la página...");
+    await page.goto(requestUrl, {
+      waitUntil: "networkidle2",
+      timeout: 120000,
+    });
+    console.log("✅ Página cargada");
+
+    // Esperar a que se renderice el contenido
+    await delay(5000);
+
+    // NUEVO: Expandir TODOS los eventos progresivamente
+    console.log("🔄 Expandiendo eventos en la página...");
+    const expandedCount = await page.evaluate(async () => {
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      let count = 0;
+      
+      // Buscar todos los botones de eventos colapsados
+      const eventButtons = document.querySelectorAll('.results-table__event[data-expanded="false"]');
+      
+      for (const btn of eventButtons) {
+        try {
+          btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+          await delay(300);
+          btn.click();
+          await delay(800);
+          count++;
+        } catch (e) {
+          console.error('Error expandiendo evento:', e);
+        }
+      }
+      
+      return count;
+    });
+
+    console.log(`✅ ${expandedCount} eventos expandidos`);
+    await delay(2000);
+
+    // CAMBIO: Extraer eventos con datos reales de la página
+    const events = await page.evaluate(() => {
+      const clean = (text) => (text || "").replace(/\s+/g, " ").trim();
+      const result = [];
+
+      // ESTRATEGIA 1: Buscar .results-table__event (estructura de World Aquatics)
+      const eventElements = document.querySelectorAll(".results-table__event");
+      console.log(`📊 Encontrados ${eventElements.length} eventos con .results-table__event`);
+
+      eventElements.forEach((el, index) => {
+        try {
+          // IMPORTANTE: Extraer el GUID real del atributo data-event-guid
+          const eventGuid = el.getAttribute("data-event-guid");
+          
+          // Si no tiene GUID, saltar este evento
+          if (!eventGuid) {
+            console.warn(`⚠️ Evento ${index} sin data-event-guid`);
+            return;
+          }
+
+          // Buscar título en el elemento padre más cercano
+          const scheduleItem = el.closest(".schedule__item");
+          
+          let title = clean(
+            scheduleItem?.querySelector(".schedule__item-title")?.textContent || ""
+          );
+
+          let subtitle = clean(
+            scheduleItem?.querySelector(".schedule__item-subtitle")?.textContent || ""
+          );
+
+          // Extraer disciplina si está disponible
+          let discipline = el.getAttribute("data-discipline") || "SW";
+
+          // Extraer unidades (series) disponibles
+          const unitButtons = scheduleItem?.querySelectorAll(".js-results-unit") || [];
+          const units = Array.from(unitButtons).map((unitBtn, idx) => ({
+            unitId: unitBtn.getAttribute("data-unit-id") || null,
+            name: clean(unitBtn.getAttribute("data-unit-name") || 
+                       unitBtn.querySelector(".unit-selector__unit-name")?.textContent || ""),
+            status: clean(unitBtn.querySelector(".status-tag")?.textContent || ""),
+            datetime: clean(unitBtn.querySelector(".unit-selector__unit-datetime")?.textContent || ""),
+            isActive: unitBtn.classList.contains("is-active"),
+            order: idx,
+          }));
+
+          if (title) {
+            result.push({
+              eventGuid,
+              title,
+              subtitle: subtitle || null,
+              discipline,
+              units: units.length > 0 ? units : null,
+            });
+            
+            console.log(`✅ Evento ${index + 1}: ${title} (GUID: ${eventGuid})`);
+          }
+        } catch (err) {
+          console.error(`❌ Error procesando evento ${index}:`, err.message);
+        }
+      });
+
+      console.log(`📊 Total eventos extraídos: ${result.length}`);
+      return result;
+    });
+
+    console.log("🎯 Eventos encontrados:", events.length);
+
+    if (events.length === 0) {
+      // Guardar HTML para debugging
+      const htmlContent = await page.content();
+      const fs = require('fs');
+      const path = require('path');
+      const debugDir = path.join(__dirname, '../../debug-screenshots');
+      
+      // Crear directorio si no existe
+      if (!fs.existsSync(debugDir)) {
+        fs.mkdirSync(debugDir, { recursive: true });
+      }
+      
+      const debugPath = path.join(debugDir, `debug-page-${Date.now()}.html`);
+      fs.writeFileSync(debugPath, htmlContent);
+      console.log(`💾 HTML guardado en: ${debugPath}`);
+      
+      throw new Error("No se encontraron eventos en la página de resultados");
+    }
+
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      url: requestUrl,
+      competition: {
+        id: parts.competitionId,
+        slug: parts.slug || null,
+      },
+      events,
+      total: events.length,
+    };
+
+    cache.set(
+      cacheKey,
+      result,
+      Number.parseInt(process.env.WORLD_AQUATICS_EVENTS_TTL || "3600", 10)
+    );
+
+    console.log("✅ Resultado guardado en caché");
+    return result;
+
+  } catch (error) {
+    console.error("❌ Error en fetchCompetitionEvents:", error.message);
+    logger.error(
+      { err: error.message, url: requestUrl },
+      "Error obteniendo eventos de competición"
+    );
+    throw new Error(
+      `No se pudieron obtener los eventos solicitados: ${error.message}`
+    );
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (_) {}
+    }
+  }
+}
+
+async function fetchCompetitionEventResults(options = {}) {
+  const {
+    slug = "",
+    url = "",
+    eventGuid = "",
+    unitId = "",
+    refresh = false,
+  } = options;
+
+  if (!eventGuid) {
+    throw new Error("El parámetro eventGuid es obligatorio");
+  }
+
+  const parts = parseCompetitionPath(slug || url);
+  if (!parts?.competitionId) {
+    throw new Error("No se pudo determinar el identificador de la competición");
+  }
+
+  // 🔴 CAMBIO: Pasar eventGuid a buildCompetitionResultsUrl
+  const requestUrl = buildCompetitionResultsUrl(parts, eventGuid);
+  
+  console.log("🌐 URL de petición:", requestUrl);
+  
+  const cacheKey = `world-aquatics-event-result-${buildCompetitionCacheKey(
+    parts
+  )}-${eventGuid}-${unitId || "active"}`;
+  if (!refresh) {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      logger.debug({ cacheKey }, "Resultado de prueba desde caché");
+      return cached;
+    }
+  }
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+    const page = await browser.newPage();
+    await page.setUserAgent(USER_AGENT);
+    await page.goto(requestUrl, {
+      waitUntil: "networkidle2",
+      timeout: 60000,
+    });
+    const eventSelector = `.results-table__event[data-event-guid="${eventGuid}"]`;
+    await page.waitForSelector(eventSelector, { timeout: 60000 });
+
+    await page.evaluate((selector) => {
+      const button = document.querySelector(selector);
+      if (!button) return;
+      button.scrollIntoView({ behavior: "instant", block: "center" });
+      if (button.getAttribute("data-expanded") !== "true") {
+        button.click();
+      }
+    }, eventSelector);
+
+    await page.waitForFunction(
+      (selector) => {
+        const el = document.querySelector(selector);
+        if (!el) return false;
+        const item = el.closest(".schedule__item");
+        if (!item) return false;
+        return !!item.querySelector(".results-table__unit-selector-container");
+      },
+      { timeout: 60000 },
+      eventSelector
+    );
+
+    if (unitId) {
+      await page.evaluate(
+        (selector, desiredUnit) => {
+          const item = document.querySelector(selector)?.closest(
+            ".schedule__item"
+          );
+          if (!item) return;
+          const unitButton = Array.from(
+            item.querySelectorAll(".js-results-unit")
+          ).find(
+            (unit) => unit.getAttribute("data-unit-id") === desiredUnit
+          );
+          if (unitButton) {
+            unitButton.click();
+          }
+        },
+        eventSelector,
+        unitId
+      );
+      await delay(1200);
+    }
+
+    await page
+      .waitForFunction(
+        (selector) => {
+          const item = document.querySelector(selector)?.closest(
+            ".schedule__item"
+          );
+          if (!item) return false;
+          const table = item.querySelector(
+            ".results-table__table-container table"
+          );
+          return !!table && table.querySelectorAll("tbody tr").length > 0;
+        },
+        { timeout: 60000 },
+        eventSelector
+      )
+      .catch(() => {});
+
+    const data = await page.evaluate((selector) => {
+      const clean = (text) => (text || "").replace(/\s+/g, " ").trim();
+      const item = document.querySelector(selector)?.closest(".schedule__item");
+      if (!item) return null;
+
+      const eventTitle =
+        clean(
+          item.querySelector(".schedule__item-title")?.textContent || ""
+        ) || null;
+
+      // ============= EXTRAER UNIDADES =============
+      const units = Array.from(item.querySelectorAll(".js-results-unit")).map(
+        (unitBtn, idx) => ({
+          unitId: unitBtn.getAttribute("data-unit-id") || null,
+          name:
+            clean(
+              unitBtn.getAttribute("data-unit-name") ||
+                unitBtn.querySelector(".unit-selector__unit-name")?.textContent ||
+                ""
+            ) || null,
+          status:
+            clean(unitBtn.querySelector(".status-tag")?.textContent || "") ||
+            null,
+          datetime:
+            clean(
+              unitBtn.querySelector(".unit-selector__unit-datetime")?.textContent || ""
+            ) || null,
+          isActive: unitBtn.classList.contains("is-active"),
+          order: idx,
+        })
+      );
+
+      const selectedUnit = units.find((unit) => unit.isActive) || units[0] || null;
+
+      const tableNode = item.querySelector(".results-table__table-container table");
+      
+      if (!tableNode) {
+        console.log("❌ No se encontró tabla de resultados");
+        return {
+          eventTitle,
+          units,
+          selectedUnit,
+          table: { headers: [], rows: [] },
+        };
+      }
+
+      // ============= EXTRAER HEADERS =============
+      const headerRow = tableNode.querySelector("thead tr:first-child");
+      const allHeaders = headerRow 
+        ? Array.from(headerRow.querySelectorAll("th")).map((th) => clean(th.textContent))
+        : [];
+      
+      const mainHeaders = [];
+      const seenHeaders = new Set();
+      
+      for (const header of allHeaders) {
+        if (!header || header.match(/^(Distance|Split Time|Cumulative Time|Col \d+)$/i)) {
+          continue;
+        }
+        
+        const normalizedHeader = header.toLowerCase().trim();
+        if (seenHeaders.has(normalizedHeader)) {
+          continue;
+        }
+        
+        seenHeaders.add(normalizedHeader);
+        mainHeaders.push(header);
+      }
+
+      console.log("✅ Headers extraídos:", mainHeaders);
+
+      // ============= EXTRAER FILAS DE NADADORES =============
+      // Selector preciso: .results-table__row (contiene los datos del nadador)
+      const athleteRows = Array.from(tableNode.querySelectorAll("tbody > tr.results-table__row"));
+      console.log(`📊 Encontradas ${athleteRows.length} filas de nadadores`);
+
+      const rows = [];
+
+      athleteRows.forEach((athleteRow, athleteIdx) => {
+        // ============= EXTRAER DATOS DEL NADADOR =============
+        const cells = Array.from(athleteRow.querySelectorAll("td.results-table__cell"));
+        
+        const athleteData = [];
+
+        cells.forEach((cell, cellIdx) => {
+          // Saltar celdas especiales
+          if (cell.classList.contains("results-table__cell--no-padding")) {
+            return; // Botón de expansión, ignorar
+          }
+
+          let cellText = "";
+
+          // 🔴 CELDA 0: Posición con medalla
+          if (cellIdx === 0) {
+            cellText = clean(cell.textContent); // "1"
+          }
+          // 🔴 CELDA 1: Calle (Lane)
+          else if (cellIdx === 1) {
+            cellText = clean(cell.textContent); // "1"
+          }
+          // 🔴 CELDA 2: País (Country)
+          else if (cellIdx === 2) {
+            const countryDiv = cell.querySelector(".results-table__country");
+            cellText = clean(countryDiv?.textContent || ""); // "HKG"
+          }
+          // 🔴 CELDA 3: Nombre del atleta
+          else if (cellIdx === 3) {
+            const firstNameSpan = cell.querySelector(".results-table__athlete-first");
+            const lastNameSpan = cell.querySelector(".results-table__athlete-last");
+            const firstName = clean(firstNameSpan?.textContent || "");
+            const lastName = clean(lastNameSpan?.textContent || "");
+            cellText = `${firstName} ${lastName}`.trim(); // "Siobhan HAUGHEY"
+          }
+          // 🔴 CELDA 4: Edad (Age)
+          else if (cellIdx === 4) {
+            cellText = clean(cell.textContent); // "22"
+          }
+          // 🔴 CELDA 5: RT (Reaction Time)
+          else if (cellIdx === 5) {
+            cellText = clean(cell.textContent); // "0.71"
+          }
+          // 🔴 CELDA 6: Tiempo (Time)
+          else if (cellIdx === 6) {
+            cellText = clean(cell.textContent); // "53.33"
+          }
+          // 🔴 CELDA 7: Time Behind
+          else if (cellIdx === 7) {
+            cellText = clean(cell.textContent); // "-" o "+00.10"
+          }
+          // 🔴 CELDA 8: Puntos (Points)
+          else if (cellIdx === 8) {
+            cellText = clean(cell.textContent); // "911"
+          }
+
+          if (cellText) {
+            athleteData.push(cellText);
+          }
+        });
+
+        console.log(`   Nadador ${athleteIdx + 1}: ${athleteData.join(" | ")}`);
+
+        // ============= EXTRAER SPLITS =============
+        // Buscar la fila expandible siguiente
+        const expandableRow = athleteRow.nextElementSibling;
+        const splits = [];
+
+        if (expandableRow && expandableRow.classList.contains("results-table__expandable")) {
+          // Dentro hay una tabla con splits
+          const splitTable = expandableRow.querySelector(".results-table__sub-table");
+          
+          if (splitTable) {
+            const splitRows = Array.from(splitTable.querySelectorAll("tbody tr.results-table__sub-row"));
+            
+            splitRows.forEach((splitRow) => {
+              const splitCells = Array.from(splitRow.querySelectorAll("td.results-table__sub-cell"));
+              
+              if (splitCells.length >= 3) {
+                // Celda 0: Distancia (50m, 100m, etc.)
+                const distanceDiv = splitCells[0].querySelector(".results-table__split");
+                const distance = clean(distanceDiv?.textContent || "");
+                
+                // Celda 1: Split Time
+                const splitTime = clean(splitCells[1].textContent || "");
+                
+                // Celda 2: Cumulative Time
+                const cumulativeTime = clean(splitCells[2].textContent || "");
+
+                if (distance && splitTime && cumulativeTime) {
+                  splits.push({
+                    distance,
+                    splitTime,
+                    cumulativeTime
+                  });
+                  console.log(`      Split: ${distance} | ${splitTime} | ${cumulativeTime}`);
+                }
+              }
+            });
+          }
+        }
+
+        // ============= CREAR OBJETO DE FILA =============
+        rows.push({
+          data: athleteData,
+          splits: splits.length > 0 ? splits : [],
+          hasSplits: splits.length > 0,
+          expanded: false,
+        });
+      });
+
+      console.log(`✅ ${rows.length} nadadores procesados`);
+
+      return {
+        success: true,
+        eventTitle,
+        units,
+        selectedUnit,
+        table: {
+          headers: mainHeaders,
+          rows,
+        },
+        stats: {
+          totalAthletes: rows.length,
+          athletesWithSplits: rows.filter(r => r.hasSplits).length,
+          totalUnits: units.length,
+        }
+      };
+    }, eventSelector);
+
+    console.log("📦 Datos extraídos:", {
+      eventTitle: data?.eventTitle,
+      unitsCount: data?.units?.length || 0,
+      headersCount: data?.table?.headers?.length || 0,
+      rowsCount: data?.table?.rows?.length || 0,
+    });
+
+    const result = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      url: requestUrl,
+      competition: {
+        id: parts.competitionId,
+        slug: parts.slug || null,
+      },
+      event: {
+        eventGuid,
+        title: data?.eventTitle || null,
+      },
+      units: data?.units || [],
+      selectedUnit:
+        (data?.units || []).find((unit) => unit.isActive) || null,
+      table: data?.table || { headers: [], rows: [] },
+    };
+
+    cache.set(
+      cacheKey,
+      result,
+      Number.parseInt(
+        process.env.WORLD_AQUATICS_EVENT_RESULT_TTL || "900",
+        10
+      )
+    );
+    return result;
+  } catch (error) {
+    logger.error(
+      { err: error.message, url: requestUrl, eventGuid },
+      "Error obteniendo resultados de una prueba"
+    );
+    throw new Error(
+      `No se pudieron obtener los resultados solicitados: ${error.message}`
+    );
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (_) {}
+    }
+  }
+}
+
+function parseCompetitionPath(input = "") {
+  if (!input) return null;
+  let working = String(input).trim();
+  if (!working) return null;
+
+  const stripQuery = working.split("?")[0].split("#")[0];
+  if (!stripQuery) return null;
+
+  let path = stripQuery;
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    try {
+      path = new URL(path).pathname;
+    } catch (_) {
+      path = stripQuery;
+    }
+  }
+
+  const segments = path.split("/").filter(Boolean);
+  const idx = segments.indexOf("competitions");
+  if (idx === -1) {
+    return {
+      competitionId: segments[0] || null,
+      slug: segments.slice(1).join("/") || null,
+    };
+  }
+
+  const competitionId = segments[idx + 1] || null;
+  const slug = segments.slice(idx + 2).join("/") || null;
+  return { competitionId, slug };
+}
+
+function buildCompetitionResultsUrl(parts, eventGuid = "") {
+  const safeId = parts.competitionId || "95";
+  const suffix = parts.slug ? `/${parts.slug}` : "";
+  const eventParam = eventGuid ? `?event=${eventGuid}` : "?disciplines=";
+  return `https://www.worldaquatics.com/competitions/${safeId}${suffix}/results${eventParam}`;
+}
+
+function buildCompetitionCacheKey(parts) {
+  return `${parts.competitionId || "unknown"}-${(parts.slug || "default")
+    .replace(/[^a-z0-9\-]+/gi, "_")
+    .toLowerCase()}`;
+}
+
+module.exports = {
+  fetchRankings,
+  fetchAthletes,
+  fetchCompetitionsList,
+  fetchCompetitionEvents,
+  fetchCompetitionEventResults,
+};

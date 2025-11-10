@@ -30,4 +30,74 @@ async function competitions(req, res) {
   }
 }
 
-module.exports = { rankings, athletes, competitions };
+async function competitionResults(req, res) {
+  try {
+    const { slug = '', url = '', refresh = 'false' } = req.query || {};
+    if (!slug && !url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar el slug o la URL de la competición',
+      });
+    }
+    const result = await worldService.fetchCompetitionEvents({
+      slug,
+      url,
+      refresh: refresh === 'true',
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener los eventos de resultados de World Aquatics',
+      mensaje: error.message,
+    });
+  }
+}
+
+async function competitionEventResult(req, res) {
+  try {
+    const {
+      slug = '',
+      url = '',
+      eventGuid = '',
+      unitId = '',
+      refresh = 'false',
+    } = req.query || {};
+
+    if (!eventGuid) {
+      return res.status(400).json({
+        success: false,
+        error: 'El parámetro eventGuid es obligatorio',
+      });
+    }
+    if (!slug && !url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar el slug o la URL de la competición',
+      });
+    }
+
+    const result = await worldService.fetchCompetitionEventResults({
+      slug,
+      url,
+      eventGuid,
+      unitId,
+      refresh: refresh === 'true',
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener la tabla de resultados solicitada',
+      mensaje: error.message,
+    });
+  }
+}
+
+module.exports = {
+  rankings,
+  athletes,
+  competitions,
+  competitionResults,
+  competitionEventResult,
+};

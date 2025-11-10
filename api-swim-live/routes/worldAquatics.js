@@ -2,6 +2,7 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const cache = require('../lib/cache');
 const { USER_AGENT } = require('../lib/constants');
+const worldService = require('../src/services/worldAquatics.service');
 
 const router = express.Router();
 
@@ -155,6 +156,70 @@ router.get('/athletes', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al obtener atletas de World Aquatics', mensaje: error.message });
+  }
+});
+
+router.get('/competitions/results', async (req, res) => {
+  try {
+    const { slug = '', url = '', refresh = 'false' } = req.query || {};
+    if (!slug && !url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar el slug o la URL de la competición',
+      });
+    }
+    const result = await worldService.fetchCompetitionEvents({
+      slug,
+      url,
+      refresh: refresh === 'true',
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener los eventos de resultados de World Aquatics',
+      mensaje: error.message,
+    });
+  }
+});
+
+router.get('/competitions/results/event', async (req, res) => {
+  try {
+    const {
+      slug = '',
+      url = '',
+      eventGuid = '',
+      unitId = '',
+      refresh = 'false',
+    } = req.query || {};
+
+    if (!eventGuid) {
+      return res.status(400).json({
+        success: false,
+        error: 'El parámetro eventGuid es obligatorio',
+      });
+    }
+    if (!slug && !url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar el slug o la URL de la competición',
+      });
+    }
+
+    const result = await worldService.fetchCompetitionEventResults({
+      slug,
+      url,
+      eventGuid,
+      unitId,
+      refresh: refresh === 'true',
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener la tabla solicitada de World Aquatics',
+      mensaje: error.message,
+    });
   }
 });
 

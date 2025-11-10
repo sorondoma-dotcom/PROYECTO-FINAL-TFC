@@ -282,7 +282,13 @@ $transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
 
-  a[mat-stroked-button] {
+  .competition-card__actions-buttons {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  button[mat-stroked-button] {
     border-radius: 14px;
     font-weight: 600;
     letter-spacing: 0.2px;
@@ -303,6 +309,11 @@ $transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 10px 24px rgba(26, 115, 232, 0.18);
       transform: translateY(-1px);
     }
+  }
+
+  a[mat-icon-button] {
+    border-radius: 50%;
+    border: 1px solid rgba(26, 115, 232, 0.2);
   }
 
   .competition-card__placeholder {

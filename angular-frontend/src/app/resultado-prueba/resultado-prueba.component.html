@@ -1,0 +1,248 @@
+<div class="results-container">
+  <header class="results-header">
+    <button mat-button type="button" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </button>
+
+    <div class="results-header__info">
+      <h1>{{ competition?.name || "Resultados World Aquatics" }}</h1>
+      @if(competition?.location || competition?.dateLabel) {
+      <p class="meta">
+        @if(competition?.location){
+        <span>{{ competition?.location }}</span>
+        } @if(competition?.location && competition?.dateLabel){
+        <span class="separator">•</span>
+        } @if(competition?.dateLabel){
+        <span>{{ competition?.dateLabel }}</span>
+        }
+      </p>
+      }
+    </div>
+
+    <button
+      mat-stroked-button
+      color="primary"
+      type="button"
+      (click)="refreshEvents()"
+    >
+      <mat-icon>refresh</mat-icon>
+      Recargar
+    </button>
+  </header>
+
+  @if (eventsLoading) {
+  <div class="state-block loading">
+    <mat-progress-spinner
+      diameter="48"
+      mode="indeterminate"
+    ></mat-progress-spinner>
+    <p><strong>Cargando eventos...</strong></p>
+    <p class="loading-hint">
+      Esto puede tardar entre 30-60 segundos mientras se procesan los resultados
+    </p>
+  </div>
+  } @else if (eventsError) {
+  <div class="state-block error">
+    <mat-icon color="warn">error</mat-icon>
+    <p>{{ eventsError }}</p>
+    <button
+      mat-raised-button
+      color="primary"
+      type="button"
+      (click)="refreshEvents()"
+    >
+      Reintentar
+    </button>
+  </div>
+  } @else {
+  <div class="results-layout">
+    <section class="events-panel">
+      <div class="events-panel__header">
+        <h2>Pruebas ({{ events.length }})</h2>
+        <input
+          type="text"
+          class="events-filter"
+          placeholder="Buscar por prueba..."
+          [(ngModel)]="filterText"
+        />
+      </div>
+
+      <div class="events-list">
+        @if (filteredEvents.length === 0) {
+        <p class="empty-state">No hay pruebas que coincidan con la búsqueda.</p>
+        } @for (event of filteredEvents; track trackByEvent($index, event)) {
+        <button
+          type="button"
+          class="event-pill"
+          [class.is-selected]="event.eventGuid === selectedEventGuid"
+          (click)="selectEvent(event)"
+        >
+          <div class="event-pill__text">
+            <span class="event-pill__title">{{ event.title }}</span>
+            @if(event.subtitle){
+            <small class="event-pill__subtitle">
+              {{ event.subtitle }}
+            </small>
+            }
+          </div>
+          <span class="event-pill__units">
+            {{ event.units?.length || 0 }} series
+          </span>
+        </button>
+        }
+      </div>
+    </section>
+
+    <section class="details-panel">
+      @if (selectedEvent) {
+      <mat-card class="event-details">
+        <mat-card-header>
+          <div class="details-heading">
+            <h2>{{ selectedEvent.title }}</h2>
+            @if (selectedEvent.subtitle) {
+            <p>{{ selectedEvent.subtitle }}</p>
+            }
+          </div>
+          @if (selectedEvent.discipline) {
+          <span class="discipline-tag">
+            {{ selectedEvent.discipline }}
+          </span>
+          }
+        </mat-card-header>
+        <mat-card-content>
+          @if (selectedEvent.units?.length) {
+          <div class="unit-selector">
+            @for (unit of selectedEvent.units; track unit.unitId || unit.order)
+            {
+            <button
+              mat-stroked-button
+              type="button"
+              class="unit-button"
+              [class.is-active]="
+                unit.unitId === selectedUnitId ||
+                (!selectedUnitId && unit.isActive)
+              "
+              (click)="selectUnit(unit)"
+              [disabled]="tableLoading && unit.unitId === selectedUnitId"
+            >
+              @if (unit.status) {
+              <span class="unit-button__status">
+                {{ unit.status }}
+              </span>
+              }
+              <span class="unit-button__name">{{ unit.name || "Serie" }}</span>
+              @if(unit.datetime){
+              <small class="unit-button__meta">
+                {{ unit.datetime }}
+              </small>
+              }
+            </button>
+            }
+          </div>
+          }
+
+          <div class="table-wrapper">
+            @if (tableLoading) {
+            <div class="state-block loading">
+              <mat-progress-spinner
+                diameter="40"
+                mode="indeterminate"
+              ></mat-progress-spinner>
+              <p>Cargando resultados...</p>
+            </div>
+            } @else if (tableError) {
+            <div class="state-block error">
+              <mat-icon color="warn">error</mat-icon>
+              <p>{{ tableError }}</p>
+              <button
+                mat-button
+                color="primary"
+                type="button"
+                (click)="
+                  selectedEvent &&
+                    loadEventResults(selectedEvent.eventGuid, selectedUnitId)
+                "
+              >
+                Reintentar
+              </button>
+            </div>
+            } @else if (currentTable?.rows?.length) {
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width: 40px"></th>
+                    <th>Overall Rank</th>
+                    <th>Lane</th>
+                    <th>Country</th>
+                    <th>Athlete</th>
+                    <th>Age</th>
+                    <th>RT</th>
+                    <th>Time</th>
+                    <th>Time Behind</th>
+                    <th>Points</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of currentTable?.rows; track trackByRow($index,
+                  row)) {
+                  <!-- Fila principal -->
+                  <tr class="athlete-row">
+                    <td class="expand-button-cell">
+                      @if (row.hasSplits) {
+                      <button
+                        type="button"
+                        class="expand-btn"
+                        [class.expanded]="row.expanded"
+                        (click)="toggleSplits(row)"
+                      >
+                        {{ row.expanded ? "−" : "+" }}
+                      </button>
+                      }
+                    </td>
+                    @for (cell of row.data; track trackByColumn($index, cell)) {
+                    <td>{{ cell }}</td>
+                    }
+                  </tr>
+
+                  <!-- Splits (solo si expandido) -->
+                  @if (row.expanded && row.splits?.length) {
+                  <tr class="split-header-row">
+                    <td colspan="4"></td>
+                    <td><strong>Distancia</strong></td>
+                    <td><strong>Parcial</strong></td>
+                    <td><strong>Acumulado</strong></td>
+                    <td colspan="3"></td>
+                  </tr>
+                  @for (split of row.splits; track $index) {
+                  <tr class="split-row">
+                    <td colspan="4"></td>
+                    <td>{{ split.distance }}</td>
+                    <td>{{ split.splitTime }}</td>
+                    <td>{{ split.cumulativeTime }}</td>
+                    <td colspan="3"></td>
+                  </tr>
+                  } } }
+                </tbody>
+              </table>
+            </div>
+            } @else {
+            <div class="state-block empty">
+              <mat-icon>table_rows</mat-icon>
+              <p>Sin resultados disponibles para esta serie.</p>
+            </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+      } @else {
+      <div class="details-placeholder">
+        <mat-icon>info</mat-icon>
+        <p>Selecciona una prueba para ver sus resultados.</p>
+      </div>
+      }
+    </section>
+  </div>
+  }
+</div>

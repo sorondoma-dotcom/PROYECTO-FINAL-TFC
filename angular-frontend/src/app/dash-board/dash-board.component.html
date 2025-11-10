@@ -15,7 +15,8 @@
 
   <!-- Stats Cards -->
   @if (!loading) {
-    <div class="dashboard-grid">
+    <div class="cards-carousel stats-carousel" aria-label="Resumen de estadísticas">
+      <div class="dashboard-grid" role="list">
       <!-- Total Competiciones -->
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
@@ -111,13 +112,19 @@
           </div>
         </mat-card-content>
       </mat-card>
+      </div>
+      <div class="carousel-hint mobile-only">
+        <mat-icon>swipe</mat-icon>
+        Desliza para ver más
+      </div>
     </div>
 
     <!-- Competiciones Destacadas -->
     @if (competicionesDestacadas.length > 0) {
       <div class="featured-section">
         <h2>🌟 Competiciones Destacadas</h2>
-        <div class="featured-grid">
+        <div class="cards-carousel" aria-label="Competiciones destacadas">
+          <div class="featured-grid" role="list">
           @for (comp of competicionesDestacadas; track comp.id || comp.name) {
             <mat-card class="featured-card">
               <mat-card-header>
@@ -167,6 +174,11 @@
               }
             </mat-card>
           }
+          </div>
+          <div class="carousel-hint mobile-only">
+            <mat-icon>swipe</mat-icon>
+            Desliza para ver más
+          </div>
         </div>
       </div>
     }
@@ -196,7 +208,8 @@
       }
 
       @if (eventosTop && eventosTop.length > 0) {
-        <div class="featured-grid">
+        <div class="cards-carousel" aria-label="Nadadores destacados por prueba">
+          <div class="featured-grid" role="list">
           @for (ev of eventosTop; track ev.key) {
             <mat-card class="featured-card">
               <mat-card-header>
@@ -226,6 +239,11 @@
               </mat-card-content>
             </mat-card>
           }
+          </div>
+          <div class="carousel-hint mobile-only">
+            <mat-icon>swipe</mat-icon>
+            Desliza para ver más
+          </div>
         </div>
       }
     </div>

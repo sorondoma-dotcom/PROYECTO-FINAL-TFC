@@ -9,32 +9,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DatosService } from '../datos.service';
+import { Router } from '@angular/router';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { CityNamePipe } from '../pipes/city-name.pipe';
-
-interface Competition {
-  name: string;
-  stage: string | null;
-  date: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  poolName: string | null;
-  city: string | null;
-  countryCode: string | null;
-  flagImage: string | null;
-  logo: string | null;
-  url: string | null;
-  month: string | null;
-  year: string | null;
-  monthNumber: number | null;
-}
-
-interface CompetitionGroup {
-  key: string;
-  label: string;
-  competitions: Competition[];
-  sortValue: number;
-}
+import { Competition, CompetitionGroup } from '../models/competition.interface';
 
 @Component({
   selector: 'app-competicion',
@@ -83,7 +61,7 @@ export class CompeticionComponent implements OnInit {
 
   private readonly selectedMonth = 'latest';
 
-  constructor(private datos: DatosService) {}
+  constructor(private datos: DatosService, private router: Router) {}
 
   ngOnInit(): void {
     // Inicializa el selector de años con el rango fijo 2019–2025
@@ -334,5 +312,31 @@ export class CompeticionComponent implements OnInit {
       result.push(y);
     }
     return result;
+  }
+
+  viewCompetitionResults(competition: Competition): void {
+    if (!competition.url) {
+      return;
+    }
+
+    this.router.navigate(['/resultado-prueba'], {
+      queryParams: {
+        url: competition.url,
+        name: competition.name
+      },
+      state: {
+        competition: {
+          name: competition.name,
+          stage: competition.stage,
+          date: competition.date,
+          startDate: competition.startDate,
+          endDate: competition.endDate,
+          city: competition.city,
+          countryCode: competition.countryCode,
+          poolName: competition.poolName,
+          logo: competition.logo
+        }
+      }
+    });
   }
 }

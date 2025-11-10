@@ -9,6 +9,8 @@ export class DatosService {
   private url = "http://localhost:3000/api/natacion";
   private rankingsUrl = "http://localhost:3000/api/world-aquatics/rankings";
   private competitionsUrl = "http://localhost:3000/api/world-aquatics/competitions";
+  private competitionResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results";
+  private competitionEventResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results/event";
 
   constructor(private http:HttpClient ) { }
   getDatosApi(){
@@ -63,5 +65,35 @@ export class DatosService {
     if (filters.cacheTtl != null) params = params.set('cacheTtl', String(filters.cacheTtl));
 
     return this.http.get(this.competitionsUrl, { params });
+  }
+
+  getCompetitionResultEvents(options: {
+    slug?: string;
+    url?: string;
+    refresh?: boolean;
+  } = {}): Observable<any> {
+    let params = new HttpParams();
+    if (options.slug) params = params.set('slug', options.slug);
+    if (options.url) params = params.set('url', options.url);
+    if (options.refresh) params = params.set('refresh', 'true');
+    return this.http.get(this.competitionResultsUrl, { params });
+  }
+
+  getCompetitionEventResults(options: {
+    eventGuid: string;
+    slug?: string;
+    url?: string;
+    unitId?: string;
+    refresh?: boolean;
+  }): Observable<any> {
+    if (!options.eventGuid) {
+      throw new Error('Se requiere el identificador del evento (eventGuid)');
+    }
+    let params = new HttpParams().set('eventGuid', options.eventGuid);
+    if (options.slug) params = params.set('slug', options.slug);
+    if (options.url) params = params.set('url', options.url);
+    if (options.unitId) params = params.set('unitId', options.unitId);
+    if (options.refresh) params = params.set('refresh', 'true');
+    return this.http.get(this.competitionEventResultsUrl, { params });
   }
 }

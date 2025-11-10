@@ -125,16 +125,27 @@
 
                   <div class="competition-card__actions">
                     @if (competition.url) {
-                      <a
-                        mat-stroked-button
-                        color="primary"
-                        [href]="competition.url"
-                        target="_blank"
-                        rel="noopener"
-                      >
-                        Ver en World Aquatics
-                        <mat-icon>open_in_new</mat-icon>
-                      </a>
+                      <div class="competition-card__actions-buttons">
+                        <button
+                          mat-stroked-button
+                          color="primary"
+                          type="button"
+                          (click)="viewCompetitionResults(competition)"
+                        >
+                          Ver resultados
+                          <mat-icon>insights</mat-icon>
+                        </button>
+                        <a
+                          mat-icon-button
+                          color="primary"
+                          [href]="competition.url"
+                          target="_blank"
+                          rel="noopener"
+                          aria-label="Abrir en World Aquatics"
+                        >
+                          <mat-icon>open_in_new</mat-icon>
+                        </a>
+                      </div>
                     } @else {
                       <span class="competition-card__placeholder">Sin enlace disponible</span>
                     }
