@@ -12,6 +12,7 @@ import { CityNamePipe } from '../pipes/city-name.pipe';
 import { CountryCodePipe } from '../pipes/country-code.pipe';
 import { forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { MatTabsModule, MatTabChangeEvent } from '@angular/material/tabs';
 
 interface DashboardStats {
   totalCompeticiones: number;
@@ -47,6 +48,7 @@ interface TopEvent {
     MatButtonModule,
     MatProgressSpinnerModule,
     MatChipsModule,
+    MatTabsModule,
     RouterLink,
     CountryFlagPipe,
     CityNamePipe,
@@ -68,12 +70,26 @@ export class DashBoardComponent implements OnInit {
   competicionesDestacadas: any[] = [];
   eventosTop: TopEvent[] = [];
   errorRankings: string | null = null;
-
-  constructor(private datosService: DatosService) {}
+  selectedIndex = 0;
+  constructor(private datosService: DatosService) { }
 
   ngOnInit(): void {
     this.cargarDatos();
   }
+
+  onTabChange(event: MatTabChangeEvent): void {
+    this.selectedIndex = event.index;
+  }
+
+  get tabs() {
+    const base = [{ key: 'resumen', label: 'Resumen' }];
+    if (this.competicionesDestacadas?.length) {
+      base.push({ key: 'destacadas', label: 'Destacadas' });
+    }
+    base.push({ key: 'rankings', label: 'Rankings' });
+    return base;
+  }
+
 
   cargarDatos(): void {
     this.loading = true;
@@ -108,7 +124,7 @@ export class DashBoardComponent implements OnInit {
 
   isLive(dateStr: string): boolean {
     if (!dateStr) return false;
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const parts = dateStr.split(' ');
     if (parts.length !== 3) return false;
 
@@ -120,8 +136,8 @@ export class DashBoardComponent implements OnInit {
     const today = new Date();
 
     return compDate.getDate() === today.getDate() &&
-           compDate.getMonth() === today.getMonth() &&
-           compDate.getFullYear() === today.getFullYear();
+      compDate.getMonth() === today.getMonth() &&
+      compDate.getFullYear() === today.getFullYear();
   }
 
   getCourseIcon(course: string): string {
@@ -138,52 +154,51 @@ export class DashBoardComponent implements OnInit {
       { key: 'M_200_FREE', title: '200 libre (M)', gender: 'M', distance: '200', stroke: 'FREESTYLE', poolConfiguration: 'LCM' },
     ];
 
-    const requests = eventos.map(e =>
-      this.datosService.getRankings({
-        gender: e.gender,
-        distance: e.distance,
-        stroke: e.stroke,
-        poolConfiguration: e.poolConfiguration,
-        limit: 10,
-      }).pipe(
-        map((arr: any) => ({
-          ...e,
+  const requests = eventos.map(e =>
+    this.datosService.getRankings({
+      gender: e.gender,
+      distance: e.distance,
+      stroke: e.stroke,
+      poolConfiguration: e.poolConfiguration,
+      limit: 3,
+    }).pipe(
+      map((arr: any) => ({
+        ...e,
           top: this.mapearRespuestaRankings(arr),
-          error: false
-        })),
-        catchError((err) => {
-          console.error(`Error cargando ranking para ${e.title}:`, err);
-          // Retornar un evento vacío en caso de error para que no rompa forkJoin
-          return of({
-            ...e,
-            top: [],
-            error: true,
-            errorMessage: err?.error?.mensaje || err?.message || 'Error al cargar datos'
-          });
-        })
-      )
-    );
+        error: false
+      })),
+      catchError((err) => {
+        console.error(`Error cargando ranking para ${e.title}:`, err);
+        return of({
+          ...e,
+          top: [],
+          error: true,
+          errorMessage: err?.error?.mensaje || err?.message || 'Error al cargar datos'
+        });
+      })
+    )
+  );
 
-    forkJoin(requests).subscribe({
-      next: (res: any[]) => {
+  forkJoin(requests).subscribe({
+    next: (res: any[]) => {
         // Filtrar solo los eventos que tienen datos (no errores o con datos)
         this.eventosTop = res.filter((ev: any) => !ev.error && ev.top.length > 0) as TopEvent[];
         // Si todos fallaron, mostrar mensaje
         const errores = res.filter((ev: any) => ev.error);
-        if (errores.length > 0 && this.eventosTop.length === 0) {
+      if (errores.length > 0 && this.eventosTop.length === 0) {
           this.errorRankings = 'No se pudieron cargar los rankings. Por favor, intenta más tarde.';
-        } else if (errores.length > 0) {
+      } else if (errores.length > 0) {
           this.errorRankings = `Algunos rankings no se pudieron cargar (${errores.length} de ${res.length})`;
-        }
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error crítico cargando rankings:', err);
-        this.errorRankings = 'Error al cargar los rankings. Por favor, intenta más tarde.';
-        this.loading = false;
       }
-    });
-  }
+      this.loading = false;
+    },
+    error: (err) => {
+      console.error('Error crítico cargando rankings:', err);
+        this.errorRankings = 'Error al cargar los rankings. Por favor, intenta más tarde.';
+      this.loading = false;
+    }
+  });
+}
 
   private mapearRespuestaRankings(res: any): RankingEntry[] {
     // La API devuelve un objeto con { rankings: [...] }

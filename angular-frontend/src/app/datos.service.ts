@@ -96,4 +96,9 @@ export class DatosService {
     if (options.refresh) params = params.set('refresh', 'true');
     return this.http.get(this.competitionEventResultsUrl, { params });
   }
+
+  postHighlightedRankings(payload: any): Observable<any> {
+    const url = `${this.rankingsUrl}/highlighted`;
+    return this.http.post(url, payload);
+  }
 }

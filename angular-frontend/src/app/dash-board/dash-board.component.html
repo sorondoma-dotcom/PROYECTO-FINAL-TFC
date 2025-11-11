@@ -5,7 +5,7 @@
     <p class="subtitle">Bienvenido al dashboard de competiciones de natación</p>
   </div>
 
-  <!-- Loading State -->
+  <!-- Loading -->
   @if (loading) {
     <div class="loading-container">
       <mat-spinner diameter="50"></mat-spinner>
@@ -13,17 +13,37 @@
     </div>
   }
 
-  <!-- Stats Cards -->
+  <!-- Tabs -->
   @if (!loading) {
-    <div class="cards-carousel stats-carousel" aria-label="Resumen de estadísticas">
-      <div class="dashboard-grid" role="list">
+    <mat-tab-group [dynamicHeight]="true" (selectedTabChange)="onTabChange($event)">
+      @for (t of tabs; track t.key; let i = $index) {
+        <mat-tab [label]="t.label">
+          <ng-container *ngIf="selectedIndex === i">
+            <!-- Contenido lazy por pestaña -->
+            @if (t.key === 'resumen') {
+              <ng-container *ngTemplateOutlet="tplResumen"></ng-container>
+            } @else if (t.key === 'destacadas') {
+              <ng-container *ngTemplateOutlet="tplDestacadas"></ng-container>
+            } @else if (t.key === 'rankings') {
+              <ng-container *ngTemplateOutlet="tplRankings"></ng-container>
+            }
+          </ng-container>
+        </mat-tab>
+      }
+    </mat-tab-group>
+  }
+
+  <!-- TEMPLATES -->
+
+  <!-- RESUMEN -->
+  <ng-template #tplResumen>
+    <div class="dashboard-grid">
+      <!-- (Este bloque es el de tus tarjetas de estadísticas, idéntico al original) -->
       <!-- Total Competiciones -->
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
           <div class="stat-content">
-            <div class="stat-icon total">
-              <mat-icon>pool</mat-icon>
-            </div>
+            <div class="stat-icon total"><mat-icon>pool</mat-icon></div>
             <div class="stat-info">
               <h3>{{ stats.totalCompeticiones }}</h3>
               <p>Total Competiciones</p>
@@ -32,13 +52,11 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Competiciones en Directo -->
+      <!-- En Directo Hoy -->
       <mat-card class="dashboard-card stat-card live">
         <mat-card-content>
           <div class="stat-content">
-            <div class="stat-icon live">
-              <mat-icon>live_tv</mat-icon>
-            </div>
+            <div class="stat-icon live"><mat-icon>live_tv</mat-icon></div>
             <div class="stat-info">
               <h3>{{ stats.competicionesLive }}</h3>
               <p>En Directo Hoy</p>
@@ -47,13 +65,11 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Competiciones 25m -->
+      <!-- 25m -->
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
           <div class="stat-content">
-            <div class="stat-icon">
-              <mat-icon>straighten</mat-icon>
-            </div>
+            <div class="stat-icon"><mat-icon>straighten</mat-icon></div>
             <div class="stat-info">
               <h3>{{ stats.competiciones25m }}</h3>
               <p>Piscina 25m</p>
@@ -62,13 +78,11 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Competiciones 50m -->
+      <!-- 50m -->
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
           <div class="stat-content">
-            <div class="stat-icon">
-              <mat-icon>waves</mat-icon>
-            </div>
+            <div class="stat-icon"><mat-icon>waves</mat-icon></div>
             <div class="stat-info">
               <h3>{{ stats.competiciones50m }}</h3>
               <p>Piscina 50m</p>
@@ -81,9 +95,7 @@
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
           <div class="stat-content">
-            <div class="stat-icon results">
-              <mat-icon>emoji_events</mat-icon>
-            </div>
+            <div class="stat-icon results"><mat-icon>emoji_events</mat-icon></div>
             <div class="stat-info">
               <h3>{{ stats.competicionesConResultados }}</h3>
               <p>Con Resultados</p>
@@ -96,9 +108,7 @@
       <mat-card class="dashboard-card stat-card action-card">
         <mat-card-content>
           <div class="stat-content">
-            <div class="stat-icon">
-              <mat-icon>dashboard</mat-icon>
-            </div>
+            <div class="stat-icon"><mat-icon>dashboard</mat-icon></div>
             <div class="stat-info">
               <h3>Explorar</h3>
               <p>Ver todas las competiciones</p>
@@ -112,19 +122,15 @@
           </div>
         </mat-card-content>
       </mat-card>
-      </div>
-      <div class="carousel-hint mobile-only">
-        <mat-icon>swipe</mat-icon>
-        Desliza para ver más
-      </div>
     </div>
+  </ng-template>
 
-    <!-- Competiciones Destacadas -->
+  <!-- DESTACADAS -->
+  <ng-template #tplDestacadas>
     @if (competicionesDestacadas.length > 0) {
       <div class="featured-section">
         <h2>🌟 Competiciones Destacadas</h2>
-        <div class="cards-carousel" aria-label="Competiciones destacadas">
-          <div class="featured-grid" role="list">
+        <div class="featured-grid">
           @for (comp of competicionesDestacadas; track comp.id || comp.name) {
             <mat-card class="featured-card">
               <mat-card-header>
@@ -174,16 +180,22 @@
               }
             </mat-card>
           }
-          </div>
-          <div class="carousel-hint mobile-only">
-            <mat-icon>swipe</mat-icon>
-            Desliza para ver más
-          </div>
         </div>
       </div>
+    } @else {
+      <mat-card class="warning-card">
+        <mat-card-content>
+          <div class="error-content">
+            <mat-icon>info</mat-icon>
+            <p>No hay competiciones destacadas disponibles.</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
     }
+  </ng-template>
 
-    <!-- Nadadores destacados por prueba -->
+  <!-- RANKINGS -->
+  <ng-template #tplRankings>
     <div class="featured-section">
       <h2>🏅 Nadadores destacados por prueba</h2>
 
@@ -208,8 +220,7 @@
       }
 
       @if (eventosTop && eventosTop.length > 0) {
-        <div class="cards-carousel" aria-label="Nadadores destacados por prueba">
-          <div class="featured-grid" role="list">
+        <div class="featured-grid">
           @for (ev of eventosTop; track ev.key) {
             <mat-card class="featured-card">
               <mat-card-header>
@@ -239,13 +250,17 @@
               </mat-card-content>
             </mat-card>
           }
-          </div>
-          <div class="carousel-hint mobile-only">
-            <mat-icon>swipe</mat-icon>
-            Desliza para ver más
-          </div>
         </div>
+      } @else {
+        <mat-card class="warning-card">
+          <mat-card-content>
+            <div class="error-content">
+              <mat-icon>info</mat-icon>
+              <p>No hay rankings disponibles en este momento.</p>
+            </div>
+          </mat-card-content>
+        </mat-card>
       }
     </div>
-  }
+  </ng-template>
 </div>

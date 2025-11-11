@@ -8,11 +8,12 @@ $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
 $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
 
 .dashboard-container {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 2rem auto;
   padding: 2rem;
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(117, 75, 162, 0.05) 100%);
   border-radius: $border-radius-lg;
+  min-height: 100vh;
 }
 
 .dashboard-header {
@@ -39,6 +40,11 @@ $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
     letter-spacing: 0.3px;
   }
 }
+
+  ::ng-deep .mat-mdc-tab-body-content {
+  padding-top: 1rem;
+}
+
 
 .loading-container {
   display: flex;
