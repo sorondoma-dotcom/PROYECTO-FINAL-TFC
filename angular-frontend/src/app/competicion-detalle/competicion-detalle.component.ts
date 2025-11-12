@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { DatosService } from '../datos.service';
-import { PdfViewerDialogComponent } from '../pdf-viewer-dialog/pdf-viewer-dialog.component';
+
 
 @Component({
   selector: 'app-competicion-detalle',
@@ -53,17 +53,6 @@ export class CompeticionDetalleComponent implements OnInit {
     this.router.navigate(['/']);
   }
 
-  verPDF(urlPdf: string, tipo: string, titulo: string, event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-
-    this.dialog.open(PdfViewerDialogComponent, {
-      width: '95%',
-      maxWidth: '1400px',
-      height: '90vh',
-      data: { url: urlPdf, tipo, titulo }
-    });
-  }
 
   // Metodo para obtener los campos del evento como array
   obtenerCampos(evento: any): Array<{key: string, value: any}> {

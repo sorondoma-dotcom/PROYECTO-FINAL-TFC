@@ -13,7 +13,9 @@ import { CountryCodePipe } from '../pipes/country-code.pipe';
 import { forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { MatTabsModule, MatTabChangeEvent } from '@angular/material/tabs';
-
+import { Router } from '@angular/router';
+import { Competition } from '../models/competition.interface';
+//TODO faltante separar las interfaces en archivos propios
 interface DashboardStats {
   totalCompeticiones: number;
   competicionesLive: number;
@@ -33,7 +35,7 @@ interface TopEvent {
   title: string;
   gender: 'M' | 'F';
   distance: string;
-  stroke: string; // FREESTYLE, BACKSTROKE, etc.
+  stroke: string;
   poolConfiguration: 'LCM' | 'SCM';
   top: RankingEntry[];
 }
@@ -51,11 +53,10 @@ interface TopEvent {
     MatTabsModule,
     RouterLink,
     CountryFlagPipe,
-    CityNamePipe,
-    CountryCodePipe
+    CityNamePipe
   ],
   templateUrl: './dash-board.component.html',
-  styleUrl: './dash-board.component.scss'
+  styleUrl: './dash-board.component.scss',
 })
 export class DashBoardComponent implements OnInit {
   loading = true;
@@ -64,14 +65,15 @@ export class DashBoardComponent implements OnInit {
     competicionesLive: 0,
     competiciones25m: 0,
     competiciones50m: 0,
-    competicionesConResultados: 0
+    competicionesConResultados: 0,
   };
-  competiciones: any[] = [];
-  competicionesDestacadas: any[] = [];
+  competicionesDestacadas: Competition[] = [];
   eventosTop: TopEvent[] = [];
   errorRankings: string | null = null;
+  errorCompeticiones: string | null = null;
   selectedIndex = 0;
-  constructor(private datosService: DatosService) { }
+
+  constructor(private datosService: DatosService, private router: Router) {}
 
   ngOnInit(): void {
     this.cargarDatos();
@@ -83,141 +85,447 @@ export class DashBoardComponent implements OnInit {
 
   get tabs() {
     const base = [{ key: 'resumen', label: 'Resumen' }];
-    if (this.competicionesDestacadas?.length) {
-      base.push({ key: 'destacadas', label: 'Destacadas' });
-    }
+    // IMPORTANTE: Siempre mostrar la pestaña "Destacadas", incluso si está cargando
+    base.push({ key: 'destacadas', label: 'Destacadas' });
     base.push({ key: 'rankings', label: 'Rankings' });
     return base;
   }
+  cargarCompeticionesDestacadas(): void {
+    const currentYear = new Date().getFullYear();
 
+    console.log('🔄 Cargando competiciones destacadas...'); // Debug
+
+    this.datosService
+      .getWorldAquaticsCompetitions({
+        group: 'FINA',
+        discipline: 'SW',
+        year: currentYear,
+        month: 'latest',
+        refresh: false,
+      })
+      .subscribe({
+        next: (data: any) => {
+          console.log('✅ Respuesta de competiciones:', data); // Debug
+
+          const list = Array.isArray(data?.competitions)
+            ? data.competitions
+            : [];
+          console.log('📋 Lista de competiciones:', list.length); // Debug
+
+          this.competicionesDestacadas = this.procesarCompeticiones(list);
+          console.log(
+            '🌟 Competiciones destacadas procesadas:',
+            this.competicionesDestacadas.length
+          ); // Debug
+
+          this.calcularEstadisticas();
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('❌ Error al cargar competiciones destacadas:', error);
+          this.errorCompeticiones =
+            'No se pudieron cargar las competiciones destacadas.';
+          this.competicionesDestacadas = [];
+          this.loading = false;
+        },
+      });
+  }
 
   cargarDatos(): void {
     this.loading = true;
-    this.datosService.getDatosApi().subscribe({
-      next: (data: any) => {
-        this.competiciones = data.competiciones || [];
-        this.calcularEstadisticas();
-        this.seleccionarDestacadas();
-        this.cargarRankingsDestacados();
-      },
-      error: (error) => {
-        console.error('Error al cargar datos:', error);
-        this.loading = false;
+
+    // Cargar competiciones destacadas de World Aquatics
+    this.cargarCompeticionesDestacadas();
+
+    // Cargar rankings
+    this.cargarRankingsDestacados();
+  }
+
+  procesarCompeticiones(list: any[]): Competition[] {
+    console.log('🔧 Procesando competiciones, total:', list.length); // Debug
+
+    // Normalizar competiciones
+    const competiciones = list.map((item, index) =>
+      this.normalizeCompetition(item, index)
+    );
+
+    // Filtrar competiciones: priorizar las que están en curso o próximas
+    const inProgress: Competition[] = [];
+    const upcoming: Competition[] = [];
+    const recent: Competition[] = [];
+    const others: Competition[] = [];
+
+    competiciones.forEach((comp) => {
+      const status = this.getCompetitionStatus(comp);
+      console.log(`📅 ${comp.name}: ${status}`); // Debug
+
+      if (status === 'live') {
+        inProgress.push(comp);
+      } else if (status === 'upcoming') {
+        upcoming.push(comp);
+      } else if (status === 'recent') {
+        recent.push(comp);
+      } else {
+        others.push(comp);
       }
     });
+
+    // Ordenar por fecha
+    const sortByDate = (a: Competition, b: Competition) => {
+      const aDate = new Date(a.startDate || a.endDate || '');
+      const bDate = new Date(b.startDate || b.endDate || '');
+      return aDate.getTime() - bDate.getTime();
+    };
+
+    inProgress.sort(sortByDate);
+    upcoming.sort(sortByDate);
+    recent.sort((a, b) => -sortByDate(a, b)); // Más recientes primero
+    others.sort((a, b) => -sortByDate(a, b)); // Más recientes primero
+
+    console.log(
+      `✅ Live: ${inProgress.length}, Upcoming: ${upcoming.length}, Recent: ${recent.length}, Others: ${others.length}`
+    ); // Debug
+
+    // Combinar: primero en vivo, luego próximas, luego recientes, luego otras (hasta 6 total)
+    const destacadas = [...inProgress, ...upcoming, ...recent, ...others].slice(
+      0,
+      6
+    );
+
+    console.log('🎯 Competiciones destacadas finales:', destacadas.length); // Debug
+
+    return destacadas;
+  }
+
+  private normalizeCompetition(raw: any, index: number): Competition {
+    const sanitize = (value: unknown): string | null => {
+      if (value === null || value === undefined) return null;
+      const text = String(value).trim();
+      return text.length ? text : null;
+    };
+
+    const startDate = typeof raw?.startDate === 'string' ? raw.startDate : null;
+    const endDate = typeof raw?.endDate === 'string' ? raw.endDate : null;
+
+    return {
+      name: sanitize(raw?.name) ?? `Competición ${index + 1}`,
+      stage: sanitize(raw?.stage),
+      date: sanitize(raw?.date),
+      startDate,
+      endDate,
+      poolName: sanitize(raw?.poolName),
+      city: sanitize(raw?.city),
+      countryCode: sanitize(raw?.countryCode),
+      flagImage: sanitize(raw?.flagImage),
+      logo: sanitize(raw?.logo),
+      url: sanitize(raw?.url),
+      month: sanitize(raw?.month),
+      year: sanitize(raw?.year)?.toString() || null,
+      monthNumber: raw?.monthNumber,
+    };
+  }
+
+  getCompetitionStatus(
+    competition: Competition
+  ): 'live' | 'upcoming' | 'recent' | 'past' {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const startDate = competition.startDate
+      ? new Date(competition.startDate)
+      : null;
+    const endDate = competition.endDate ? new Date(competition.endDate) : null;
+
+    if (!startDate && !endDate) return 'past';
+
+    const start = startDate || endDate!;
+    const end = endDate || startDate!;
+
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    // En progreso
+    if (now >= start && now <= end) {
+      return 'live';
+    }
+
+    // Próxima (dentro de los próximos 30 días)
+    const thirtyDaysFromNow = new Date(now);
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    if (start > now && start <= thirtyDaysFromNow) {
+      return 'upcoming';
+    }
+
+    // Reciente (últimos 7 días)
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    if (end >= sevenDaysAgo && end < now) {
+      return 'recent';
+    }
+
+    return 'past';
   }
 
   calcularEstadisticas(): void {
-    this.stats.totalCompeticiones = this.competiciones.length;
-    this.stats.competicionesLive = this.competiciones.filter(c => this.isLive(c.date)).length;
-    this.stats.competiciones25m = this.competiciones.filter(c => c.course === '25m').length;
-    this.stats.competiciones50m = this.competiciones.filter(c => c.course === '50m').length;
-    this.stats.competicionesConResultados = this.competiciones.filter(c => c.hasResults).length;
+    this.stats.totalCompeticiones = this.competicionesDestacadas.length;
+
+    let live = 0;
+    let lcm = 0;
+    let scm = 0;
+    let withResults = 0;
+
+    this.competicionesDestacadas.forEach((comp) => {
+      const status = this.getCompetitionStatus(comp);
+      if (status === 'live') live++;
+
+      // Inferir el tipo de piscina del nombre o stage
+      const text = `${comp.name} ${comp.stage || ''}`.toLowerCase();
+      if (
+        text.includes('25m') ||
+        text.includes('short course') ||
+        text.includes('scm')
+      ) {
+        scm++;
+      } else if (
+        text.includes('50m') ||
+        text.includes('long course') ||
+        text.includes('lcm')
+      ) {
+        lcm++;
+      }
+
+      // Las competiciones pasadas o recientes probablemente tengan resultados
+      if (status === 'recent' || status === 'past') {
+        withResults++;
+      }
+    });
+
+    this.stats.competicionesLive = live;
+    this.stats.competiciones25m = scm;
+    this.stats.competiciones50m = lcm;
+    this.stats.competicionesConResultados = withResults;
   }
 
-  seleccionarDestacadas(): void {
-    // Seleccionar competiciones en vivo y las que tienen resultados
-    this.competicionesDestacadas = this.competiciones
-      .filter(c => this.isLive(c.date) || c.hasResults)
-      .slice(0, 6);
+  isLive(competition: Competition): boolean {
+    return this.getCompetitionStatus(competition) === 'live';
   }
 
-  isLive(dateStr: string): boolean {
-    if (!dateStr) return false;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const parts = dateStr.split(' ');
-    if (parts.length !== 3) return false;
-
-    const [day, mon, year] = parts;
-    const monthIndex = months.indexOf(mon);
-    if (monthIndex === -1) return false;
-
-    const compDate = new Date(Number(year), monthIndex, Number(day));
-    const today = new Date();
-
-    return compDate.getDate() === today.getDate() &&
-      compDate.getMonth() === today.getMonth() &&
-      compDate.getFullYear() === today.getFullYear();
+  isUpcoming(competition: Competition): boolean {
+    return this.getCompetitionStatus(competition) === 'upcoming';
   }
 
-  getCourseIcon(course: string): string {
-    return course === '25m' ? 'straighten' : 'waves';
+  isRecent(competition: Competition): boolean {
+    return this.getCompetitionStatus(competition) === 'recent';
   }
+
+  getCourseIcon(competition: Competition): string {
+    const text = `${competition.name} ${competition.stage || ''}`.toLowerCase();
+    if (
+      text.includes('25m') ||
+      text.includes('short course') ||
+      text.includes('scm')
+    ) {
+      return 'straighten';
+    }
+    return 'waves';
+  }
+
+  getCourseName(competition: Competition): string {
+    const text = `${competition.name} ${competition.stage || ''}`.toLowerCase();
+    if (
+      text.includes('25m') ||
+      text.includes('short course') ||
+      text.includes('scm')
+    ) {
+      return '25m (SCM)';
+    }
+    return '50m (LCM)';
+  }
+
+  formatDate(competition: Competition): string {
+    if (competition.date) return competition.date;
+
+    const start = competition.startDate;
+    const end = competition.endDate;
+
+    if (!start && !end) return 'Fecha por confirmar';
+
+    const formatSingle = (dateStr: string) => {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('es-ES', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    };
+
+    if (start && end && start !== end) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+
+      if (
+        startDate.getMonth() === endDate.getMonth() &&
+        startDate.getFullYear() === endDate.getFullYear()
+      ) {
+        return `${startDate.getDate()}-${endDate.getDate()} ${endDate.toLocaleDateString(
+          'es-ES',
+          { month: 'short', year: 'numeric' }
+        )}`;
+      }
+
+      return `${formatSingle(start)} - ${formatSingle(end)}`;
+    }
+
+    return formatSingle(start || end!);
+  }
+
+  viewCompetitionResults(competition: Competition): void {
+    if (!competition.url) return;
+
+    this.router.navigate(['/resultado-prueba'], {
+      queryParams: {
+        url: competition.url,
+        name: competition.name,
+      },
+      state: {
+        competition: {
+          name: competition.name,
+          stage: competition.stage,
+          date: this.formatDate(competition),
+          startDate: competition.startDate,
+          endDate: competition.endDate,
+          city: competition.city,
+          countryCode: competition.countryCode,
+          poolName: competition.poolName,
+          logo: competition.logo,
+        },
+      },
+    });
+  }
+
+  trackCompetition = (_index: number, competition: Competition) =>
+    competition.url ||
+    `${competition.name}-${competition.startDate ?? ''}-${
+      competition.endDate ?? ''
+    }`;
 
   private cargarRankingsDestacados(): void {
     const eventos: Omit<TopEvent, 'top'>[] = [
-      { key: 'F_100_BACK', title: '100 espalda (F)', gender: 'F', distance: '100', stroke: 'BACKSTROKE', poolConfiguration: 'LCM' },
-      { key: 'M_100_BACK', title: '100 espalda (M)', gender: 'M', distance: '100', stroke: 'BACKSTROKE', poolConfiguration: 'LCM' },
-      { key: 'F_100_FREE', title: '100 libre (F)', gender: 'F', distance: '100', stroke: 'FREESTYLE', poolConfiguration: 'LCM' },
-      { key: 'M_100_FREE', title: '100 libre (M)', gender: 'M', distance: '100', stroke: 'FREESTYLE', poolConfiguration: 'LCM' },
-      { key: 'F_200_FREE', title: '200 libre (F)', gender: 'F', distance: '200', stroke: 'FREESTYLE', poolConfiguration: 'LCM' },
-      { key: 'M_200_FREE', title: '200 libre (M)', gender: 'M', distance: '200', stroke: 'FREESTYLE', poolConfiguration: 'LCM' },
+      {
+        key: 'F_100_BACK',
+        title: '100 espalda (F)',
+        gender: 'F',
+        distance: '100',
+        stroke: 'BACKSTROKE',
+        poolConfiguration: 'LCM',
+      },
+      {
+        key: 'M_100_BACK',
+        title: '100 espalda (M)',
+        gender: 'M',
+        distance: '100',
+        stroke: 'BACKSTROKE',
+        poolConfiguration: 'LCM',
+      },
+      {
+        key: 'F_100_FREE',
+        title: '100 libre (F)',
+        gender: 'F',
+        distance: '100',
+        stroke: 'FREESTYLE',
+        poolConfiguration: 'LCM',
+      },
+      {
+        key: 'M_100_FREE',
+        title: '100 libre (M)',
+        gender: 'M',
+        distance: '100',
+        stroke: 'FREESTYLE',
+        poolConfiguration: 'LCM',
+      },
+      {
+        key: 'F_200_FREE',
+        title: '200 libre (F)',
+        gender: 'F',
+        distance: '200',
+        stroke: 'FREESTYLE',
+        poolConfiguration: 'LCM',
+      },
+      {
+        key: 'M_200_FREE',
+        title: '200 libre (M)',
+        gender: 'M',
+        distance: '200',
+        stroke: 'FREESTYLE',
+        poolConfiguration: 'LCM',
+      },
     ];
 
-  const requests = eventos.map(e =>
-    this.datosService.getRankings({
-      gender: e.gender,
-      distance: e.distance,
-      stroke: e.stroke,
-      poolConfiguration: e.poolConfiguration,
-      limit: 3,
-    }).pipe(
-      map((arr: any) => ({
-        ...e,
-          top: this.mapearRespuestaRankings(arr),
-        error: false
-      })),
-      catchError((err) => {
-        console.error(`Error cargando ranking para ${e.title}:`, err);
-        return of({
-          ...e,
-          top: [],
-          error: true,
-          errorMessage: err?.error?.mensaje || err?.message || 'Error al cargar datos'
-        });
-      })
-    )
-  );
+    const requests = eventos.map((e) =>
+      this.datosService
+        .getRankings({
+          gender: e.gender,
+          distance: e.distance,
+          stroke: e.stroke,
+          poolConfiguration: e.poolConfiguration,
+          limit: 3,
+        })
+        .pipe(
+          map((arr: any) => ({
+            ...e,
+            top: this.mapearRespuestaRankings(arr),
+            error: false,
+          })),
+          catchError((err) => {
+            console.error(`Error cargando ranking para ${e.title}:`, err);
+            return of({
+              ...e,
+              top: [],
+              error: true,
+              errorMessage:
+                err?.error?.mensaje || err?.message || 'Error al cargar datos',
+            });
+          })
+        )
+    );
 
-  forkJoin(requests).subscribe({
-    next: (res: any[]) => {
-        // Filtrar solo los eventos que tienen datos (no errores o con datos)
-        this.eventosTop = res.filter((ev: any) => !ev.error && ev.top.length > 0) as TopEvent[];
-        // Si todos fallaron, mostrar mensaje
+    forkJoin(requests).subscribe({
+      next: (res: any[]) => {
+        this.eventosTop = res.filter(
+          (ev: any) => !ev.error && ev.top.length > 0
+        ) as TopEvent[];
         const errores = res.filter((ev: any) => ev.error);
-      if (errores.length > 0 && this.eventosTop.length === 0) {
-          this.errorRankings = 'No se pudieron cargar los rankings. Por favor, intenta más tarde.';
-      } else if (errores.length > 0) {
+        if (errores.length > 0 && this.eventosTop.length === 0) {
+          this.errorRankings =
+            'No se pudieron cargar los rankings. Por favor, intenta más tarde.';
+        } else if (errores.length > 0) {
           this.errorRankings = `Algunos rankings no se pudieron cargar (${errores.length} de ${res.length})`;
-      }
-      this.loading = false;
-    },
-    error: (err) => {
-      console.error('Error crítico cargando rankings:', err);
-        this.errorRankings = 'Error al cargar los rankings. Por favor, intenta más tarde.';
-      this.loading = false;
-    }
-  });
-}
+        }
+      },
+      error: (err) => {
+        console.error('Error crítico cargando rankings:', err);
+        this.errorRankings =
+          'Error al cargar los rankings. Por favor, intenta más tarde.';
+      },
+    });
+  }
 
   private mapearRespuestaRankings(res: any): RankingEntry[] {
-    // La API devuelve un objeto con { rankings: [...] }
     const items: any[] = Array.isArray(res)
       ? res
       : Array.isArray(res?.rankings)
-        ? res.rankings
-        : [];
+      ? res.rankings
+      : [];
     return items.slice(0, 5).map((it) => ({
       overallRank: it?.overallRank,
       country: it?.country,
-      name: this.limpiarNombre(it?.name, it?.country)
+      name: this.limpiarNombre(it?.name, it?.country),
     }));
   }
 
   private limpiarNombre(nameRaw?: string, country?: string): string {
     if (!nameRaw) return 'Desconocido';
     let name = nameRaw.replace(/\s+/g, ' ').trim();
-    // El nombre puede traer el país al final; intentar removerlo si coincide
     if (country) {
       const countryTrim = String(country).trim();
       const regex = new RegExp(`\\b${countryTrim}\\b$`);
@@ -236,5 +544,10 @@ export class DashBoardComponent implements OnInit {
 
   getEtiquetaRanking(e: RankingEntry): string {
     return e.overallRank ? `#${e.overallRank}` : '';
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 }
