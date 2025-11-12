@@ -1,16 +1,26 @@
-/* ===========================================================
-   GLOBAL THEME CONFIGURATION
-   =========================================================== */
+
 
 @use '@angular/material' as mat;
 
-/* === Importa configuraciones === */
+
 @use './theme/palettes' as palettes;
 @use './theme/typography' as typography;
 @use './theme/components' as components;
 @use './theme/variables' as variables;
 
-/* === Material Core === */
+
+:root {
+  --font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
+  --font-size-base: 16px;
+  --font-size-sm: 0.875rem;
+  --font-size-lg: 1.125rem;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-base: 1.5;
+}
+
 @include mat.core();
 
 
@@ -19,7 +29,7 @@ html, body {
   height: 100%;
   background-color: var(--color-bg);
   color: var(--color-text);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-family-mono);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -33,7 +43,7 @@ button {
   background-color: var(--color-primary);
   color: white;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: var(--font-weight-medium);
   text-transform: none;
   transition: background-color 0.3s ease;
 }
@@ -43,8 +53,7 @@ button:hover {
 }
 
 
-/* === Tema claro === */
-$light-theme: mat.m2-define-light-theme((
+$light-theme: mat.m2-define-light-theme(( 
   color: (
     primary: palettes.$primary,
     accent: palettes.$accent,
@@ -53,8 +62,9 @@ $light-theme: mat.m2-define-light-theme((
   typography: typography.$config,
 ));
 
-/* === Tema oscuro === */
-$dark-theme: mat.m2-define-dark-theme((
+
+
+$dark-theme: mat.m2-define-dark-theme(( 
   color: (
     primary: palettes.$primary,
     accent: palettes.$accent,
@@ -63,26 +73,22 @@ $dark-theme: mat.m2-define-dark-theme((
   typography: typography.$config,
 ));
 
-/* === Tema por defecto (claro) === */
+
+
 @include mat.all-component-themes($light-theme);
 
-/* === Estilos globales === */
 html, body {
   height: 100%;
   margin: 0;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-family-base);
   background-color: #f5f5f5;
   color: #212121;
 }
 
-/* ===========================================================
-   COMPONENTES MATERIALES PERSONALIZADOS
-   =========================================================== */
+
 @include components.global-styles();
 
-/* ===========================================================
-   MODO OSCURO
-   =========================================================== */
+
 .dark-theme {
   background-color: #121212;
   color: #e0e0e0;
