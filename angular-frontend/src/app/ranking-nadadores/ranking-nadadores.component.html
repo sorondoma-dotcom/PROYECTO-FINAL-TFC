@@ -93,10 +93,36 @@
           <span style="margin-left: 0.3em;">{{ n.country }}</span>
         </td>
       </ng-container>
-      <!-- Nombre -->
+      <!-- Nombre con imagen -->
       <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nombre</th>
-        <td mat-cell *matCellDef="let n">{{ n.name }}</td>
+        <th mat-header-cell *matHeaderCellDef>Nadador</th>
+        <td mat-cell *matCellDef="let n">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            @if(n.imageUrl) {
+              <img
+                [src]="n.imageUrl"
+                [alt]="n.name"
+                class="athlete-photo"
+                (error)="onImageError($event)"
+                loading="lazy"
+              >
+            } @else {
+              <div class="athlete-photo-placeholder">
+                <mat-icon>person</mat-icon>
+              </div>
+            }
+            <div class="athlete-name-wrapper">
+              @if(n.profileUrl) {
+                <a [href]="n.profileUrl" target="_blank" rel="noopener noreferrer" class="athlete-link">
+                  {{ n.name }}
+                  <mat-icon class="external-link-icon">open_in_new</mat-icon>
+                </a>
+              } @else {
+                <span>{{ n.name }}</span>
+              }
+            </div>
+          </div>
+        </td>
       </ng-container>
       <!-- Edad -->
       <ng-container matColumnDef="age">

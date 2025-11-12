@@ -6,7 +6,7 @@ $shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
 $shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
 $shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
 $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
-
+$text-main: rgba(0, 0, 0, 0.87);
 .dashboard-container {
   max-width: 1800px;
   margin: 2rem auto;
@@ -15,6 +15,29 @@ $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
   border-radius: $border-radius-lg;
   min-height: 100vh;
 }
+
+  .location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: $text-main;
+
+  &__flag {
+    width: 26px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    object-fit: cover;
+    box-shadow: 0 4px 8px rgba(26, 115, 232, 0.15);
+    font-size: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+  }
+}
+
 
 .dashboard-header {
   text-align: center;
@@ -286,8 +309,8 @@ $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, 
-      rgba(102, 126, 234, 0.05) 0%, 
+    background: linear-gradient(135deg,
+      rgba(102, 126, 234, 0.05) 0%,
       rgba(117, 75, 162, 0.05) 100%);
     position: relative;
     overflow: hidden;
@@ -399,7 +422,7 @@ $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
       }
     }
 
-    .live-chip, 
+    .live-chip,
     .results-chip,
     .upcoming-chip {
       display: inline-flex;
@@ -620,7 +643,7 @@ $shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.18);
   }
 
 
-  
+
   .dashboard-grid .dashboard-card,
   .featured-grid .featured-card {
     flex: 0 0 clamp(260px, 80vw, 320px);

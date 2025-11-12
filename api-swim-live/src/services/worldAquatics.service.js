@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+﻿const puppeteer = require("puppeteer");
 const axios = require("axios");
 const cheerio = require("cheerio");
 const cache = require("../../lib/cache");
@@ -177,7 +177,30 @@ async function fetchRankings(params = {}) {
               });
 
               clickCount++;
-              await new Promise((resolve) => setTimeout(resolve, 4000));
+              console.log(`✓ Click ${clickCount} en "Show More" realizado`);
+              
+              // CRUCIAL: Esperar a que se rendericen las nuevas filas
+              await new Promise((resolve) => setTimeout(resolve, 3000));
+              
+              // INMEDIATAMENTE hacer scroll por las filas nuevas para activar lazy loading
+              console.log(`🔄 Haciendo scroll de las filas recién cargadas...`);
+              await page.evaluate(async () => {
+                const tabla = document.querySelector("table");
+                if (tabla) {
+                  const filas = tabla.querySelectorAll("tbody tr");
+                  // Scroll rápido por TODAS las filas actuales
+                  for (let i = 0; i < filas.length; i++) {
+                    filas[i]?.scrollIntoView({ behavior: "auto", block: "center" });
+                    // Solo 50ms por fila en esta pasada rápida
+                    if (i % 5 === 0) {
+                      await new Promise(r => setTimeout(r, 50));
+                    }
+                  }
+                }
+              });
+              
+              console.log(`✅ Scroll post-click completado, esperando carga...`);
+              await new Promise((resolve) => setTimeout(resolve, 2000));
               errorCount = 0; // Reset error count on success
             } else {
               // Botón no visible, intentar scroll
@@ -223,7 +246,90 @@ async function fetchRankings(params = {}) {
       }
     }
 
+    
+    // Scroll FINAL más ligero (ya hicimos scroll después de cada "Show More")
+    console.log("📸 Scroll final para asegurar carga de todas las imágenes...");
     await new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    // Contar filas totales
+    const totalFilas = await page.evaluate(() => {
+      const tabla = document.querySelector("table");
+      return tabla ? tabla.querySelectorAll("tbody tr").length : 0;
+    });
+    
+    console.log(`🔄 Pasada final por ${totalFilas} filas...`);
+    
+    // Pasada FINAL más rápida (ya hicimos pre-scroll)
+    await page.evaluate(async () => {
+      const tabla = document.querySelector("table");
+      if (!tabla) return;
+      
+      const filas = tabla.querySelectorAll("tbody tr");
+      
+      // Scroll moderado cada 2 filas con menos espera
+      for (let i = 0; i < filas.length; i += 2) {
+        filas[i]?.scrollIntoView({ 
+          behavior: "auto", 
+          block: "center"
+        });
+        
+        // Menos espera: solo 100ms cada 2 filas
+        await new Promise(r => setTimeout(r, 100));
+        
+        // Log cada 20 filas
+        if (i % 20 === 0 && i > 0) {
+          console.log(`  → ${i}/${filas.length} filas procesadas`);
+        }
+      }
+      
+      // Scroll final: arriba -> abajo
+      window.scrollTo(0, 0);
+      await new Promise(r => setTimeout(r, 1000));
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise(r => setTimeout(r, 1000));
+    });
+    
+    console.log(`✅ Scroll final completado`);
+    
+    // Esperar AGRESIVAMENTE a que las imágenes se carguen
+    console.log("⏳ Esperando carga de todas las imágenes...");
+    
+    // Espera inicial para que empiecen a cargar
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    
+    try {
+      await page.waitForFunction(() => {
+        const images = document.querySelectorAll(
+          "img.object-fit-cover-picture__img"
+        );
+        let loadedCount = 0;
+        let totalImages = images.length;
+        
+        images.forEach((img) => {
+          // Verificar si la imagen está cargada Y no es un placeholder
+          const src = img.getAttribute("src") || img.src;
+          const isLoaded = img.complete && img.naturalHeight > 0;
+          const isReal = src && !src.includes("data:") && src.includes("resources.fina.org");
+          
+          if (isLoaded && isReal) {
+            loadedCount++;
+          }
+        });
+        
+        const percentage = totalImages > 0 ? Math.round(loadedCount/totalImages*100) : 0;
+        console.log(`📊 Imágenes: ${loadedCount}/${totalImages} (${percentage}%) cargadas`);
+        
+        // Umbral MUY bajo (30%) pero con más tiempo
+        return loadedCount >= totalImages * 0.3 || totalImages === 0;
+      }, { timeout: 30000 }); // Timeout aumentado a 30s
+      
+      console.log("✅ Suficientes imágenes cargadas, extrayendo datos...");
+    } catch (error) {
+      console.warn("⚠️ Timeout esperando imágenes - extrayendo lo que hay disponible");
+    }
+    
+    // Espera adicional final para estabilidad
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     const datos = await page.evaluate(() => {
       const resultado = { filtros: {}, rankings: [] };
@@ -256,10 +362,85 @@ async function fetchRankings(params = {}) {
 
       if (tablaRankings) {
         const filas = tablaRankings.querySelectorAll("tbody tr");
-        filas.forEach((fila) => {
+        filas.forEach((fila, index) => {
           const celdas = fila.querySelectorAll("td");
           if (celdas.length >= 3) {
-            // Reducido a 3 mínimo para ser más flexible
+            // Extraer imagen del nadador - Búsqueda mejorada con múltiples fallbacks
+            let imageUrl = "";
+            let hasPhoto = false;
+            
+            // Buscar el contenedor del headshot
+            const headshotWrapper = celdas[2]?.querySelector(".athlete-headshot");
+
+            if (headshotWrapper) {
+              // Verificar si tiene foto real o es avatar genérico
+              const picture = headshotWrapper.querySelector("picture");
+              
+              if (picture) {
+                hasPhoto = true;
+                
+                // Método 1: Buscar en <source srcset> (mejor calidad)
+                const sourceElement = picture.querySelector("source[srcset]");
+                if (sourceElement) {
+                  const srcset = sourceElement.getAttribute("srcset") || "";
+                  if (srcset) {
+                    // Extraer URLs del srcset: "url1?width=80, url2?width=160 2x"
+                    const srcsetUrls = srcset.split(",").map(s => s.trim());
+                    
+                    // Priorizar la URL de alta resolución (con "2x")
+                    const highRes = srcsetUrls.find(s => s.includes("2x"));
+                    if (highRes) {
+                      imageUrl = highRes.split(" ")[0];
+                    } else if (srcsetUrls[0]) {
+                      imageUrl = srcsetUrls[0].split(" ")[0];
+                    }
+                  }
+                }
+                
+                // Método 2: Si no hay srcset, buscar en <img src>
+                if (!imageUrl) {
+                  const imgElement = picture.querySelector("img.object-fit-cover-picture__img");
+                  if (imgElement) {
+                    imageUrl = imgElement.getAttribute("src") || imgElement.src || "";
+                  }
+                }
+              }
+            }
+            
+            // Normalizar URL si existe
+            if (imageUrl && !imageUrl.startsWith("data:")) {
+              // Convertir URLs relativas a absolutas
+              if (imageUrl.startsWith("//")) {
+                imageUrl = "https:" + imageUrl;
+              } else if (imageUrl.startsWith("/")) {
+                imageUrl = "https://www.worldaquatics.com" + imageUrl;
+              }
+              
+              // Mejorar resolución: cambiar width=80 por width=160
+              if (imageUrl.includes("?width=80")) {
+                imageUrl = imageUrl.replace("?width=80", "?width=160");
+              } else if (imageUrl.includes("?width=") && !imageUrl.includes("width=160")) {
+                imageUrl = imageUrl.split("?")[0] + "?width=160";
+              } else if (!imageUrl.includes("?width=")) {
+                const separator = imageUrl.includes("?") ? "&" : "?";
+                imageUrl = imageUrl + separator + "width=160";
+              }
+            } else {
+              // Limpiar si es data: o vacío
+              imageUrl = "";
+            }
+
+            // Extraer enlace al perfil del nadador
+            let profileUrl = "";
+            const linkElement = celdas[2]?.querySelector("a.rankings-table__person-link");
+            if (linkElement) {
+              const href = linkElement.getAttribute("href") || "";
+              if (href) {
+                profileUrl = href.startsWith("//") ? "https:" + href : 
+                            href.startsWith("/") ? "https://www.worldaquatics.com" + href : href;
+              }
+            }
+
             const nadador = {
               overallRank: celdas[0]?.textContent.trim() || "",
               country: celdas[1]?.textContent.trim() || "",
@@ -271,6 +452,10 @@ async function fetchRankings(params = {}) {
               competition: celdas[7]?.textContent.trim() || "",
               location: celdas[8]?.textContent.trim() || "",
               date: celdas[9]?.textContent.trim() || "",
+              imageUrl: imageUrl,
+              profileUrl: profileUrl,
+              hasPhoto: hasPhoto, // Indica si existe un headshot (aunque no se haya cargado)
+              rowIndex: index,
             };
             // Ser más flexible: solo requiere nombre o país
             if (nadador.name || nadador.country)
@@ -285,6 +470,17 @@ async function fetchRankings(params = {}) {
     if (!datos || !datos.rankings || datos.rankings.length === 0) {
       throw new Error("No se encontraron rankings en la página");
     }
+
+    // Estadísticas detalladas
+    const imagesCount = datos.rankings.filter(r => r.imageUrl && r.imageUrl.length > 0).length;
+    const hasPhotoCount = datos.rankings.filter(r => r.hasPhoto).length;
+    const percentage = Math.round(imagesCount/datos.rankings.length*100);
+    
+    console.log(`📊 Estadísticas de scraping:`);
+    console.log(`   Total nadadores: ${datos.rankings.length}`);
+    console.log(`   Con headshot disponible: ${hasPhotoCount} (${Math.round(hasPhotoCount/datos.rankings.length*100)}%)`);
+    console.log(`   Imágenes extraídas: ${imagesCount} (${percentage}%)`);
+    console.log(`   Avatares genéricos: ${datos.rankings.length - hasPhotoCount}`);
 
     // NO aplicar slice aquí - guardamos TODOS los registros en caché
     const totalObtained = datos.rankings.length;

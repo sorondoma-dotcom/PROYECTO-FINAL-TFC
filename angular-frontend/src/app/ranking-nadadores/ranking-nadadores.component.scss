@@ -19,3 +19,62 @@ table {
   width: 100%;
   margin-top: 1rem;
 }
+
+// Estilos para las fotos de los nadadores
+.athlete-photo {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary-color, #1976d2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.athlete-photo-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: var(--background-color-light, #f5f5f5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border-color, #ddd);
+
+  mat-icon {
+    color: var(--text-secondary, #666);
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.athlete-name-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.athlete-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--primary-color, #1976d2);
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--accent-color, #ff4081);
+    text-decoration: underline;
+  }
+
+  .external-link-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    opacity: 0.7;
+  }
+}

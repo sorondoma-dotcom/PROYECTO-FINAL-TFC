@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { DatosService } from '../datos.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -18,6 +19,7 @@ import { MatDialogModule } from '@angular/material/dialog';
   standalone: true,
   templateUrl: './ranking-nadadores.component.html',
   imports: [
+    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     CountryFlagPipe,
@@ -38,7 +40,7 @@ export class RankingNadadoresComponent implements OnInit {
   distance = '100';
   stroke = 'BACKSTROKE';
   poolConfiguration: 'LCM' | 'SCM' = 'LCM';
-  limit = 10;
+  limit = 20;
 
   // datos
   nadadores: any[] = [];
@@ -90,8 +92,15 @@ export class RankingNadadoresComponent implements OnInit {
       })
       .subscribe({
         next: (res) => {
+          console.log('Respuesta completa rankings:', res);
           const datos = res?.rankings ?? res?.data ?? [];
           this.nadadores = datos.slice(0, this.limit);
+
+          // Log para debugging
+          const conImagen = this.nadadores.filter(n => n.imageUrl && n.imageUrl.length > 0).length;
+          console.log(`📊 Nadadores recibidos: ${this.nadadores.length}, Con imagen: ${conImagen}`);
+          console.log('Primeros 3 nadadores:', this.nadadores.slice(0, 3));
+
           this.loading = false;
           this.previousLimit = this.limit;
         },
@@ -100,7 +109,6 @@ export class RankingNadadoresComponent implements OnInit {
           this.loading = false;
         },
       });
-    console.log(this.nadadores);
   }
 
   onSubmit(event: Event) {
@@ -134,6 +142,7 @@ export class RankingNadadoresComponent implements OnInit {
   cerrarTimeline() {
     this.selectedTimeline = null;
   }
+
   get filteredStrokes() {
     const dist = Number(this.distance);
     if (dist > 400) {
@@ -145,5 +154,13 @@ export class RankingNadadoresComponent implements OnInit {
       );
     }
     return this.strokes;
+  }
+
+  onImageError(event: Event) {
+    // Si la imagen falla al cargar, ocultarla
+    const img = event.target as HTMLImageElement;
+    if (img) {
+      img.style.display = 'none';
+    }
   }
 }

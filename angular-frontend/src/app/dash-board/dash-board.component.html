@@ -150,20 +150,26 @@
               <!-- Logo de la competición -->
               @if (comp.logo) {
                 <div class="competition-logo-container">
-                  <img [src]="comp.logo" 
-                       [alt]="comp.name" 
+                  <img [src]="comp.logo"
+                       [alt]="comp.name"
                        class="competition-logo"
                        (error)="onImageError($event)">
                 </div>
               }
-              
+
               <mat-card-header>
                 <div class="card-header-content">
-                  @if (comp.countryCode) {
-                    <span class="country-flag" [attr.title]="comp.countryCode">
-                      {{ comp.countryCode | countryFlag }}
-                    </span>
-                  }
+                   @if (comp.flagImage) {
+                            <img
+                              [src]="comp.flagImage"
+                              [alt]="comp.countryCode || 'Bandera'"
+                              class="location__flag"
+                              loading="lazy"
+                            />
+                          } @else if (comp.countryCode) {
+                            <span class="location__flag">{{ comp.countryCode | countryFlag }}</span>
+                          }
+
                   <div class="card-title">
                     <mat-card-title>{{ comp.name }}</mat-card-title>
                     @if (comp.stage) {
