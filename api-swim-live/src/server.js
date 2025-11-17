@@ -8,8 +8,6 @@ app.listen(port, () => {
   logger.info({ port }, 'API corriendo');
   logger.info({
     endpoints: [
-      'GET /api/natacion',
-      'GET /api/natacion/:id',
       'GET /api/world-aquatics/rankings',
       'GET /api/world-aquatics/athletes',
       'GET /api/scrape?url=...'
