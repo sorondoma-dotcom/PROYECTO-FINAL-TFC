@@ -1,14 +1,16 @@
 import { Routes } from '@angular/router';
 import { CompeticionComponent } from './competicion/competicion.component';
 import { RankingNadadoresComponent } from './ranking-nadadores/ranking-nadadores.component';
-import path from 'path';
 import { DashBoardComponent } from './dash-board/dash-board.component';
 import { ResultadoPruebaComponent } from './resultado-prueba/resultado-prueba.component';
+import { AuthComponent } from './auth/auth.component';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: '', component: DashBoardComponent },
-  { path: 'competiciones', component: CompeticionComponent },
-  { path: 'nadadores', component: RankingNadadoresComponent },
-  { path: 'resultado-prueba', component: ResultadoPruebaComponent },
-  { path: '**', redirectTo: '' },
+  { path: 'auth', component: AuthComponent },
+  { path: '', component: DashBoardComponent, canActivate: [authGuard] },
+  { path: 'competiciones', component: CompeticionComponent, canActivate: [authGuard] },
+  { path: 'nadadores', component: RankingNadadoresComponent, canActivate: [authGuard] },
+  { path: 'resultado-prueba', component: ResultadoPruebaComponent, canActivate: [authGuard] },
+  { path: '**', redirectTo: 'auth' },
 ];
