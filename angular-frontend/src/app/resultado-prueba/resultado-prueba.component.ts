@@ -6,6 +6,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
+import { ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatosService } from '../datos.service';
 import {
@@ -22,10 +28,16 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatAutocompleteModule,
+    MatSelectModule,
+    MatRadioModule
   ],
   templateUrl: './resultado-prueba.component.html',
   styleUrls: ['./resultado-prueba.component.scss']
@@ -49,6 +61,8 @@ export class ResultadoPruebaComponent implements OnInit {
   tableError: string | null = null;
 
   filterText = '';
+  eventSearch = '';
+  unitSearch = '';
   private identifier: { slug?: string; url?: string } = {};
 
   constructor() {
@@ -93,7 +107,7 @@ export class ResultadoPruebaComponent implements OnInit {
   }
 
   get filteredEvents(): ResultEventSummary[] {
-    const term = this.filterText.trim().toLowerCase();
+    const term = (this.eventSearch || this.filterText).trim().toLowerCase();
     if (!term) return this.events;
     return this.events.filter((event) => {
       return (
@@ -103,9 +117,25 @@ export class ResultadoPruebaComponent implements OnInit {
     });
   }
 
+  get filteredUnits(): ResultUnit[] {
+    if (!this.selectedEvent) return [];
+    const term = this.unitSearch.trim().toLowerCase();
+    const units = this.selectedEvent.units || [];
+    if (!term) return units;
+    return units.filter((unit) => (unit.name || '').toLowerCase().includes(term));
+  }
+
   get selectedEvent(): ResultEventSummary | undefined {
     if (!this.selectedEventGuid) return undefined;
     return this.events.find((event) => event.eventGuid === this.selectedEventGuid);
+  }
+
+  onEventSearchChange(value: string): void {
+    this.eventSearch = value;
+  }
+
+  onUnitSearchChange(value: string): void {
+    this.unitSearch = value;
   }
 
   loadEvents(forceRefresh = false): void {
@@ -206,20 +236,25 @@ export class ResultadoPruebaComponent implements OnInit {
     });
   }
 
-  selectEvent(event: ResultEventSummary): void {
-    if (!event?.eventGuid) return;
-    this.selectedEventGuid = event.eventGuid;
+  selectEvent(eventGuid: string): void {
+    if (!eventGuid) return;
+    
+    const event = this.events.find(e => e.eventGuid === eventGuid);
+    if (!event) return;
+    
+    this.selectedEventGuid = eventGuid;
     const defaultUnit =
       event.units?.find((unit: any) => unit.isActive)?.unitId ||
       event.units?.[0]?.unitId ||
       null;
-    this.loadEventResults(event.eventGuid, defaultUnit);
+    
+    this.selectedUnitId = defaultUnit;
+    this.loadEventResults(eventGuid, defaultUnit);
   }
 
-  selectUnit(unit: ResultUnit): void {
-    if (!unit?.unitId || unit.unitId === this.selectedUnitId) return;
-    if (!this.selectedEventGuid) return;
-    this.loadEventResults(this.selectedEventGuid, unit.unitId);
+  onUnitChange(unitId: string): void {
+    if (!unitId || !this.selectedEventGuid) return;
+    this.loadEventResults(this.selectedEventGuid, unitId);
   }
 
   loadEventResults(eventGuid: string, unitId: string | null): void {

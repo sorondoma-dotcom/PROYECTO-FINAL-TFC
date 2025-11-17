@@ -57,58 +57,95 @@
   </div>
   } @else {
   <div class="results-layout">
-    <section class="events-panel">
-      <div class="events-panel__header">
-        <div class="events-panel__title-section">
-          <h2>Pruebas de Natación</h2>
-          <span class="events-panel__badge">{{ events.length }} eventos</span>
-        </div>
-        <input
-          type="text"
-          class="events-filter"
-          placeholder="Buscar por estilo (Freestyle, Backstroke...)..."
-          [(ngModel)]="filterText"
-        />
-      </div>
-
-      <div class="events-list">
-        @if (filteredEvents.length === 0) {
-        <p class="empty-state">No hay pruebas que coincidan con la búsqueda.</p>
-        } @for (event of filteredEvents; track trackByEvent($index, event)) {
-        <button
-          type="button"
-          class="event-pill"
-          [class.is-selected]="event.eventGuid === selectedEventGuid"
-          (click)="selectEvent(event)"
-        >
-          <div class="event-pill__content">
-            <mat-icon class="event-pill__icon">{{ getEventIcon(event) }}</mat-icon>
-            <div class="event-pill__text">
-              <span class="event-pill__title">{{ event.title }}</span>
-              @if(event.subtitle){
-              <small class="event-pill__subtitle">
-                {{ event.subtitle }}
-              </small>
+    <!-- Panel de selección de prueba y series -->
+    <section class="selection-panel">
+      <mat-card>
+        <mat-card-content>
+          <!-- Select de Pruebas -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>
+              <mat-icon class="select-icon">pool</mat-icon>
+              Seleccionar Prueba de Natación
+            </mat-label>
+            <mat-select 
+              [(ngModel)]="selectedEventGuid" 
+              (selectionChange)="selectEvent($event.value)"
+              placeholder="Elige una prueba..."
+            >
+              @for (event of filteredEvents; track event.eventGuid) {
+              <mat-option [value]="event.eventGuid">
+                <div class="event-option">
+                  <div class="event-option__text">
+                    <span class="event-option__title">{{ event.title }}</span>
+                    @if(event.subtitle) {
+                    <small class="event-option__subtitle">{{ event.subtitle }}</small>
+                    }
+                  </div>
+                  
+                </div>
+              </mat-option>
               }
-            </div>
+            </mat-select>
+            <mat-hint>{{ events.length }} pruebas de natación disponibles</mat-hint>
+          </mat-form-field>
+
+          <!-- Radio buttons para Series -->
+          @if (selectedEvent && selectedEvent.units && selectedEvent.units.length) {
+          <div class="units-section">
+            <h3 class="units-title">
+              <mat-icon>waves</mat-icon>
+              Series disponibles
+            </h3>
+            <mat-radio-group 
+              class="units-radio-group"
+              [(ngModel)]="selectedUnitId"
+              (change)="onUnitChange($event.value)"
+            >
+              @for (unit of selectedEvent.units; track unit.unitId) {
+              <mat-radio-button 
+                [value]="unit.unitId"
+                class="unit-radio"
+                [disabled]="tableLoading"
+              >
+                <div class="unit-label">
+                  <div class="unit-label__main">
+                    <mat-icon class="unit-label__icon">schedule</mat-icon>
+                    <span class="unit-label__name">{{ unit.name || 'Serie ' + (unit.order || '') }}</span>
+                    @if (unit.status) {
+                    <span 
+                      class="unit-label__status" 
+                      [class.official]="unit.status && unit.status.toLowerCase().includes('official')"
+                    >
+                      {{ unit.status }}
+                    </span>
+                    }
+                  </div>
+                  @if (unit.datetime) {
+                  <small class="unit-label__datetime">{{ unit.datetime }}</small>
+                  }
+                </div>
+              </mat-radio-button>
+              }
+            </mat-radio-group>
           </div>
-          <span class="event-pill__units">
-            {{ event.units?.length || 0 }} series
-          </span>
-        </button>
-        }
-      </div>
+          }
+        </mat-card-content>
+      </mat-card>
     </section>
 
+    <!-- Panel de resultados -->
     <section class="details-panel">
       @if (selectedEvent) {
       <mat-card class="event-details">
         <mat-card-header>
           <div class="details-heading">
-            <h2>{{ selectedEvent.title }}</h2>
-            @if (selectedEvent.subtitle) {
-            <p>{{ selectedEvent.subtitle }}</p>
-            }
+            <mat-icon class="details-heading__icon">{{ getEventIcon(selectedEvent) }}</mat-icon>
+            <div>
+              <h2>{{ selectedEvent.title }}</h2>
+              @if (selectedEvent.subtitle) {
+              <p>{{ selectedEvent.subtitle }}</p>
+              }
+            </div>
           </div>
           @if (selectedEvent.discipline) {
           <span class="discipline-tag">
@@ -117,37 +154,6 @@
           }
         </mat-card-header>
         <mat-card-content>
-          @if (selectedEvent.units?.length) {
-          <div class="unit-selector">
-            @for (unit of selectedEvent.units; track unit.unitId || unit.order)
-            {
-            <button
-              mat-stroked-button
-              type="button"
-              class="unit-button"
-              [class.is-active]="
-                unit.unitId === selectedUnitId ||
-                (!selectedUnitId && unit.isActive)
-              "
-              (click)="selectUnit(unit)"
-              [disabled]="tableLoading && unit.unitId === selectedUnitId"
-            >
-              @if (unit.status) {
-              <span class="unit-button__status">
-                {{ unit.status }}
-              </span>
-              }
-              <span class="unit-button__name">{{ unit.name || "Serie" }}</span>
-              @if(unit.datetime){
-              <small class="unit-button__meta">
-                {{ unit.datetime }}
-              </small>
-              }
-            </button>
-            }
-          </div>
-          }
-
           <div class="table-wrapper">
             @if (tableLoading) {
             <div class="state-block loading">
@@ -244,8 +250,8 @@
       </mat-card>
       } @else {
       <div class="details-placeholder">
-        <mat-icon>info</mat-icon>
-        <p>Selecciona una prueba para ver sus resultados.</p>
+        <mat-icon>pool</mat-icon>
+        <p>Selecciona una prueba y una serie para ver los resultados.</p>
       </div>
       }
     </section>

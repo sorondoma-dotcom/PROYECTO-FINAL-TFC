@@ -8,11 +8,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { DatosService } from '../datos.service';
-import { Router } from '@angular/router';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { CityNamePipe } from '../pipes/city-name.pipe';
 import { Competition, CompetitionGroup } from '../models/competition.interface';
+import { CompetitionFacadeService } from '../facades/competition-facade.service';
+import { CompetitionFilters } from '../models/filters/competition-filters.interface';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-competicion',
@@ -61,7 +62,7 @@ export class CompeticionComponent implements OnInit {
 
   private readonly selectedMonth = 'latest';
 
-  constructor(private datos: DatosService, private router: Router) {}
+  constructor(private competitionFacade: CompetitionFacadeService, private router: Router) {}
 
   ngOnInit(): void {
     // Inicializa el selector de años con el rango fijo 2019–2025
@@ -73,18 +74,19 @@ export class CompeticionComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.datos.getWorldAquaticsCompetitions({
+    const filters: CompetitionFilters = {
       group: 'FINA',
-      discipline: this.selectedDiscipline,
+      disciplines: this.selectedDiscipline,
       month: this.selectedMonth,
       year: this.selectedYear,
       refresh
-    }).subscribe({
-      next: (data: any) => {
-        const list = Array.isArray(data?.competitions) ? data.competitions : [];
-        this.handleCompetitions(list);
+    };
+
+    this.competitionFacade.fetchCompetitions(filters).subscribe({
+      next: (competitions) => {
+        this.handleCompetitions(competitions);
       },
-      error: (err) => {
+      error: (err:any) => {
         console.error('Error cargando competiciones de World Aquatics', err);
         this.error = 'No se pudieron cargar las competiciones en este momento.';
         this.competitions = [];

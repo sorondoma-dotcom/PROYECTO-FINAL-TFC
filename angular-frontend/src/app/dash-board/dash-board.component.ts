@@ -15,30 +15,7 @@ import { map, catchError } from 'rxjs/operators';
 import { MatTabsModule, MatTabChangeEvent } from '@angular/material/tabs';
 import { Router } from '@angular/router';
 import { Competition } from '../models/competition.interface';
-//TODO faltante separar las interfaces en archivos propios
-interface DashboardStats {
-  totalCompeticiones: number;
-  competicionesLive: number;
-  competiciones25m: number;
-  competiciones50m: number;
-  competicionesConResultados: number;
-}
-
-interface RankingEntry {
-  overallRank?: string;
-  country?: string;
-  name?: string;
-}
-
-interface TopEvent {
-  key: string;
-  title: string;
-  gender: 'M' | 'F';
-  distance: string;
-  stroke: string;
-  poolConfiguration: 'LCM' | 'SCM';
-  top: RankingEntry[];
-}
+import { DashboardStats, RankingEntryView, TopEvent } from '../models/dashboard.interfaces';
 
 @Component({
   selector: 'app-dash-board',
@@ -510,7 +487,7 @@ export class DashBoardComponent implements OnInit {
     });
   }
 
-  private mapearRespuestaRankings(res: any): RankingEntry[] {
+  private mapearRespuestaRankings(res: any): RankingEntryView[] {
     const items: any[] = Array.isArray(res)
       ? res
       : Array.isArray(res?.rankings)
@@ -534,15 +511,15 @@ export class DashBoardComponent implements OnInit {
     return name;
   }
 
-  getNombreRanking(e: RankingEntry): string {
+  getNombreRanking(e: RankingEntryView): string {
     return e.name || 'Desconocido';
   }
 
-  getPaisRanking(e: RankingEntry): string | null {
+  getPaisRanking(e: RankingEntryView): string | null {
     return e.country || null;
   }
 
-  getEtiquetaRanking(e: RankingEntry): string {
+  getEtiquetaRanking(e: RankingEntryView): string {
     return e.overallRank ? `#${e.overallRank}` : '';
   }
 

@@ -13,14 +13,30 @@ se puede filtrar hasta el año 1908 espectacular
 
 
 
-Maximizar el ancho de la pagina
+Aquí tienes un plan corto y accionable para cubrir los gaps críticos:
 
-en el dashboard utilizar pestañas por secciones
-
-que el inicio no se quede marcado si cambio de apartado
-
-ajustar los filtros y tamaño minimo en competiciones de 350px
-
-Que se resalte la seccion cuando se muestran los parciales
-
-Poner un select para las pruebas y segmentos
+- Base de datos y modelos
+- Definir esquema (usuarios, competiciones, eventos, resultados, favoritos) y migraciones.
+- Añadir capa de acceso a datos (ORM tipo Prisma/TypeORM o SQL nativo) y repositorios.
+- Ajustar servicios/controladores para leer/escribir en BD además del scraping (caché híbrido).
+- Autenticación y seguridad
+- Endpoints de registro/login con bcrypt (hash) y JWT (access/refresh).
+- Guardias/Interceptors en Angular para adjuntar token y redirigir al login.
+- Roles básicos (usuario/admin) si aplica; rate limiting ya existe, mantenerlo.
+- Validaciones y UX de formularios
+- Formularios reactivos en Angular con validadores y feedback en vivo.
+- Validación en backend (JOI/Zod/express-validator).
+- Modales de confirmación en operaciones sensibles (registro, logout, acciones de guardado).
+- Frontend adaptativo y accesibilidad
+- Revisar responsive (breakpoints, grid) y textos alternativos/ARIA en componentes clave.
+- Pruebas rápidas con Lighthouse/AXE y ajustes en contrastes y foco.
+- Guías y documentación
+- Manual de usuario (instalación, login, flujo de uso, capturas).
+- Guía de estilos (paleta, tipografía, componentes UI) y, si tienes prototipo, enlazarlo.
+- Despliegue
+- Variables de entorno (.env) para API/BD/secretos.
+- Scripts de build y arranque (prod) para API y Angular (build + servir).
+- Una opción de hosting (ej. Render/Vercel para front, Railway/Fly/Docker en VPS para back) y URL pública.
+- Originalidad/actualidad
+- Mantener enfoque en datos en vivo de natación y añadir algún extra diferencial (alertas de eventos, favoritos, comparativas históricas).
+Si te parece bien, podemos priorizar: 1) BD+auth, 2) validaciones/modales, 3) despliegue y documentación. Dí cuál empezamos.
