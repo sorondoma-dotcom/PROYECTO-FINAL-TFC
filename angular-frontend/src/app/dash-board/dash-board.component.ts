@@ -389,51 +389,67 @@ export class DashBoardComponent implements OnInit {
   private cargarRankingsDestacados(): void {
     const eventos: Omit<TopEvent, 'top'>[] = [
       {
-        key: 'F_100_BACK',
-        title: '100 espalda (F)',
+        key: 'F_50_BACK',
+        title: '50 espalda (F)',
         gender: 'F',
-        distance: '100',
+        distance: '50',
         stroke: 'BACKSTROKE',
         poolConfiguration: 'LCM',
       },
       {
-        key: 'M_100_BACK',
-        title: '100 espalda (M)',
+        key: 'M_50_BACK',
+        title: '50 espalda (M)',
         gender: 'M',
-        distance: '100',
+        distance: '50',
         stroke: 'BACKSTROKE',
         poolConfiguration: 'LCM',
       },
       {
-        key: 'F_100_FREE',
-        title: '100 libre (F)',
+        key: 'F_50_FREE',
+        title: '50 libre (F)',
         gender: 'F',
-        distance: '100',
+        distance: '50',
         stroke: 'FREESTYLE',
         poolConfiguration: 'LCM',
       },
       {
-        key: 'M_100_FREE',
-        title: '100 libre (M)',
+        key: 'M_50_FREE',
+        title: '50 libre (M)',
         gender: 'M',
-        distance: '100',
+        distance: '50',
         stroke: 'FREESTYLE',
         poolConfiguration: 'LCM',
       },
       {
-        key: 'F_200_FREE',
-        title: '200 libre (F)',
+        key: 'F_50_BUTTERFLY',
+        title: '50 mariposa (F)',
         gender: 'F',
-        distance: '200',
-        stroke: 'FREESTYLE',
+        distance: '50',
+        stroke: 'BUTTERFLY',
         poolConfiguration: 'LCM',
       },
       {
-        key: 'M_200_FREE',
-        title: '200 libre (M)',
+        key: 'M_50_BUTTERFLY',
+        title: '50 mariposa (M)',
         gender: 'M',
-        distance: '200',
-        stroke: 'FREESTYLE',
+        distance: '50',
+        stroke: 'BUTTERFLY',
+        poolConfiguration: 'LCM',
+      },
+            {
+        key: 'F_50_BREASTSTROKE',
+        title: '50 braza (F)',
+        gender: 'F',
+        distance: '50',
+        stroke: 'BREASTSTROKE',
+        poolConfiguration: 'LCM',
+      },
+      {
+        key: 'M_50_BREASTSTROKE',
+        title: '50 braza (M)',
+        gender: 'M',
+        distance: '50',
+        stroke: 'BREASTSTROKE',
         poolConfiguration: 'LCM',
       },
     ];
@@ -519,7 +535,7 @@ export class DashBoardComponent implements OnInit {
     return e.country || null;
   }
 
-  getEtiquetaRanking(e: RankingEntryView): string {
+    getEtiquetaRanking(e: RankingEntryView): string {
     return e.overallRank ? `#${e.overallRank}` : '';
   }
 
