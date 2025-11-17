@@ -3,6 +3,13 @@ const cheerio = require('cheerio');
 const cache = require('../../lib/cache');
 const { USER_AGENT } = require('../../lib/constants');
 const logger = require('../../lib/logger');
+const {
+  CompetitionSummary,
+  CompetitionDetail,
+  EventItem,
+  EventSchedule,
+  PdfLink
+} = require('../models/competition.model');
 
 const BASE_HOST = 'https://live.swimrankings.net';
 const DEFAULT_CACHE_TTL = Number.parseInt(process.env.NATACION_CACHE_TTL || '900', 10);
@@ -87,7 +94,7 @@ function parseCompetitionRows($, selector) {
     const targetLink = primaryLink || fallbackLink || '';
     const { href, competitionId } = extractCompetitionLink(targetLink);
 
-    const competition = {
+    const competition = CompetitionSummary.fromListing({
       id: competitionId,
       date: cleanText($(cells[0]).text()),
       course: cleanText($(cells[1]).text()),
@@ -95,7 +102,7 @@ function parseCompetitionRows($, selector) {
       name: cleanText($(cells[3]).text()),
       urlResultados: href || undefined,
       hasResults: Boolean(targetLink)
-    };
+    });
 
     if (!competition.date && !competition.name) return;
 
@@ -131,13 +138,13 @@ function extractPdfLinks($, cell, baseUrl) {
     const typeMatch = file.match(/(StartList|Start|ResultList|Result|Results)/i);
     const indexMatch = file.match(/_(\d+)\.pdf$/i);
 
-    links.push({
+    links.push(new PdfLink({
       texto: cleanText($link.text()),
       url: absoluteUrl,
       file,
       tipo: typeMatch ? (typeMatch[1].toLowerCase().includes('start') ? 'salidas' : 'resultados') : undefined,
       index: indexMatch ? Number.parseInt(indexMatch[1], 10) : undefined
-    });
+    }));
   });
   return links;
 }
@@ -162,7 +169,7 @@ function parseCompetitionDetail($, id) {
 
     if ($row.hasClass('trTitle2')) {
       const estilo = cleanText($row.find('td').eq(0).text());
-      estiloActual = { estilo, masculino: [], femenino: [] };
+      estiloActual = new EventSchedule({ estilo, masculino: [], femenino: [] });
       eventosPorEstilo.push(estiloActual);
       return;
     }
@@ -170,7 +177,7 @@ function parseCompetitionDetail($, id) {
     const cells = $row.find('td');
     if (!estiloActual || cells.length < 11) return;
 
-    const eventoMasc = {
+    const eventoMasc = new EventItem({
       distancia: cleanText($(cells[0]).text()),
       tipo: cleanText($(cells[1]).text()),
       categoria: cleanText($(cells[2]).text()),
@@ -178,9 +185,9 @@ function parseCompetitionDetail($, id) {
       info: cleanText($(cells[4]).text()),
       pdfSalidas: extractPdfLinks($, cells[3], baseUrl),
       pdfResultados: extractPdfLinks($, cells[4], baseUrl)
-    };
+    });
 
-    const eventoFem = {
+    const eventoFem = new EventItem({
       distancia: cleanText($(cells[6]).text()),
       tipo: cleanText($(cells[7]).text()),
       categoria: cleanText($(cells[8]).text()),
@@ -188,13 +195,13 @@ function parseCompetitionDetail($, id) {
       info: cleanText($(cells[10]).text()),
       pdfSalidas: extractPdfLinks($, cells[9], baseUrl),
       pdfResultados: extractPdfLinks($, cells[10], baseUrl)
-    };
+    });
 
     if (eventoMasc.distancia && eventoMasc.distancia !== '.........') estiloActual.masculino.push(eventoMasc);
     if (eventoFem.distancia && eventoFem.distancia !== '.........') estiloActual.femenino.push(eventoFem);
   });
 
-  return { infoCompeticion, eventosPorEstilo };
+  return new CompetitionDetail({ infoCompeticion, eventosPorEstilo });
 }
 
 async function fetchCompetitions(options = {}, traceId) {

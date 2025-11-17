@@ -4,6 +4,7 @@ const cheerio = require("cheerio");
 const cache = require("../../lib/cache");
 const logger = require("../../lib/logger");
 const { USER_AGENT } = require("../../lib/constants");
+const { RankingEntry } = require("../models/ranking.model");
 
 const delay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -471,19 +472,42 @@ async function fetchRankings(params = {}) {
       throw new Error("No se encontraron rankings en la página");
     }
 
+    // Normalizar rankings a la capa de modelo
+    const rankingEntries = (datos.rankings || []).map(
+      (entry) =>
+        RankingEntry.fromRaw({
+          position: entry.overallRank,
+          overallRank: entry.overallRank,
+          athlete: entry.name,
+          name: entry.name,
+          country: entry.country,
+          time: entry.time,
+          points: entry.points,
+          age: entry.age,
+          reactionTime: entry.tag,
+          competition: entry.competition,
+          location: entry.location,
+          date: entry.date,
+          imageUrl: entry.imageUrl,
+          profileUrl: entry.profileUrl,
+          hasPhoto: entry.hasPhoto,
+          extra: { tag: entry.tag }
+        })
+    );
+
     // Estadísticas detalladas
-    const imagesCount = datos.rankings.filter(r => r.imageUrl && r.imageUrl.length > 0).length;
-    const hasPhotoCount = datos.rankings.filter(r => r.hasPhoto).length;
-    const percentage = Math.round(imagesCount/datos.rankings.length*100);
+    const imagesCount = rankingEntries.filter(r => r.imageUrl && r.imageUrl.length > 0).length;
+    const hasPhotoCount = rankingEntries.filter(r => r.hasPhoto).length;
+    const percentage = Math.round(imagesCount/rankingEntries.length*100);
     
     console.log(`📊 Estadísticas de scraping:`);
-    console.log(`   Total nadadores: ${datos.rankings.length}`);
-    console.log(`   Con headshot disponible: ${hasPhotoCount} (${Math.round(hasPhotoCount/datos.rankings.length*100)}%)`);
+    console.log(`   Total nadadores: ${rankingEntries.length}`);
+    console.log(`   Con headshot disponible: ${hasPhotoCount} (${Math.round(hasPhotoCount/rankingEntries.length*100)}%)`);
     console.log(`   Imágenes extraídas: ${imagesCount} (${percentage}%)`);
-    console.log(`   Avatares genéricos: ${datos.rankings.length - hasPhotoCount}`);
+    console.log(`   Avatares genéricos: ${rankingEntries.length - hasPhotoCount}`);
 
     // NO aplicar slice aquí - guardamos TODOS los registros en caché
-    const totalObtained = datos.rankings.length;
+    const totalObtained = rankingEntries.length;
     const requestedLimitNum = parseInt(limit) || totalObtained;
 
     const result = {
@@ -496,13 +520,14 @@ async function fetchRankings(params = {}) {
         distance: `${distance}m`,
         stroke,
         poolConfiguration,
-        year,
-      },
-      total: totalObtained,
-      clicksRealizados: clickCount,
-      cachedLimit: totalObtained, // Guardar cuántos registros tenemos en caché
-      ...datos, // Incluye todos los rankings obtenidos
-    };
+      year,
+    },
+    total: totalObtained,
+    clicksRealizados: clickCount,
+    cachedLimit: totalObtained, // Guardar cuántos registros tenemos en caché
+    ...datos, // Incluye todos los rankings obtenidos
+    rankings: rankingEntries,
+  };
 
     // Guardar en caché con TODOS los registros obtenidos (sin límite en la clave)
     cache.set(cacheKey, result);
@@ -510,7 +535,7 @@ async function fetchRankings(params = {}) {
     // Devolver solo los registros solicitados
     return {
       ...result,
-      rankings: datos.rankings.slice(0, requestedLimitNum),
+      rankings: rankingEntries.slice(0, requestedLimitNum),
       total: Math.min(requestedLimitNum, totalObtained),
       requestedLimit: requestedLimitNum,
       cachedLimit: totalObtained,
@@ -1563,3 +1588,4 @@ module.exports = {
   fetchCompetitionEvents,
   fetchCompetitionEventResults,
 };
+
