@@ -14,10 +14,12 @@ export class WorldAquaticsApiService {
 
   getCompetitions(filters: CompetitionFilters = {}): Observable<any> {
     let params = new HttpParams();
+    const discipline = filters.discipline ?? filters.disciplines;
+
     if (filters.group) params = params.set('group', filters.group);
     if (filters.year != null) params = params.set('year', String(filters.year));
     if (filters.month) params = params.set('month', filters.month);
-    if (filters.disciplines) params = params.set('disciplines', filters.disciplines);
+    if (discipline) params = params.set('discipline', discipline);
     if (filters.refresh) params = params.set('refresh', 'true');
     if (filters.cacheTtl != null) params = params.set('cacheTtl', String(filters.cacheTtl));
     return this.http.get(`${this.baseUrl}/competitions`, { params });

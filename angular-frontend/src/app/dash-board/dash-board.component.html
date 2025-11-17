@@ -218,7 +218,12 @@
     <div class="featured-section">
       <h2>🏅 Nadadores destacados por prueba</h2>
 
-      @if (errorRankings && eventosTop.length === 0) {
+      @if (loadingRankings) {
+        <div class="state-block loading">
+          <mat-progress-spinner diameter="40" mode="indeterminate"></mat-progress-spinner>
+          <span>Cargando rankings destacados...</span>
+        </div>
+      } @else if (errorRankings && eventosTop.length === 0) {
         <mat-card class="error-card">
           <mat-card-content>
             <div class="error-content">

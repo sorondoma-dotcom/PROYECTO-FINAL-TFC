@@ -60,7 +60,7 @@ export class DatosService {
     if (filters.group) params = params.set('group', filters.group);
     if (filters.year != null) params = params.set('year', String(filters.year));
     if (filters.month) params = params.set('month', filters.month);
-    if (filters.discipline) params = params.set('disciplines', filters.discipline);
+    if (filters.discipline) params = params.set('discipline', filters.discipline);
     if (filters.refresh) params = params.set('refresh', 'true');
     if (filters.cacheTtl != null) params = params.set('cacheTtl', String(filters.cacheTtl));
 

@@ -76,10 +76,9 @@ export class CompeticionComponent implements OnInit {
 
     const filters: CompetitionFilters = {
       group: 'FINA',
-      discipline: this.selectedDiscipline,
+      disciplines: this.selectedDiscipline,
       month: this.selectedMonth,
       year: this.selectedYear,
-      cacheTtl: 600, // evita rehacer scraping en menos de 10 minutos
       refresh
     };
 
@@ -343,3 +342,4 @@ export class CompeticionComponent implements OnInit {
     });
   }
 }
+

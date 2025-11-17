@@ -6,6 +6,11 @@ const logger = require("../../lib/logger");
 const { USER_AGENT } = require("../../lib/constants");
 const { RankingEntry } = require("../models/ranking.model");
 
+const DEFAULT_COMP_TTL = Number.parseInt(
+  process.env.WORLD_AQUATICS_COMP_TTL || "3600",
+  10
+);
+
 const delay = (ms = 500) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -664,22 +669,29 @@ function extractMonthInfo($header) {
 async function fetchCompetitionsList(params = {}) {
   const {
     group = "FINA",
-    year = new Date().getFullYear(),
+    year: rawYear = new Date().getFullYear(),
     month = "latest",
-    discipline = "SW",
-    cacheTtl = Number.parseInt(
-      process.env.WORLD_AQUATICS_COMP_TTL || "3600",
-      10
-    ),
+    discipline: disciplineParam,
+    disciplines: disciplinesParam,
+    cacheTtl: rawCacheTtl = DEFAULT_COMP_TTL,
     refresh = false,
   } = params;
+
+  const year = Number.isFinite(Number(rawYear))
+    ? Number(rawYear)
+    : new Date().getFullYear();
+  const discipline =
+    (disciplineParam || disciplinesParam || "SW").toString().trim() || "SW";
+  const cacheTtl = Number.isFinite(Number(rawCacheTtl))
+    ? Math.max(60, Number(rawCacheTtl))
+    : DEFAULT_COMP_TTL;
 
   const cacheKey = `world-aquatics-competitions-${group}-${year}-${month}-${discipline}`;
   if (!refresh) {
     const cached = cache.get(cacheKey);
     if (cached) {
       logger.debug({ cacheKey }, "Competencias de World Aquatics desde cache");
-      return cached;
+      return { ...cached, fromCache: true, cacheKey };
     }
   } else {
     cache.del(cacheKey);
@@ -940,6 +952,9 @@ async function fetchCompetitionsList(params = {}) {
       filters: { group, year, month, discipline },
       total: competitions.length,
       competitions,
+      cacheKey,
+      cacheTtl,
+      fromCache: false,
     };
 
     cache.set(cacheKey, result, cacheTtl);

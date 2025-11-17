@@ -36,6 +36,7 @@ import { DashboardStats, RankingEntryView, TopEvent } from '../models/dashboard.
 })
 export class DashBoardComponent implements OnInit {
   loading = true;
+  loadingRankings = true;
   stats: DashboardStats = {
     totalCompeticiones: 0,
     competicionesLive: 0,
@@ -385,7 +386,8 @@ export class DashBoardComponent implements OnInit {
       competition.endDate ?? ''
     }`;
 
-  private cargarRankingsDestacados(): void {
+    private cargarRankingsDestacados(): void {
+    this.loadingRankings = true;
     const eventos: Omit<TopEvent, 'top'>[] = [
       {
         key: 'F_50_BACK',
@@ -435,7 +437,7 @@ export class DashBoardComponent implements OnInit {
         stroke: 'BUTTERFLY',
         poolConfiguration: 'LCM',
       },
-            {
+      {
         key: 'F_50_BREASTSTROKE',
         title: '50 braza (F)',
         gender: 'F',
@@ -453,7 +455,7 @@ export class DashBoardComponent implements OnInit {
       },
     ];
 
-    const requests = eventos.map((e:any) =>
+    const requests = eventos.map((e: any) =>
       this.datosService
         .getRankings({
           gender: e.gender,
@@ -469,13 +471,12 @@ export class DashBoardComponent implements OnInit {
             error: false,
           })),
           catchError((err) => {
-            console.error(`Error cargando ranking para ${e.title}:`, err);
+            console.error('Error cargando ranking para ' + e.title + ':', err);
             return of({
               ...e,
               top: [],
               error: true,
-              errorMessage:
-                err?.error?.mensaje || err?.message || 'Error al cargar datos',
+              errorMessage: err?.error?.mensaje || err?.message || 'Error al cargar datos',
             });
           })
         )
@@ -483,21 +484,19 @@ export class DashBoardComponent implements OnInit {
 
     forkJoin(requests).subscribe({
       next: (res: any[]) => {
-        this.eventosTop = res.filter(
-          (ev: any) => !ev.error && ev.top.length > 0
-        ) as TopEvent[];
+        this.eventosTop = res.filter((ev: any) => !ev.error && ev.top.length > 0) as TopEvent[];
         const errores = res.filter((ev: any) => ev.error);
         if (errores.length > 0 && this.eventosTop.length === 0) {
-          this.errorRankings =
-            'No se pudieron cargar los rankings. Por favor, intenta más tarde.';
+          this.errorRankings = 'No se pudieron cargar los rankings. Por favor, intenta más tarde.';
         } else if (errores.length > 0) {
           this.errorRankings = `Algunos rankings no se pudieron cargar (${errores.length} de ${res.length})`;
         }
+        this.loadingRankings = false;
       },
       error: (err) => {
         console.error('Error crítico cargando rankings:', err);
-        this.errorRankings =
-          'Error al cargar los rankings. Por favor, intenta más tarde.';
+        this.errorRankings = 'Error al cargar los rankings. Por favor, intenta más tarde.';
+        this.loadingRankings = false;
       },
     });
   }

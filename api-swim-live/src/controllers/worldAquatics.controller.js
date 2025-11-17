@@ -23,7 +23,18 @@ async function athletes(req, res) {
 async function competitions(req, res) {
   try {
     const params = req.query || {};
-    const result = await worldService.fetchCompetitionsList(params);
+    const cacheTtl = Number.isFinite(Number(params.cacheTtl))
+      ? Number(params.cacheTtl)
+      : Number.parseInt(process.env.WORLD_AQUATICS_COMP_TTL || "3600", 10);
+
+    const result = await worldService.fetchCompetitionsList({
+      ...params,
+      cacheTtl,
+    });
+
+    if (cacheTtl > 0) {
+      res.set('Cache-Control', `public, max-age=${cacheTtl}`);
+    }
     res.json(result);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al obtener competiciones de World Aquatics', mensaje: error.message });
