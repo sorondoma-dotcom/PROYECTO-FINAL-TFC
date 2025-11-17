@@ -65,32 +65,6 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- 25m -->
-      <mat-card class="dashboard-card stat-card">
-        <mat-card-content>
-          <div class="stat-content">
-            <div class="stat-icon"><mat-icon>straighten</mat-icon></div>
-            <div class="stat-info">
-              <h3>{{ stats.competiciones25m }}</h3>
-              <p>Piscina 25m</p>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
-      <!-- 50m -->
-      <mat-card class="dashboard-card stat-card">
-        <mat-card-content>
-          <div class="stat-content">
-            <div class="stat-icon"><mat-icon>waves</mat-icon></div>
-            <div class="stat-info">
-              <h3>{{ stats.competiciones50m }}</h3>
-              <p>Piscina 50m</p>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-
       <!-- Con Resultados -->
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
@@ -124,9 +98,6 @@
       </mat-card>
     </div>
   </ng-template>
-
-  <!-- DESTACADAS -->
- <!-- ...existing code... -->
 
   <!-- DESTACADAS -->
   <ng-template #tplDestacadas>
@@ -242,8 +213,6 @@
     }
   </ng-template>
 
-<!-- ...existing code... -->
-
   <!-- RANKINGS -->
   <ng-template #tplRankings>
     <div class="featured-section">
@@ -272,32 +241,98 @@
       @if (eventosTop && eventosTop.length > 0) {
         <div class="featured-grid">
           @for (ev of eventosTop; track ev.key) {
-            <mat-card class="featured-card">
+            <mat-card class="featured-card ranking-card">
               <mat-card-header>
                 <div class="card-header-content">
                   <div class="card-title">
                     <mat-card-title>{{ ev.title }}</mat-card-title>
-                    <mat-card-subtitle>{{ ev.poolConfiguration }} • {{ ev.gender }}</mat-card-subtitle>
+                    <mat-card-subtitle>{{ ev.poolConfiguration }} • {{ ev.gender === 'M' ? 'Masculino' : 'Femenino' }}</mat-card-subtitle>
                   </div>
                 </div>
               </mat-card-header>
+
               <mat-card-content>
-                <div class="card-details">
+                <div class="ranking-list">
                   @for (t of ev.top; track $index) {
-                    <div class="detail-item">
-                      @if (getPaisRanking(t)) {
-                        <span class="country-flag" [attr.title]="getPaisRanking(t)">
-                          {{ getPaisRanking(t) | countryFlag }}
-                        </span>
+                    <div 
+                      class="ranking-item" 
+                      [class.first-place]="($index + 1) === 1"
+                      (click)="navigateToAthleteRanking(ev, t)"
+                      role="button"
+                      tabindex="0"
+                      [attr.aria-label]="'Ver ranking de ' + getNombreRanking(t)"
+                    >
+                      @if (($index + 1) === 1) {
+                        <div class="medal-badge">
+                          <mat-icon>emoji_events</mat-icon>
+                        </div>
                       }
-                      <span class="athlete-name">{{ getNombreRanking(t) }}</span>
-                      @if (getEtiquetaRanking(t)) {
-                        <span class="athlete-mark">{{ getEtiquetaRanking(t) }}</span>
-                      }
+                      
+                      <div class="rank-number">
+                        <span>{{ $index + 1 }}</span>
+                      </div>
+
+                      <!-- Foto del atleta -->
+                      <div class="athlete-photo-container">
+                        @if (t.imageUrl) {
+                          <img
+                            [src]="t.imageUrl"
+                            [alt]="t.name"
+                            [attr.data-name]="t.name"
+                            class="athlete-photo"
+                            (error)="onAthleteImageError($event)"
+                            loading="lazy"
+                          >
+                        } @else {
+                          <img
+                            [src]="getAvatarUrl(t)"
+                            [alt]="t.name"
+                            class="athlete-photo"
+                            loading="lazy"
+                          >
+                        }
+                      </div>
+
+                      <!-- Información del atleta -->
+                      <div class="athlete-info">
+                        <div class="athlete-name-row">
+                          @if (getPaisRanking(t)) {
+                            <span class="country-flag" [attr.title]="getPaisRanking(t)">
+                              {{ getPaisRanking(t) | countryFlag }}
+                            </span>
+                          }
+                          <span class="athlete-name">
+                            {{ getNombreRanking(t) }}
+                          </span>
+                          <mat-icon class="external-link-icon">arrow_forward</mat-icon>
+                        </div>
+                        
+                        @if (getEtiquetaRanking(t)) {
+                          <div class="athlete-details">
+                            <span class="athlete-rank">
+                              <mat-icon>military_tech</mat-icon>
+                              {{ getEtiquetaRanking(t) }}
+                            </span>
+                          </div>
+                        }
+                      </div>
                     </div>
                   }
                 </div>
               </mat-card-content>
+
+              <!-- Botón para ver ranking completo -->
+              <mat-card-actions>
+                <button 
+                  mat-button 
+                  color="primary" 
+                  (click)="navigateToRanking(ev)"
+                  class="view-full-ranking-btn"
+                >
+                  <mat-icon>leaderboard</mat-icon>
+                  Ver ranking completo
+                </button>
+              </mat-card-actions>
             </mat-card>
           }
         </div>

@@ -13,6 +13,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
+import { ActivatedRoute, Route } from '@angular/router';
 
 @Component({
   selector: 'app-ranking-nadadores',
@@ -47,7 +48,7 @@ export class RankingNadadoresComponent implements OnInit {
   loading = false;
   error: string | null = null;
   previousLimit: number = 10;
-
+  datosDashboard: any
   // opciones mínimas para selects
   genders = [
     { val: 'F', label: 'Femenino' },
@@ -69,12 +70,43 @@ export class RankingNadadoresComponent implements OnInit {
   ];
   selectedTimeline: { name: string; times: any[] } | null = null;
 
-  constructor(private datosService: DatosService, private dialog: MatDialog) {}
+  constructor(private datosService: DatosService, private dialog: MatDialog, private active: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.previousLimit = this.limit;
     this.cargarRankings();
+    if (this.active) {
+    this.active.queryParams.subscribe((params:any) => {
+      this.gender = params['gender'] || this.gender;
+      this.distance = params['distance'] || this.distance;  
+      this.stroke = params['stroke'] || this.stroke;
+      this.poolConfiguration = params['poolConfiguration'] || this.poolConfiguration;
+      this.limit = params['limit'] || this.limit;
+
+      this.datosService.getRankings({
+        gender: this.gender,
+        distance: this.distance,
+        stroke: this.stroke,    
+        poolConfiguration: this.poolConfiguration,
+        limit: this.limit,
+        clearCache: false,
+      }).subscribe({
+        next: (res) => {
+          console.log('Respuesta completa rankings desde queryParams:', res);
+          const datos = res?.rankings ?? res?.data ?? [];
+          this.nadadores = datos.slice(0, this.limit);
+          this.loading = false;
+          this.previousLimit = this.limit;
+        },
+        error: (err) => {
+          this.error = err?.message || 'Error al obtener rankings';
+          this.loading = false;
+        },
+      });
+     });
+    }
   }
+  
   cargarRankings(clearCache: boolean = false): void {
     if (this.loading) return; // Evita llamadas simultáneas
     this.loading = true;
@@ -92,13 +124,11 @@ export class RankingNadadoresComponent implements OnInit {
       })
       .subscribe({
         next: (res) => {
-          console.log('Respuesta completa rankings:', res);
           const datos = res?.rankings ?? res?.data ?? [];
           this.nadadores = datos.slice(0, this.limit);
 
           // Log para debugging
           const conImagen = this.nadadores.filter(n => n.imageUrl && n.imageUrl.length > 0).length;
-          console.log(`📊 Nadadores recibidos: ${this.nadadores.length}, Con imagen: ${conImagen}`);
           console.log('Primeros 3 nadadores:', this.nadadores.slice(0, 3));
 
           this.loading = false;

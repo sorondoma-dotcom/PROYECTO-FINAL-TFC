@@ -1,3 +1,5 @@
+import { RankingEntry } from '../domain/ranking-entry';
+
 export interface DashboardStats {
   totalCompeticiones: number;
   competicionesLive: number;
@@ -6,18 +8,21 @@ export interface DashboardStats {
   competicionesConResultados: number;
 }
 
-export interface RankingEntryView {
-  overallRank?: string;
-  country?: string;
-  name?: string;
-}
-
 export interface TopEvent {
   key: string;
   title: string;
-  gender: 'M' | 'F';
+  gender: string;
   distance: string;
   stroke: string;
-  poolConfiguration: 'LCM' | 'SCM';
+  poolConfiguration: string;
   top: RankingEntryView[];
+}
+
+export interface RankingEntryView {
+  rank?: number;
+  overallRank?: number;
+  country: string | null;
+  name: string;
+  imageUrl?: string | null;
+  profileUrl?: string | null;
 }

@@ -1,11 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
-import { RouterLink } from '@angular/router';
 import { DatosService } from '../datos.service';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { CityNamePipe } from '../pipes/city-name.pipe';
@@ -13,7 +13,6 @@ import { CountryCodePipe } from '../pipes/country-code.pipe';
 import { forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { MatTabsModule, MatTabChangeEvent } from '@angular/material/tabs';
-import { Router } from '@angular/router';
 import { Competition } from '../models/competition.interface';
 import { DashboardStats, RankingEntryView, TopEvent } from '../models/dashboard.interfaces';
 
@@ -454,7 +453,7 @@ export class DashBoardComponent implements OnInit {
       },
     ];
 
-    const requests = eventos.map((e) =>
+    const requests = eventos.map((e:any) =>
       this.datosService
         .getRankings({
           gender: e.gender,
@@ -509,10 +508,14 @@ export class DashBoardComponent implements OnInit {
       : Array.isArray(res?.rankings)
       ? res.rankings
       : [];
+    
     return items.slice(0, 5).map((it) => ({
       overallRank: it?.overallRank,
+      rank: it?.rank || it?.overallRank,
       country: it?.country,
       name: this.limpiarNombre(it?.name, it?.country),
+      imageUrl: it?.imageUrl || null,
+      profileUrl: it?.profileUrl || null,
     }));
   }
 
@@ -539,8 +542,57 @@ export class DashBoardComponent implements OnInit {
     return e.overallRank ? `#${e.overallRank}` : '';
   }
 
+  getAvatarUrl(entry: RankingEntryView): string {
+    if (entry.imageUrl) {
+      return entry.imageUrl;
+    }
+    
+    const initials = this.getInitials(entry.name);
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=1976d2&color=fff&size=128&bold=true`;
+  }
+
+  private getInitials(name: string): string {
+    if (!name) return '??';
+    const parts = name.split(' ').filter(p => p.length > 0);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return parts[0]?.substring(0, 2).toUpperCase() || '??';
+  }
+
+  onAthleteImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    if (img && img.dataset['name']) {
+      const initials = this.getInitials(img.dataset['name']);
+      img.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=random&color=fff&size=128&bold=true`;
+    }
+  }
+
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
+  }
+
+  navigateToRanking(event: TopEvent): void {
+    // Navegar a ranking-nadadores con los parámetros del evento
+    this.router.navigate(['/nadadores'], {
+      queryParams: {
+        gender: event.gender,
+        distance: event.distance,
+        stroke: event.stroke,
+        poolConfiguration: event.poolConfiguration
+      }
+    });
+  }
+
+  navigateToAthleteRanking(event: TopEvent, entry: RankingEntryView): void {
+    // Si el atleta tiene profileUrl, abrirlo en nueva pestaña
+    if (entry.profileUrl) {
+      window.open(entry.profileUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Si no, navegar al ranking con los filtros del evento
+    this.navigateToRanking(event);
   }
 }
