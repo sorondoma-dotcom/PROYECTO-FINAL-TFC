@@ -17,7 +17,7 @@ interface RegisterRequest extends LoginRequest {
 })
 export class AuthService {
   // URL directa al backend PHP en XAMPP
-  private readonly baseUrl = 'http://localhost/Proyecto-Final-TFC/backend-php/auth-php/public/api';
+  private readonly baseUrl = 'http://localhost/backend-php/auth-php/public/api';
 
   // Si prefieres usar proxy, cambia a: private readonly baseUrl = '/api';
   // Y ejecuta: ng serve --proxy-config proxy.conf.json

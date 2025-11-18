@@ -9,13 +9,12 @@ use App\Controllers\AuthController;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
 
-// CORS para desarrollo local con Angular
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-header('Content-Type: application/json; charset=utf-8');
+header('Access-Control-Allow-Origin: http://localhost:4200'); // o "*" si no usas cookies/withCredentials
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    // respuesta al preflight
     http_response_code(204);
     exit;
 }
@@ -24,7 +23,7 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
 // Normalizar la ruta - remover el path base de XAMPP
-$basePath = '/Proyecto-Final-TFC/backend-php/auth-php/public';
+$basePath = '/backend-php/auth-php/public';
 if (strpos($uri, $basePath) === 0) {
     $uri = substr($uri, strlen($basePath));
 }

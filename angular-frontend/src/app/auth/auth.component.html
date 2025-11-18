@@ -1,7 +1,10 @@
 <div class="auth-container">
+  <div class="bg"></div>
   <mat-card class="auth-card">
-    <mat-card-title>{{ mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta' }}</mat-card-title>
-    <mat-card-subtitle>Conecta con la API PHP para gestionar usuarios</mat-card-subtitle>
+    <div class="auth-card__header">
+      <mat-card-title>{{ mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta' }}</mat-card-title>
+      <mat-card-subtitle>Gestiona tu acceso a la API PHP</mat-card-subtitle>
+    </div>
 
     <form (ngSubmit)="submit()" class="auth-form">
       @if (mode === 'register') {
@@ -21,8 +24,9 @@
         <input matInput type="password" [(ngModel)]="form.password" name="password" required />
       </mat-form-field>
 
-      <button mat-raised-button color="primary" type="submit" [disabled]="loading">
-        {{ loading ? 'Enviando...' : (mode === 'login' ? 'Entrar' : 'Registrarme') }}
+      <button mat-raised-button color="primary" class="submit-btn" type="submit" [disabled]="loading">
+        <mat-progress-spinner *ngIf="loading" diameter="18" mode="indeterminate"></mat-progress-spinner>
+        <span>{{ loading ? 'Enviando...' : (mode === 'login' ? 'Entrar' : 'Registrarme') }}</span>
       </button>
     </form>
 
