@@ -38,6 +38,41 @@ class AuthController
         }
     }
 
+    public function logout(): void
+    {
+        $this->service->logout();
+        jsonResponse(['message' => 'Sesión finalizada']);
+    }
+
+    public function requestPasswordReset(): void
+    {
+        $input = $this->getJsonInput();
+        try {
+            $reset = $this->service->requestPasswordReset($input['email'] ?? '');
+            jsonResponse(['message' => 'Código generado', 'reset' => $reset]);
+        } catch (\InvalidArgumentException $e) {
+            jsonResponse(['error' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => $e->getMessage()], 404);
+        }
+    }
+
+    public function resetPassword(): void
+    {
+        $input = $this->getJsonInput();
+        try {
+            $result = $this->service->resetPassword(
+                $input['code'] ?? '',
+                $input['newPassword'] ?? ''
+            );
+            jsonResponse($result);
+        } catch (\InvalidArgumentException $e) {
+            jsonResponse(['error' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => $e->getMessage()], 403);
+        }
+    }
+
     private function getJsonInput(): array
     {
         $raw = file_get_contents('php://input');

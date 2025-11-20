@@ -11,9 +11,10 @@ $text-main: rgba(0, 0, 0, 0.87);
   max-width: 1800px;
   margin: 2rem auto;
   padding: 2rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(117, 75, 162, 0.05) 100%);
+  background: var(--color-bg);
   border-radius: $border-radius-lg;
   min-height: 100vh;
+  transition: background-color 0.3s ease;
 }
 
   .location {
@@ -608,7 +609,7 @@ $text-main: rgba(0, 0, 0, 0.87);
     &.first-place {
       background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
       border: 2px solid rgba(255, 215, 0, 0.3);
-      
+
       &:hover {
         background: linear-gradient(135deg, rgba(255, 215, 0, 0.25) 0%, rgba(255, 215, 0, 0.15) 100%);
       }
@@ -777,7 +778,7 @@ $text-main: rgba(0, 0, 0, 0.87);
     justify-content: center;
     gap: 8px;
     font-weight: 600;
-    
+
     mat-icon {
       margin-right: 0;
     }

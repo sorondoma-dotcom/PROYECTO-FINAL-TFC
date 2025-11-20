@@ -9,12 +9,16 @@ use App\Controllers\AuthController;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
 
-header('Access-Control-Allow-Origin: http://localhost:4200'); // o "*" si no usas cookies/withCredentials
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+header('Access-Control-Allow-Origin: http://localhost:4200');
+header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    // respuesta al preflight
     http_response_code(204);
     exit;
 }
@@ -22,36 +26,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-// Normalizar la ruta - remover el path base de XAMPP
-$basePath = '/backend-php/auth-php/public';
+$basePath = '/PROYECTO-FINAL-TFC/backend-php/auth-php/public';
 if (strpos($uri, $basePath) === 0) {
     $uri = substr($uri, strlen($basePath));
 }
 
-// Asegurar que la ruta comience con /
-if (empty($uri) || $uri === '') {
+if (empty($uri)) {
     $uri = '/';
+}
+
+$publicRoutes = [
+    'GET' => ['/api/health', '/', '/index.php'],
+    'POST' => ['/api/login', '/api/register', '/api/password-reset'],
+    'PUT' => ['/api/password-reset']
+];
+
+$requiresAuth = true;
+if (isset($publicRoutes[$method]) && in_array($uri, $publicRoutes[$method], true)) {
+    $requiresAuth = false;
+}
+
+if ($requiresAuth && (empty($_SESSION['user_id']))) {
+    header('Content-Type: application/json');
+    http_response_code(401);
+    die(json_encode([
+        'error' => 'Sesión cerrada. Debes volver a autenticarte para acceder.'
+    ]));
 }
 
 $userRepository = new UserRepository();
 $authService = new AuthService($userRepository);
 $controller = new AuthController($authService);
 
-// Debug: descomentar para ver qué ruta se está recibiendo
-// jsonResponse(['debug' => true, 'uri' => $uri, 'method' => $method, 'original_uri' => $_SERVER['REQUEST_URI']]);
-
-// Routing
 if ($method === 'POST' && $uri === '/api/register') {
     $controller->register();
 } elseif ($method === 'POST' && $uri === '/api/login') {
     $controller->login();
+} elseif ($method === 'POST' && $uri === '/api/logout') {
+    $controller->logout();
+} elseif ($method === 'POST' && $uri === '/api/password-reset') {
+    $controller->requestPasswordReset();
+} elseif ($method === 'PUT' && $uri === '/api/password-reset') {
+    $controller->resetPassword();
 } elseif ($method === 'GET' && ($uri === '/api/health' || $uri === '/' || $uri === '/index.php')) {
     jsonResponse(['status' => 'ok', 'service' => 'auth-php', 'database' => 'MySQL on localhost:3306']);
 } else {
     http_response_code(404);
     jsonResponse([
-        'error' => 'Ruta no encontrada', 
-        'uri_recibida' => $uri, 
+        'error' => 'Ruta no encontrada',
+        'uri_recibida' => $uri,
         'method' => $method,
         'uri_original' => $_SERVER['REQUEST_URI']
     ]);

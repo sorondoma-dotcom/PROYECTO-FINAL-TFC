@@ -90,4 +90,13 @@ class UserRepository
         $row = $stmt->fetch();
         return $row ? User::fromArray($row) : null;
     }
+
+    public function updatePassword(int $userId, string $passwordHash): bool
+    {
+        $stmt = $this->db->prepare('UPDATE users SET password = :password WHERE id = :id');
+        return $stmt->execute([
+            'id' => $userId,
+            'password' => $passwordHash,
+        ]);
+    }
 }

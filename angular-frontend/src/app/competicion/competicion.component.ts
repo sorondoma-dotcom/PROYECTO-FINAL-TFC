@@ -14,6 +14,7 @@ import { Competition, CompetitionGroup } from '../models/competition.interface';
 import { CompetitionFacadeService } from '../facades/competition-facade.service';
 import { CompetitionFilters } from '../models/filters/competition-filters.interface';
 import { Router } from '@angular/router';
+import { ConfirmationService } from '../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-competicion',
@@ -62,7 +63,11 @@ export class CompeticionComponent implements OnInit {
 
   private readonly selectedMonth = 'latest';
 
-  constructor(private competitionFacade: CompetitionFacadeService, private router: Router) {}
+  constructor(
+    private competitionFacade: CompetitionFacadeService,
+    private router: Router,
+    private confirmation: ConfirmationService
+  ) {}
 
   ngOnInit(): void {
     // Inicializa el selector de años con el rango fijo 2019–2025
@@ -119,7 +124,18 @@ export class CompeticionComponent implements OnInit {
   }
 
   onRefresh(): void {
-    this.loadCompetitions(true);
+    this.confirmation
+      .confirm({
+        title: 'Actualizar competiciones',
+        message: 'Se solicitarán nuevamente los datos a World Aquatics. ¿Deseas continuar?',
+        confirmText: 'Actualizar',
+        confirmColor: 'primary'
+      })
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.loadCompetitions(true);
+        }
+      });
   }
 
   trackGroup = (_index: number, group: CompetitionGroup) => group.key;

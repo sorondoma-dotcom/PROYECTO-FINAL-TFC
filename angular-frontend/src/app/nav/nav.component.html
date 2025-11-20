@@ -1,112 +1,125 @@
-<mat-sidenav-container class="sidenav-container">
-  <!-- Sidenav para móvil -->
-  <mat-sidenav #sidenav mode="over" class="mobile-sidenav">
-    <div class="sidenav-header">
-      <mat-icon class="logo-icon">pool</mat-icon>
-      <h2>SwimLive</h2>
-      <button mat-icon-button (click)="sidenav.close()" class="close-btn">
+<mat-sidenav-container class="nav-layout">
+  <mat-sidenav #sidenav mode="over" class="mobile-nav">
+    <div class="mobile-nav__header">
+      <div class="logo-pill">
+        <mat-icon>pool</mat-icon>
+      </div>
+      <div>
+        <p class="eyebrow">Swim Suite</p>
+        <strong>Panel avanzado</strong>
+      </div>
+      <button mat-icon-button (click)="sidenav.close()" aria-label="Cerrar menú">
         <mat-icon>close</mat-icon>
       </button>
     </div>
 
+    @if (authService.isLoggedIn()) {
+      <div class="mobile-nav__status">
+        <span>Sesión activa</span>
+        <small>{{ authService.currentUser()?.email || 'coach@swimlive.io' }}</small>
+      </div>
+    }
+
     <mat-nav-list>
       @for (item of menuItems; track item.route) {
-      <a
-        mat-list-item
-        routerLink="{{ item.route }}"
-        routerLinkActive="active-link"
-        (click)="sidenav.close()"
-      >
-        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
-        <span matListItemTitle>{{ item.label }}</span>
-      </a>
+        <a mat-list-item [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.route === '/' }" (click)="sidenav.close()">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+          <mat-icon matListItemMeta>chevron_right</mat-icon>
+        </a>
       }
     </mat-nav-list>
+
+    @if (authService.isLoggedIn()) {
+      <button mat-stroked-button color="accent" class="mobile-nav__cta" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        Cerrar sesión
+      </button>
+    }
   </mat-sidenav>
 
-  <!-- Contenido principal -->
   <mat-sidenav-content>
-    <!-- Navbar principal -->
-    <mat-toolbar class="navbar">
-      <div class="navbar-container">
-        <!-- Logo y título -->
-        <div class="logo-section">
-          <button mat-icon-button class="menu-btn" (click)="sidenav.toggle()">
+    <mat-toolbar class="glass-toolbar">
+      <div class="toolbar-grid">
+        <div class="brand-section">
+          <button mat-icon-button class="menu-btn" (click)="sidenav.toggle()" aria-label="Abrir menú">
             <mat-icon>menu</mat-icon>
           </button>
 
-          <div class="logo" [routerLink]="'/'">
-            <mat-icon class="logo-icon animate-swim">pool</mat-icon>
-            <span class="logo-text">
-              <span class="logo-swim">Swim</span>
-              <span class="logo-live">Live</span>
+          <div class="brand" [routerLink]="'/'">
+            <span class="logo-mark">
+              <mat-icon class="wave">pool</mat-icon>
             </span>
+            <div class="brand-copy">
+              <strong>SwimLive</strong>
+              <small>Elite Dashboard</small>
+            </div>
           </div>
         </div>
 
-        <!-- Menú desktop -->
-        <nav class="desktop-menu">
+        <nav class="desktop-links">
           @for (item of menuItems; track item.route) {
-          <a
-            mat-button
-            routerLink="{{ item.route }}"
-            routerLinkActive="active-nav-link"
-            [matTooltip]="item.label"
-            matTooltipPosition="below"
-          >
-            <mat-icon>{{ item.icon }}</mat-icon>
-            <span>{{ item.label }}</span>
-          </a>
+            <a
+              mat-button
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+              [matTooltip]="item.label"
+              matTooltipPosition="below"
+            >
+              <mat-icon>{{ item.icon }}</mat-icon>
+              <span>{{ item.label }}</span>
+            </a>
           }
         </nav>
 
-        <!-- Botones de acción -->
-        <div class="action-buttons">
+        <div class="toolbar-actions">
+          <button mat-stroked-button class="status-pill" type="button">
+            <mat-icon>bolt</mat-icon>
+            <span>Live</span>
+          </button>
+
           <button
             mat-icon-button
             (click)="toggleTheme()"
             [matTooltip]="isDarkMode ? 'Modo claro' : 'Modo oscuro'"
-            class="theme-toggle"
           >
-            <mat-icon>{{ isDarkMode ? "light_mode" : "dark_mode" }}</mat-icon>
+            <mat-icon>{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
           </button>
 
-          <button
-            mat-icon-button
-            matTooltip="Notificaciones"
-            class="notification-btn"
-            aria-label="Notificaciones, 3 nuevas"
-          >
+          <button mat-icon-button matTooltip="Notificaciones" class="notification">
             <mat-icon
               [matBadge]="3"
               matBadgeColor="warn"
               matBadgeSize="small"
-              aria-hidden="false"
-              [attr.aria-label]="'Tienes 3 notificaciones nuevas'"
+              aria-label="Tienes 3 notificaciones nuevas"
               >notifications</mat-icon
             >
           </button>
 
-          <button mat-raised-button color="primary" class="cta-button">
+          <button mat-raised-button color="primary" class="cta">
             <mat-icon>add</mat-icon>
-            Nueva Competición
+            <span>Nueva serie</span>
           </button>
 
-          <button
-            mat-icon-button
-            (click)="logout()"
-            matTooltip="Cerrar sesión"
-            color="warn"
-          >
-            <mat-icon>logout</mat-icon>
-          </button>
+          @if (authService.isLoggedIn()) {
+            <button class="user-chip" mat-button [matTooltip]="authService.currentUser()?.name || 'Usuario'" (click)="logout()">
+              <div class="avatar">
+                <span>{{ authService.currentUser()?.name?.charAt(0) || 'U' }}</span>
+              </div>
+              <span class="user-name">{{ authService.currentUser()?.name || 'Usuario' }}</span>
+              <mat-icon class="logout-icon">logout</mat-icon>
+            </button>
+          }
         </div>
       </div>
     </mat-toolbar>
 
-    <!-- Aquí va el contenido de la página -->
-    <div class="page-content">
-      <router-outlet></router-outlet>
+    <div class="page-surface">
+      <div class="gradient-backdrop"></div>
+      <div class="page-content">
+        <router-outlet></router-outlet>
+      </div>
     </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

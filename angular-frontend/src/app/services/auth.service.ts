@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, finalize } from 'rxjs/operators';
 
 interface LoginRequest {
   email: string;
@@ -16,30 +16,44 @@ interface RegisterRequest extends LoginRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  // URL directa al backend PHP en XAMPP
-  private readonly baseUrl = 'http://localhost/backend-php/auth-php/public/api';
-
-  // Si prefieres usar proxy, cambia a: private readonly baseUrl = '/api';
-  // Y ejecuta: ng serve --proxy-config proxy.conf.json
-
+  private readonly baseUrl = 'http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api';
   private readonly storageKey = 'auth_user';
+  private readonly httpOptions = { withCredentials: true };
 
   constructor(private http: HttpClient) {}
 
   login(payload: LoginRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/login`, payload).pipe(
+    return this.http.post(`${this.baseUrl}/login`, payload, this.httpOptions).pipe(
       tap((res: any) => this.saveUser(res?.user))
     );
   }
 
   register(payload: RegisterRequest): Observable<any> {
-    return this.http.post(`${this.baseUrl}/register`, payload).pipe(
+    return this.http.post(`${this.baseUrl}/register`, payload, this.httpOptions).pipe(
       tap((res: any) => this.saveUser(res?.user))
     );
   }
 
-  logout(): void {
-    localStorage.removeItem(this.storageKey);
+  logout(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/logout`, {}, this.httpOptions).pipe(
+      finalize(() => this.clearUser())
+    );
+  }
+
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/password-reset`,
+      { email },
+      this.httpOptions
+    );
+  }
+
+  resetPassword(code: string, newPassword: string): Observable<any> {
+    return this.http.put(
+      `${this.baseUrl}/password-reset`,
+      { code, newPassword },
+      this.httpOptions
+    );
   }
 
   isLoggedIn(): boolean {
@@ -59,5 +73,9 @@ export class AuthService {
     if (user) {
       localStorage.setItem(this.storageKey, JSON.stringify(user));
     }
+  }
+
+  private clearUser(): void {
+    localStorage.removeItem(this.storageKey);
   }
 }

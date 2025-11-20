@@ -36,7 +36,7 @@
             autocomplete="name"
             placeholder="Ej: Juan Pérez" />
           <mat-icon matPrefix>person</mat-icon>
-          @if (nameControl?.invalid && nameControl?.touched) {
+          @if (nameControl?.invalid && (nameControl?.touched || formSubmitted)) {
             <mat-error>{{ getErrorMessage('name') }}</mat-error>
           }
         </mat-form-field>
@@ -52,7 +52,7 @@
           autocomplete="email"
           placeholder="tu@email.com" />
         <mat-icon matPrefix>email</mat-icon>
-        @if (emailControl?.invalid && emailControl?.touched) {
+        @if (emailControl?.invalid && (emailControl?.touched || formSubmitted)) {
           <mat-error>{{ getErrorMessage('email') }}</mat-error>
         }
       </mat-form-field>
@@ -76,7 +76,7 @@
           [attr.aria-pressed]="passwordVisible">
           <mat-icon>{{ passwordVisible ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
-        @if (passwordControl?.invalid && passwordControl?.touched) {
+        @if (passwordControl?.invalid && (passwordControl?.touched || formSubmitted)) {
           <mat-error>{{ getErrorMessage('password') }}</mat-error>
         }
       </mat-form-field>

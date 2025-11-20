@@ -1,68 +1,67 @@
 <div class="ranking-container mat-elevation-z4">
-  <form class="filters" (ngSubmit)="onSubmit($event)">
+  <form class="filters" [formGroup]="rankingForm" (ngSubmit)="onSubmit($event)">
 
     <mat-form-field appearance="outline">
       <mat-label>Sexo</mat-label>
-      <mat-select [(ngModel)]="gender" name="gender">
+      <mat-select formControlName="gender">
         @for(g of genders; track $index){
-          <mat-option value="{{g.val}}">{{ g.label }}</mat-option>
+          <mat-option [value]="g.val">{{ g.label }}</mat-option>
         }
       </mat-select>
+      @if(hasError('gender')) {
+        <mat-error>{{ getErrorMessage('gender') }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Distancia</mat-label>
-      <mat-select [(ngModel)]="distance" name="distance">
+      <mat-select formControlName="distance">
         @for(d of distances; track $index){
-          <mat-option value="{{d}}">{{ d }} m</mat-option>
+          <mat-option [value]="d">{{ d }} m</mat-option>
         }
       </mat-select>
+      @if(hasError('distance')) {
+        <mat-error>{{ getErrorMessage('distance') }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Estilo</mat-label>
-      <mat-select [(ngModel)]="stroke" name="stroke">
+      <mat-select formControlName="stroke">
         @for(s of filteredStrokes; track s.val){
-          <mat-option value="{{s.val}}">{{ s.label }}</mat-option>
+          <mat-option [value]="s.val">{{ s.label }}</mat-option>
         }
       </mat-select>
+      @if(hasError('stroke')) {
+        <mat-error>{{ getErrorMessage('stroke') }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Piscina</mat-label>
-      <mat-select [(ngModel)]="poolConfiguration" name="poolConfiguration">
+      <mat-select formControlName="poolConfiguration">
         @for(p of pools; track $index){
-          <mat-option value="{{p.val}}">{{ p.label }}</mat-option>
+          <mat-option [value]="p.val">{{ p.label }}</mat-option>
         }
       </mat-select>
+      @if(hasError('poolConfiguration')) {
+        <mat-error>{{ getErrorMessage('poolConfiguration') }}</mat-error>
+      }
     </mat-form-field>
 
-<mat-form-field appearance="outline" style="width: 120px;">
-  <mat-label>Límite</mat-label>
-  <input
-    matInput
-    type="number"
-    [(ngModel)]="limit"
-    name="limit"
-    min="1"
-    max="200"
-    (ngModelChange)="validarLimite()"
-  >
-  @if(limit>200){
-    <mat-hint style="color: red;">Máximo 200</mat-hint>
-  }
-</mat-form-field>
-
-<button
-  mat-raised-button
-  color="primary"
-  type="submit"
-  class="btn"
-  [disabled]="loading || limit > 200"
->
-  Buscar
-</button>
-
+    <button
+      mat-raised-button
+      color="primary"
+      type="submit"
+      class="btn"
+      [disabled]="loading || rankingForm.invalid"
+    >
+      @if(loading) {
+        Cargando...
+      } @else {
+        Buscar
+      }
+    </button>
 
   </form>
 
@@ -175,6 +174,35 @@
       <tr mat-header-row *matHeaderRowDef="['overallRank','country','name','age','time','points','tag','competition','location','date','actions']"></tr>
       <tr mat-row *matRowDef="let row; columns: ['overallRank','country','name','age','time','points','tag','competition','location','date','actions'];"></tr>
     </table>
+
+    <!-- Información de paginación y botón "Cargar más" -->
+    @if(hayMasRegistros) {
+      <div class="pagination-info mat-elevation-z1">
+        <div class="records-info">
+          <mat-icon color="primary">info_outline</mat-icon>
+          <span>{{ textoRegistrosCargados }}</span>
+        </div>
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="cargarMasRegistros()"
+          [disabled]="loading"
+          class="load-more-btn"
+        >
+          @if(loading) {
+            <ng-container>
+              <mat-progress-spinner mode="indeterminate" diameter="20" style="display: inline-block;"></mat-progress-spinner>
+              <span style="margin-left: 0.5em;">Cargando...</span>
+            </ng-container>
+          } @else {
+            <ng-container>
+              <mat-icon>expand_more</mat-icon>
+              <span>Cargar más registros</span>
+            </ng-container>
+          }
+        </button>
+      </div>
+    }
   }
   @if (!loading && (!nadadores || nadadores.length === 0)){
     <div class="age-note mat-elevation-z1" style="display: flex; align-items: center;">
@@ -183,4 +211,5 @@
     </div>
   }
 </div>
+
 

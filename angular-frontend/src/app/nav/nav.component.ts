@@ -8,8 +8,10 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
+import { MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
+import { ConfirmationService } from '../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-nav',
@@ -25,58 +27,71 @@ import { AuthService } from '../services/auth.service';
     MatListModule,
     MatTooltipModule,
     MatBadgeModule,
+    MatDialogModule,
     RouterOutlet,
-    RouterLink,
+    RouterLink
   ],
   templateUrl: './nav.component.html',
-  styleUrl: './nav.component.scss',
+  styleUrl: './nav.component.scss'
 })
 export class NavComponent {
   menuOpen = false;
   isDarkMode = false;
+  theme: string = 'light';
 
   menuItems = [
     { label: 'Inicio', icon: 'home', route: '/' },
     { label: 'Competiciones', icon: 'pool', route: '/competiciones' },
     { label: 'Nadadores', icon: 'person', route: '/nadadores' },
     { label: 'Estadísticas', icon: 'analytics', route: '/estadisticas' },
-    { label: 'Contacto', icon: 'email', route: '/contacto' },
+    { label: 'Contacto', icon: 'email', route: '/contacto' }
   ];
+
+  constructor(
+    @Inject(PLATFORM_ID) private platformId: object,
+    public authService: AuthService,
+    private router: Router,
+    private confirmation: ConfirmationService
+  ) {}
+
+  ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.theme = localStorage.getItem('theme') || 'light';
+      this.isDarkMode = this.theme === 'dark';
+      document.body.classList.toggle('dark-theme', this.isDarkMode);
+    }
+  }
 
   toggleMenu() {
     this.menuOpen = !this.menuOpen;
   }
 
-  ngOnInit(): void {
-    // Proteger acceso a localStorage en entornos no browser (SSR/tests)
-    if (isPlatformBrowser(this.platformId)) {
-      this.isDarkMode = localStorage.getItem('theme') === 'dark';
-      if (this.isDarkMode) document.body.classList.add('dark-theme');
-    }
-  }
-
-   theme: string = 'light';
-
-  constructor(
-    @Inject(PLATFORM_ID) private platformId: object,
-    private authService: AuthService,
-    private router: Router
-  ) {
-    if (isPlatformBrowser(this.platformId)) {
-      this.theme = localStorage.getItem('theme') || 'light';
-    }
-  }
-
   toggleTheme(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.theme = this.theme === 'light' ? 'dark' : 'light';
+      this.isDarkMode = this.theme === 'dark';
       localStorage.setItem('theme', this.theme);
-      document.body.classList.toggle('dark-theme', this.theme === 'dark');
+      document.body.classList.toggle('dark-theme', this.isDarkMode);
     }
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/auth']);
+    this.confirmation
+      .confirm({
+        title: 'Cerrar sesión',
+        message: '¿Deseas cerrar tu sesión actual? Necesitarás volver a autenticarte.',
+        confirmText: 'Cerrar sesión',
+        confirmColor: 'warn'
+      })
+      .subscribe((confirmed) => {
+        if (!confirmed) {
+          return;
+        }
+
+        this.authService.logout().subscribe({
+          next: () => this.router.navigate(['/auth']),
+          error: () => this.router.navigate(['/auth'])
+        });
+      });
   }
 }
