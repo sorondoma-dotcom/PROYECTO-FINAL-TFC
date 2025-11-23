@@ -259,8 +259,8 @@
               <mat-card-content>
                 <div class="ranking-list">
                   @for (t of ev.top; track $index) {
-                    <div 
-                      class="ranking-item" 
+                    <div
+                      class="ranking-item"
                       [class.first-place]="($index + 1) === 1"
                       (click)="navigateToAthleteRanking(ev, t)"
                       role="button"
@@ -272,7 +272,7 @@
                           <mat-icon>emoji_events</mat-icon>
                         </div>
                       }
-                      
+
                       <div class="rank-number">
                         <span>{{ $index + 1 }}</span>
                       </div>
@@ -311,7 +311,7 @@
                           </span>
                           <mat-icon class="external-link-icon">arrow_forward</mat-icon>
                         </div>
-                        
+
                         @if (getEtiquetaRanking(t)) {
                           <div class="athlete-details">
                             <span class="athlete-rank">
@@ -328,9 +328,9 @@
 
               <!-- Botón para ver ranking completo -->
               <mat-card-actions>
-                <button 
-                  mat-button 
-                  color="primary" 
+                <button
+                  mat-button
+                  color="primary"
                   (click)="navigateToRanking(ev)"
                   class="view-full-ranking-btn"
                 >
@@ -341,15 +341,6 @@
             </mat-card>
           }
         </div>
-      } @else {
-        <mat-card class="warning-card">
-          <mat-card-content>
-            <div class="error-content">
-              <mat-icon>info</mat-icon>
-              <p>No hay rankings disponibles en este momento.</p>
-            </div>
-          </mat-card-content>
-        </mat-card>
       }
     </div>
   </ng-template>
