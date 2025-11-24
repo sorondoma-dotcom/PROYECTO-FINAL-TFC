@@ -16,11 +16,10 @@ class UserRepository
 
     private function ensureTable(): void
     {
-        // Detectar el driver de base de datos
+
         $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
         
         if ($driver === 'sqlite') {
-            // Sintaxis para SQLite
             $sql = 'CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
@@ -29,7 +28,6 @@ class UserRepository
                 created_at TEXT NOT NULL
             )';
         } else {
-            // Sintaxis para MySQL/MariaDB
             $sql = 'CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
@@ -54,8 +52,7 @@ class UserRepository
     {
         $driver = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME);
         
-        if ($driver === 'sqlite') {
-            // SQLite requiere created_at explícito
+        if ($driver === 'sqlite') {            
             $stmt = $this->db->prepare(
                 'INSERT INTO users (name, email, password, created_at)
                  VALUES (:name, :email, :password, :created_at)'
@@ -67,7 +64,6 @@ class UserRepository
                 'created_at' => date('c'),
             ]);
         } else {
-            // MySQL/MariaDB usa DEFAULT CURRENT_TIMESTAMP
             $stmt = $this->db->prepare(
                 'INSERT INTO users (name, email, password)
                  VALUES (:name, :email, :password)'
@@ -90,7 +86,7 @@ class UserRepository
         $row = $stmt->fetch();
         return $row ? User::fromArray($row) : null;
     }
-
+    
     public function updatePassword(int $userId, string $passwordHash): bool
     {
         $stmt = $this->db->prepare('UPDATE users SET password = :password WHERE id = :id');
