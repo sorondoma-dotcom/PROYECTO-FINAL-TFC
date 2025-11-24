@@ -17,7 +17,7 @@ function loadEnv(): void
 
     $envPath = __DIR__ . '/../.env';
     if (!file_exists($envPath)) {
-        return;
+        throw new RuntimeException('Archivo .env no encontrado en: ' . $envPath);
     }
 
     $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -32,15 +32,6 @@ function loadEnv(): void
     }
 }
 
-function dbPath(): string
-{
-    $path = __DIR__ . '/../data';
-    if (!is_dir($path)) {
-        mkdir($path, 0777, true);
-    }
-    return $path . '/auth.db';
-}
-
 function getPDO(): PDO
 {
     loadEnv();
@@ -49,18 +40,24 @@ function getPDO(): PDO
         return $pdo;
     }
 
-    $dsn = env('DB_DSN', '');
-    $user = env('DB_USER', '');
-    $pass = env('DB_PASS', '');
+    $dsn = env('DB_DSN');
+    $user = env('DB_USER');
+    $pass = env('DB_PASS');
 
-    if (!$dsn) {
-        $dsn = 'sqlite:' . dbPath();
+    if (!$dsn || !$user) {
+        throw new RuntimeException('Configuración de base de datos incompleta en .env (DB_DSN y DB_USER son obligatorios)');
     }
 
-    $pdo = new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
+    try {
+        $pdo = new PDO($dsn, $user, $pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    } catch (PDOException $e) {
+        throw new RuntimeException('Error al conectar con MySQL: ' . $e->getMessage());
+    }
+
     return $pdo;
 }
 
