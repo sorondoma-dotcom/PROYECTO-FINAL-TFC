@@ -118,9 +118,9 @@
           <h2>🌟 Competiciones Destacadas</h2>
           @if (competicionesDestacadas.length > itemsPerViewCompetitions) {
             <div class="carousel-controls">
-              <button 
-                mat-icon-button 
-                (click)="scrollCompetitionsLeft()" 
+              <button
+                mat-icon-button
+                (click)="scrollCompetitionsLeft()"
                 [disabled]="!canScrollCompetitionsLeft"
                 class="carousel-btn"
                 aria-label="Anterior">
@@ -129,9 +129,9 @@
               <span class="carousel-indicator">
                 {{ currentCompetitionIndex + 1 }} - {{ Math.min(currentCompetitionIndex + itemsPerViewCompetitions, competicionesDestacadas.length) }} de {{ competicionesDestacadas.length }}
               </span>
-              <button 
-                mat-icon-button 
-                (click)="scrollCompetitionsRight()" 
+              <button
+                mat-icon-button
+                (click)="scrollCompetitionsRight()"
                 [disabled]="!canScrollCompetitionsRight"
                 class="carousel-btn"
                 aria-label="Siguiente">
@@ -247,9 +247,9 @@
         <h2>🏅 Nadadores destacados por prueba</h2>
         @if (eventosTop.length > itemsPerViewRankings) {
           <div class="carousel-controls">
-            <button 
-              mat-icon-button 
-              (click)="scrollRankingsLeft()" 
+            <button
+              mat-icon-button
+              (click)="scrollRankingsLeft()"
               [disabled]="!canScrollRankingsLeft"
               class="carousel-btn"
               aria-label="Anterior">
@@ -258,9 +258,9 @@
             <span class="carousel-indicator">
               {{ currentRankingIndex + 1 }} - {{ Math.min(currentRankingIndex + itemsPerViewRankings, eventosTop.length) }} de {{ eventosTop.length }}
             </span>
-            <button 
-              mat-icon-button 
-              (click)="scrollRankingsRight()" 
+            <button
+              mat-icon-button
+              (click)="scrollRankingsRight()"
               [disabled]="!canScrollRankingsRight"
               class="carousel-btn"
               aria-label="Siguiente">
