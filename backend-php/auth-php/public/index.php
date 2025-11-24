@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-$basePath = '/backend-php/auth-php/public';
+$basePath = '/PROYECTO-FINAL-TFC/backend-php/auth-php/public';
 if (strpos($uri, $basePath) === 0) {
     $uri = substr($uri, strlen($basePath));
 }
@@ -35,22 +35,27 @@ if (empty($uri)) {
     $uri = '/';
 }
 
+// Rutas públicas que NO requieren autenticación
 $publicRoutes = [
     'GET' => ['/api/health', '/', '/index.php'],
     'POST' => ['/api/login', '/api/register', '/api/password-reset'],
     'PUT' => ['/api/password-reset']
 ];
 
+// Verificar si la ruta requiere autenticación
 $requiresAuth = true;
 if (isset($publicRoutes[$method]) && in_array($uri, $publicRoutes[$method], true)) {
     $requiresAuth = false;
 }
 
-if ($requiresAuth && (empty($_SESSION['user_id']))) {
+// Solo verificar autenticación si la ruta la requiere
+if ($requiresAuth && empty($_SESSION['user_id'])) {
     header('Content-Type: application/json');
     http_response_code(401);
     die(json_encode([
-        'error' => 'Sesión cerrada. Debes volver a autenticarte para acceder.'
+        'error' => 'Sesión cerrada. Debes volver a autenticarte para acceder.',
+        'uri' => $uri,
+        'method' => $method
     ]));
 }
 
