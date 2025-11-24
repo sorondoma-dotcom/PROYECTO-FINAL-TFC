@@ -114,8 +114,34 @@
 
     @if (competicionesDestacadas.length > 0) {
       <div class="featured-section">
-        <h2>🌟 Competiciones Destacadas</h2>
-        <div class="featured-grid">
+        <div class="section-header">
+          <h2>🌟 Competiciones Destacadas</h2>
+          @if (competicionesDestacadas.length > itemsPerViewCompetitions) {
+            <div class="carousel-controls">
+              <button 
+                mat-icon-button 
+                (click)="scrollCompetitionsLeft()" 
+                [disabled]="!canScrollCompetitionsLeft"
+                class="carousel-btn"
+                aria-label="Anterior">
+                <mat-icon>chevron_left</mat-icon>
+              </button>
+              <span class="carousel-indicator">
+                {{ currentCompetitionIndex + 1 }} - {{ Math.min(currentCompetitionIndex + itemsPerViewCompetitions, competicionesDestacadas.length) }} de {{ competicionesDestacadas.length }}
+              </span>
+              <button 
+                mat-icon-button 
+                (click)="scrollCompetitionsRight()" 
+                [disabled]="!canScrollCompetitionsRight"
+                class="carousel-btn"
+                aria-label="Siguiente">
+                <mat-icon>chevron_right</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+        <div class="carousel-container">
+          <div class="featured-grid carousel" [style.transform]="'translateX(-' + (currentCompetitionIndex * (100 / itemsPerViewCompetitions)) + '%)'">
           @for (comp of competicionesDestacadas; track trackCompetition($index, comp)) {
             <mat-card class="featured-card">
               <!-- Logo de la competición -->
@@ -199,6 +225,7 @@
               }
             </mat-card>
           }
+          </div>
         </div>
       </div>
     } @else if (!errorCompeticiones) {
@@ -216,7 +243,32 @@
   <!-- RANKINGS -->
   <ng-template #tplRankings>
     <div class="featured-section">
-      <h2>🏅 Nadadores destacados por prueba</h2>
+      <div class="section-header">
+        <h2>🏅 Nadadores destacados por prueba</h2>
+        @if (eventosTop.length > itemsPerViewRankings) {
+          <div class="carousel-controls">
+            <button 
+              mat-icon-button 
+              (click)="scrollRankingsLeft()" 
+              [disabled]="!canScrollRankingsLeft"
+              class="carousel-btn"
+              aria-label="Anterior">
+              <mat-icon>chevron_left</mat-icon>
+            </button>
+            <span class="carousel-indicator">
+              {{ currentRankingIndex + 1 }} - {{ Math.min(currentRankingIndex + itemsPerViewRankings, eventosTop.length) }} de {{ eventosTop.length }}
+            </span>
+            <button 
+              mat-icon-button 
+              (click)="scrollRankingsRight()" 
+              [disabled]="!canScrollRankingsRight"
+              class="carousel-btn"
+              aria-label="Siguiente">
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
 
       @if (loadingRankings) {
         <div class="state-block loading">
@@ -244,7 +296,8 @@
       }
 
       @if (eventosTop && eventosTop.length > 0) {
-        <div class="featured-grid">
+        <div class="carousel-container">
+          <div class="featured-grid carousel" [style.transform]="'translateX(-' + (currentRankingIndex * (100 / itemsPerViewRankings)) + '%)'">
           @for (ev of eventosTop; track ev.key) {
             <mat-card class="featured-card ranking-card">
               <mat-card-header>
@@ -340,6 +393,7 @@
               </mat-card-actions>
             </mat-card>
           }
+          </div>
         </div>
       }
     </div>

@@ -219,13 +219,22 @@ $text-main: rgba(0, 0, 0, 0.87);
   margin-top: 4rem;
   animation: fadeIn 0.7s ease-out 0.4s both;
 
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
   h2 {
     font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 2rem;
+    margin: 0;
     color: var(--mat-sys-on-surface);
     position: relative;
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
 
     &::after {
       content: '';
@@ -238,12 +247,72 @@ $text-main: rgba(0, 0, 0, 0.87);
       border-radius: 2px;
     }
   }
+
+  .carousel-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .carousel-btn {
+      background: var(--mat-sys-surface-variant);
+      color: var(--mat-sys-primary);
+      transition: $transition-smooth;
+      box-shadow: $shadow-sm;
+
+      &:hover:not(:disabled) {
+        background: var(--mat-sys-primary);
+        color: var(--mat-sys-on-primary);
+        transform: scale(1.1);
+        box-shadow: $shadow-md;
+      }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      mat-icon {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    .carousel-indicator {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface-variant);
+      min-width: 120px;
+      text-align: center;
+      background: var(--mat-sys-surface-variant);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+    }
+  }
+}
+
+.carousel-container {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
 }
 
 .featured-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 2rem;
+
+  &.carousel {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    gap: 2rem;
+    will-change: transform;
+
+    .featured-card {
+      flex: 0 0 calc(33.333% - 1.333rem);
+      min-width: 340px;
+    }
+  }
 }
 
 .cards-carousel {
@@ -827,6 +896,17 @@ $text-main: rgba(0, 0, 0, 0.87);
 
   .featured-grid {
     grid-template-columns: repeat(2, 1fr);
+
+    &.carousel .featured-card {
+      flex: 0 0 calc(50% - 1rem);
+    }
+  }
+
+  .featured-section .section-header {
+    .carousel-controls .carousel-indicator {
+      font-size: 0.85rem;
+      min-width: 100px;
+    }
   }
 }
 
@@ -847,13 +927,36 @@ $text-main: rgba(0, 0, 0, 0.87);
     }
   }
 
-  .cards-carousel {
-    margin: 0 -1rem;
-    padding: 0 1rem;
+  .featured-section {
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+
+      .carousel-controls {
+        width: 100%;
+        justify-content: center;
+
+        .carousel-btn mat-icon {
+          font-size: 24px;
+          width: 24px;
+          height: 24px;
+        }
+
+        .carousel-indicator {
+          font-size: 0.8rem;
+          min-width: 90px;
+          padding: 0.4rem 0.8rem;
+        }
+      }
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
   }
 
-  .dashboard-grid,
-  .featured-grid {
+  .dashboard-grid {
     display: flex;
     overflow-x: auto;
     gap: 1rem;
@@ -868,12 +971,16 @@ $text-main: rgba(0, 0, 0, 0.87);
     }
   }
 
-
-
-  .dashboard-grid .dashboard-card,
-  .featured-grid .featured-card {
+  .dashboard-grid .dashboard-card {
     flex: 0 0 clamp(260px, 80vw, 320px);
     scroll-snap-align: start;
+  }
+
+  .featured-grid.carousel {
+    .featured-card {
+      flex: 0 0 calc(100% - 2rem);
+      min-width: 280px;
+    }
   }
 
   .stat-card {
@@ -937,8 +1044,32 @@ $text-main: rgba(0, 0, 0, 0.87);
     font-size: 1.6rem;
   }
 
-  .featured-section h2 {
-    font-size: 1.5rem;
+  .featured-section {
+    h2 {
+      font-size: 1.3rem;
+    }
+
+    .section-header .carousel-controls {
+      gap: 0.5rem;
+
+      .carousel-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+
+        mat-icon {
+          font-size: 20px;
+          width: 20px;
+          height: 20px;
+        }
+      }
+
+      .carousel-indicator {
+        font-size: 0.7rem;
+        min-width: 75px;
+        padding: 0.3rem 0.6rem;
+      }
+    }
   }
 
   .stat-card .stat-info h3 {

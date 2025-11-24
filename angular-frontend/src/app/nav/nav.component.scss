@@ -417,3 +417,21 @@ mat-nav-list {
     display: none;
   }
 }
+
+@media (max-width: 600px) {
+  .toolbar-grid {
+    padding: 0 0.75rem;
+  }
+
+  .toolbar-actions {
+    gap: 0.35rem;
+  }
+
+  .cta {
+    display: none;
+  }
+
+  .page-content {
+    padding: clamp(1rem, 4vw, 1.5rem);
+  }
+}

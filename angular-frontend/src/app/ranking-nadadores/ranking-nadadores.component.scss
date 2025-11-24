@@ -4,6 +4,9 @@
   margin: 0 auto;
   max-width: 1500px;
   background-color: var(--ranking-container-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 
 }
 
@@ -12,12 +15,32 @@
   flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-end;
+  justify-content: space-between;
 
+  mat-form-field,
+  .btn {
+    flex: 1 1 220px;
+    min-width: 200px;
+  }
+
+  .btn {
+    align-self: stretch;
+    display: inline-flex;
+    justify-content: center;
+  }
 }
 
 table {
   width: 100%;
   margin-top: 1rem;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--color-surface, #fff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
 }
 
 // Estilos para las fotos de los nadadores
@@ -119,5 +142,94 @@ table {
       opacity: 0.6;
       cursor: not-allowed;
     }
+  }
+}
+
+// Responsive table -> cards
+@media (max-width: 1024px) {
+  .ranking-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .filters {
+    mat-form-field,
+    .btn {
+      flex: 1 1 100%;
+      min-width: 100%;
+    }
+  }
+
+  .ranking-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .ranking-table thead {
+    display: none;
+  }
+
+  .ranking-table tr {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+    padding: 0.9rem;
+    border-radius: 12px;
+    background: var(--surface-color, #fafafa);
+    border: 1px solid var(--color-border, #e0e0e0);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  }
+
+  .ranking-table td {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border: 0;
+    font-weight: 600;
+  }
+
+  .ranking-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-secondary, #666);
+    font-size: 0.9rem;
+  }
+
+  .ranking-table td.actions-cell {
+    justify-content: flex-start;
+    margin-top: 0.35rem;
+  }
+
+  .ranking-table .athlete-photo,
+  .ranking-table .athlete-photo-placeholder {
+    width: 42px;
+    height: 42px;
+  }
+
+  .pagination-info {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 600px) {
+  .ranking-container {
+    padding: 1rem;
+  }
+
+  .table-wrapper {
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .ranking-table tr {
+    padding: 0.75rem;
+  }
+
+  .ranking-table td {
+    font-size: 0.95rem;
   }
 }

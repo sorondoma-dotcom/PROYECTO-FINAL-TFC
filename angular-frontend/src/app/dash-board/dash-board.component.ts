@@ -49,6 +49,17 @@ export class DashBoardComponent implements OnInit {
   errorRankings: string | null = null;
   errorCompeticiones: string | null = null;
   selectedIndex = 0;
+  
+  // Control del carrusel de competiciones
+  currentCompetitionIndex = 0;
+  itemsPerViewCompetitions = 3;
+  
+  // Control del carrusel de rankings
+  currentRankingIndex = 0;
+  itemsPerViewRankings = 3;
+  
+  // Exponer Math para usar en template
+  Math = Math;
 
   constructor(private datosService: DatosService, private router: Router) {}
 
@@ -593,5 +604,55 @@ export class DashBoardComponent implements OnInit {
 
     // Si no, navegar al ranking con los filtros del evento
     this.navigateToRanking(event);
+  }
+
+  // Métodos para el carrusel de competiciones
+  get maxCompetitionIndex(): number {
+    return Math.max(0, this.competicionesDestacadas.length - this.itemsPerViewCompetitions);
+  }
+
+  get canScrollCompetitionsLeft(): boolean {
+    return this.currentCompetitionIndex > 0;
+  }
+
+  get canScrollCompetitionsRight(): boolean {
+    return this.currentCompetitionIndex < this.maxCompetitionIndex;
+  }
+
+  scrollCompetitionsLeft(): void {
+    if (this.canScrollCompetitionsLeft) {
+      this.currentCompetitionIndex--;
+    }
+  }
+
+  scrollCompetitionsRight(): void {
+    if (this.canScrollCompetitionsRight) {
+      this.currentCompetitionIndex++;
+    }
+  }
+
+  // Métodos para el carrusel de rankings
+  get maxRankingIndex(): number {
+    return Math.max(0, this.eventosTop.length - this.itemsPerViewRankings);
+  }
+
+  get canScrollRankingsLeft(): boolean {
+    return this.currentRankingIndex > 0;
+  }
+
+  get canScrollRankingsRight(): boolean {
+    return this.currentRankingIndex < this.maxRankingIndex;
+  }
+
+  scrollRankingsLeft(): void {
+    if (this.canScrollRankingsLeft) {
+      this.currentRankingIndex--;
+    }
+  }
+
+  scrollRankingsRight(): void {
+    if (this.canScrollRankingsRight) {
+      this.currentRankingIndex++;
+    }
   }
 }
