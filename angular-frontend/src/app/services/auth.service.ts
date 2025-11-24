@@ -16,7 +16,7 @@ interface RegisterRequest extends LoginRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly baseUrl = 'http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api';
+  private readonly baseUrl = 'http://localhost/backend-php/auth-php/public/api';
   private readonly storageKey = 'auth_user';
   private readonly httpOptions = { withCredentials: true };
 

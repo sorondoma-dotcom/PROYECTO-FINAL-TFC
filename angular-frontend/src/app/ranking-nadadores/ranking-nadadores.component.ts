@@ -1,7 +1,7 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
-import { DatosService } from '../datos.service';
+import { DatosService } from '../services/datos.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { TimelineChartComponent } from '../timeline-chart/timeline-chart.component';

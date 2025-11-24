@@ -6,17 +6,15 @@
 
 require __DIR__ . '/../src/bootstrap.php';
 
-// Función para generar hash de contraseña
 function generateHash(string $password): string {
     return password_hash($password, PASSWORD_DEFAULT);
 }
 
-// Función para verificar hash
+
 function verifyHash(string $password, string $hash): bool {
     return password_verify($password, $hash);
 }
 
-// Modo CLI
 if (php_sapi_name() === 'cli') {
     echo "=== Gestor de Usuarios ===\n\n";
     
@@ -64,7 +62,6 @@ if (php_sapi_name() === 'cli') {
     }
     
 } else {
-    // Modo web
     header('Content-Type: text/html; charset=utf-8');
     ?>
     <!DOCTYPE html>

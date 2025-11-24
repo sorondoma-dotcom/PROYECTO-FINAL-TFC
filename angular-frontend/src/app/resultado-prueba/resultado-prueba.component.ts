@@ -13,7 +13,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatRadioModule } from '@angular/material/radio';
 import { ReactiveFormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DatosService } from '../datos.service';
+import { DatosService } from '../services/datos.service';
 import {
   CompetitionMeta,
   ResultEventSummary,
