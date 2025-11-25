@@ -11,12 +11,12 @@ class AuthController
     {
         $input = $this->getJsonInput();
         try {
-            $user = $this->service->register(
+            $payload = $this->service->register(
                 $input['name'] ?? '',
                 $input['email'] ?? '',
                 $input['password'] ?? ''
             );
-            jsonResponse(['message' => 'Usuario creado', 'user' => $user], 201);
+            jsonResponse($payload, 201);
         } catch (\InvalidArgumentException $e) {
             jsonResponse(['error' => $e->getMessage()], 400);
         } catch (\Throwable $e) {
@@ -64,6 +64,35 @@ class AuthController
             $result = $this->service->resetPassword(
                 $input['code'] ?? '',
                 $input['newPassword'] ?? ''
+            );
+            jsonResponse($result);
+        } catch (\InvalidArgumentException $e) {
+            jsonResponse(['error' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => $e->getMessage()], 403);
+        }
+    }
+
+    public function sendVerificationCode(): void
+    {
+        $input = $this->getJsonInput();
+        try {
+            $result = $this->service->requestEmailVerification($input['email'] ?? '');
+            jsonResponse($result);
+        } catch (\InvalidArgumentException $e) {
+            jsonResponse(['error' => $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => $e->getMessage()], 404);
+        }
+    }
+
+    public function verifyEmail(): void
+    {
+        $input = $this->getJsonInput();
+        try {
+            $result = $this->service->verifyEmail(
+                $input['email'] ?? '',
+                $input['code'] ?? ''
             );
             jsonResponse($result);
         } catch (\InvalidArgumentException $e) {

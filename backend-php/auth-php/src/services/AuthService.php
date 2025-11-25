@@ -8,8 +8,9 @@ class AuthService
 {
     private const PASSWORD_PATTERN = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/';
     private const NAME_PATTERN = '/^\p{L}+(?:\s\p{L}+)*$/u';
+    private const VERIFICATION_TTL = 900; // 15 minutes
 
-    public function __construct(private UserRepository $users) {}
+    public function __construct(private UserRepository $users, private MailService $mailer) {}
 
     public function register(string $name, string $email, string $password): array
     {
@@ -23,11 +24,19 @@ class AuthService
         }
 
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $user = $this->users->create($name, $email, $hash);
+        $codeData = $this->generateVerificationCode();
+        $user = $this->users->create($name, $email, $hash, $codeData['hash'], $codeData['expiresAt']);
 
-        $this->persistUserSession($user);
+        $this->mailer->sendVerificationCode($user->email, $user->name, $codeData['code']);
 
-        return $this->formatUser($user);
+        return [
+            'user' => $this->formatUser($user),
+            'verification' => [
+                'expiresAt' => $codeData['expiresAt']->format(DATE_ATOM),
+                'emailSent' => $this->mailer->isEnabled(),
+            ],
+            'message' => 'Usuario creado. Revisa tu correo y confirma la cuenta.'
+        ];
     }
 
     public function login(string $email, string $password): array
@@ -42,6 +51,10 @@ class AuthService
         $user = $this->users->findByEmail($email);
         if (!$user || !password_verify($password, $user->passwordHash)) {
             throw new \RuntimeException('Credenciales invalidas');
+        }
+
+        if (empty($user->emailVerifiedAt)) {
+            throw new \RuntimeException('Debes confirmar tu correo antes de iniciar sesion');
         }
 
         $this->persistUserSession($user);
@@ -77,6 +90,10 @@ class AuthService
         $user = $this->users->findByEmail($email);
         if (!$user) {
             throw new \RuntimeException('No encontramos una cuenta con ese correo');
+        }
+
+        if (empty($user->emailVerifiedAt)) {
+            throw new \RuntimeException('Primero debes verificar tu correo electronico');
         }
 
         $code = (string) random_int(100000, 999999);
@@ -133,6 +150,84 @@ class AuthService
         ];
     }
 
+    public function requestEmailVerification(string $email): array
+    {
+        $email = $this->normalizeEmail($email);
+        $user = $this->users->findByEmail($email);
+
+        if (!$user) {
+            throw new \RuntimeException('No encontramos una cuenta con ese correo');
+        }
+
+        if (!empty($user->emailVerifiedAt)) {
+            return ['message' => 'El correo ya estaba verificado'];
+        }
+
+        $codeData = $this->generateVerificationCode();
+        $this->users->updateVerificationCode($user->id, $codeData['hash'], $codeData['expiresAt']);
+
+        $user->verificationCodeHash = $codeData['hash'];
+        $user->verificationExpiresAt = $codeData['expiresAt']->format('Y-m-d H:i:s');
+
+        $this->mailer->sendVerificationCode($user->email, $user->name, $codeData['code']);
+
+        return [
+            'message' => 'Codigo de verificacion enviado',
+            'verification' => [
+                'expiresAt' => $codeData['expiresAt']->format(DATE_ATOM),
+                'emailSent' => $this->mailer->isEnabled(),
+            ]
+        ];
+    }
+
+    public function verifyEmail(string $email, string $code): array
+    {
+        $email = $this->normalizeEmail($email);
+        $code = trim($code);
+
+        if ($code === '') {
+            throw new \InvalidArgumentException('El codigo es obligatorio');
+        }
+
+        $user = $this->users->findByEmail($email);
+        if (!$user) {
+            throw new \RuntimeException('Usuario no encontrado');
+        }
+
+        if (!empty($user->emailVerifiedAt)) {
+            $this->persistUserSession($user);
+            return [
+                'message' => 'El correo ya estaba verificado',
+                'user' => $this->formatUser($user)
+            ];
+        }
+
+        if (empty($user->verificationCodeHash) || empty($user->verificationExpiresAt)) {
+            throw new \RuntimeException('No hay un codigo activo, solicita uno nuevo');
+        }
+
+        if (time() > strtotime($user->verificationExpiresAt)) {
+            $this->users->clearVerificationCode($user->id);
+            throw new \RuntimeException('El codigo ha expirado, solicita uno nuevo');
+        }
+
+        if (!password_verify($code, $user->verificationCodeHash)) {
+            throw new \InvalidArgumentException('Codigo incorrecto');
+        }
+
+        $verifiedUser = $this->users->markVerified($user->id);
+        if (!$verifiedUser) {
+            throw new \RuntimeException('No pudimos actualizar el estado de verificacion');
+        }
+
+        $this->persistUserSession($verifiedUser);
+
+        return [
+            'message' => 'Correo verificado correctamente',
+            'user' => $this->formatUser($verifiedUser)
+        ];
+    }
+
     private function normalizeEmail(string $email): string
     {
         $normalized = strtolower(trim($email));
@@ -186,6 +281,20 @@ class AuthService
             'name' => $user->name,
             'email' => $user->email,
             'createdAt' => $user->createdAt,
+            'emailVerifiedAt' => $user->emailVerifiedAt,
+            'isVerified' => !empty($user->emailVerifiedAt),
+        ];
+    }
+
+    private function generateVerificationCode(): array
+    {
+        $code = (string) random_int(100000, 999999);
+        $expiresAt = new \DateTimeImmutable(sprintf('+%d seconds', self::VERIFICATION_TTL));
+
+        return [
+            'code' => $code,
+            'hash' => password_hash($code, PASSWORD_DEFAULT),
+            'expiresAt' => $expiresAt,
         ];
     }
 }

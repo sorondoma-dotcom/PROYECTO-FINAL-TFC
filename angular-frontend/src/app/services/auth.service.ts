@@ -30,7 +30,11 @@ export class AuthService {
 
   register(payload: RegisterRequest): Observable<any> {
     return this.http.post(`${this.baseUrl}/register`, payload, this.httpOptions).pipe(
-      tap((res: any) => this.saveUser(res?.user))
+      tap((res: any) => {
+        if (res?.user?.isVerified) {
+          this.saveUser(res.user);
+        }
+      })
     );
   }
 
@@ -53,6 +57,24 @@ export class AuthService {
       `${this.baseUrl}/password-reset`,
       { code, newPassword },
       this.httpOptions
+    );
+  }
+
+  sendVerificationCode(email: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/email/send-code`,
+      { email },
+      this.httpOptions
+    );
+  }
+
+  verifyEmail(email: string, code: string): Observable<any> {
+    return this.http.post(
+      `${this.baseUrl}/email/verify`,
+      { email, code },
+      this.httpOptions
+    ).pipe(
+      tap((res: any) => this.saveUser(res?.user))
     );
   }
 

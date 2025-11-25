@@ -1,0 +1,144 @@
+.verify-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 20% 20%, rgba(33, 150, 243, 0.08), transparent 35%),
+    radial-gradient(circle at 80% 30%, rgba(255, 193, 7, 0.08), transparent 40%),
+    #0f172a;
+  position: relative;
+  overflow: hidden;
+  padding: 16px;
+  color: #e2e8f0;
+}
+
+.blur {
+  position: absolute;
+  width: 240px;
+  height: 240px;
+  filter: blur(80px);
+  opacity: 0.5;
+  border-radius: 50%;
+}
+
+.blur.one {
+  background: #2196f3;
+  top: 10%;
+  left: 10%;
+}
+
+.blur.two {
+  background: #ffc107;
+  bottom: 5%;
+  right: 12%;
+}
+
+.verify-card {
+  width: 420px;
+  max-width: 100%;
+  position: relative;
+  z-index: 1;
+  padding: 20px 24px 28px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+
+  .mat-mdc-form-field {
+    width: 100%;
+  }
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #cbd5e1;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 16px;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #ffc107;
+  }
+
+  h1 {
+    margin: 8px 0 4px;
+    color: #f8fafc;
+  }
+
+  p {
+    color: #cbd5e1;
+    margin: 0;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+
+  button {
+    flex: 1;
+  }
+}
+
+.messages {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+
+  mat-icon {
+    margin-top: 2px;
+  }
+
+  &.success {
+    background: rgba(76, 175, 80, 0.12);
+    color: #c8e6c9;
+  }
+
+  &.error {
+    background: rgba(244, 67, 54, 0.12);
+    color: #ffcdd2;
+  }
+}
+
+@media (max-width: 600px) {
+  .verify-card {
+    padding: 16px;
+  }
+
+  .actions {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}

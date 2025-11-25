@@ -1,0 +1,74 @@
+<div class="verify-shell">
+  <div class="blur one"></div>
+  <div class="blur two"></div>
+
+  <mat-card class="verify-card">
+    <div class="card-header">
+      <button mat-icon-button routerLink="/auth" aria-label="Volver al inicio">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span>Verificar correo</span>
+    </div>
+
+    <div class="hero">
+      <mat-icon>mark_email_read</mat-icon>
+      <h1>Confirma tu correo</h1>
+      <p>Ingresa tu correo y el codigo recibido para activar tu cuenta.</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="verify()" class="form">
+      <mat-form-field appearance="outline">
+        <mat-label>Correo electronico</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="email" />
+        <mat-icon matPrefix>alternate_email</mat-icon>
+        <mat-error *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Ingresa un correo valido
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Codigo de verificacion</mat-label>
+        <input matInput type="text" formControlName="code" maxlength="6" autocomplete="one-time-code" />
+        <mat-icon matPrefix>vpn_key</mat-icon>
+        <mat-error *ngIf="form.get('code')?.invalid && form.get('code')?.touched">
+          Ingresa el codigo de 6 digitos
+        </mat-error>
+      </mat-form-field>
+
+      <div class="actions">
+        <button mat-stroked-button color="primary" type="button" (click)="sendCode()" [disabled]="loading">
+          <mat-icon>send</mat-icon>
+          <span>Reenviar codigo</span>
+        </button>
+
+        <button mat-raised-button color="primary" type="submit" [disabled]="loading">
+          <mat-progress-spinner *ngIf="loading" diameter="18" mode="indeterminate"></mat-progress-spinner>
+          <span *ngIf="!loading">Verificar correo</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="messages">
+      @if (message) {
+        <div class="message success" @fadeIn>
+          <mat-icon>check_circle</mat-icon>
+          <div>
+            <strong>{{ message }}</strong>
+            @if (expiresAt) {
+              <p>Caduca: {{ expiresAt | date: 'short' }}</p>
+            }
+          </div>
+        </div>
+      }
+      @if (error) {
+        <div class="message error" @fadeIn>
+          <mat-icon>error</mat-icon>
+          <div>
+            <strong>{{ error }}</strong>
+            <p>Revisa el codigo o solicita uno nuevo.</p>
+          </div>
+        </div>
+      }
+    </div>
+  </mat-card>
+</div>

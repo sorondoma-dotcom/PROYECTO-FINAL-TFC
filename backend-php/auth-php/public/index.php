@@ -2,12 +2,17 @@
 require __DIR__ . '/../src/bootstrap.php';
 require __DIR__ . '/../src/controllers/AuthController.php';
 require __DIR__ . '/../src/services/AuthService.php';
+require __DIR__ . '/../src/services/MailService.php';
 require __DIR__ . '/../src/repositories/UserRepository.php';
 require __DIR__ . '/../src/models/User.php';
+require __DIR__ . '/../src/lib/PHPMailer/Exception.php';
+require __DIR__ . '/../src/lib/PHPMailer/PHPMailer.php';
+require __DIR__ . '/../src/lib/PHPMailer/SMTP.php';
 
 use App\Controllers\AuthController;
 use App\Repositories\UserRepository;
 use App\Services\AuthService;
+use App\Services\MailService;
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -38,7 +43,7 @@ if (empty($uri)) {
 // Rutas públicas que NO requieren autenticación
 $publicRoutes = [
     'GET' => ['/api/health', '/', '/index.php'],
-    'POST' => ['/api/login', '/api/register', '/api/password-reset'],
+    'POST' => ['/api/login', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
     'PUT' => ['/api/password-reset']
 ];
 
@@ -60,7 +65,8 @@ if ($requiresAuth && empty($_SESSION['user_id'])) {
 }
 
 $userRepository = new UserRepository();
-$authService = new AuthService($userRepository);
+$mailService = new MailService();
+$authService = new AuthService($userRepository, $mailService);
 $controller = new AuthController($authService);
 
 if ($method === 'POST' && $uri === '/api/register') {
@@ -73,6 +79,10 @@ if ($method === 'POST' && $uri === '/api/register') {
     $controller->requestPasswordReset();
 } elseif ($method === 'PUT' && $uri === '/api/password-reset') {
     $controller->resetPassword();
+} elseif ($method === 'POST' && $uri === '/api/email/send-code') {
+    $controller->sendVerificationCode();
+} elseif ($method === 'POST' && $uri === '/api/email/verify') {
+    $controller->verifyEmail();
 } elseif ($method === 'GET' && ($uri === '/api/health' || $uri === '/' || $uri === '/index.php')) {
     jsonResponse(['status' => 'ok', 'service' => 'auth-php', 'database' => 'MySQL on localhost:3306']);
 } else {

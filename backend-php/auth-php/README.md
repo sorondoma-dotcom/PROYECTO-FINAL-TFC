@@ -1,82 +1,74 @@
 # Auth PHP (login/registro)
 
-API sencilla en PHP para gestionar usuarios (login/registro) con MySQL. Pensada para conectarse desde el frontend Angular.
+API sencilla en PHP para gestionar usuarios (login/registro) con MySQL. Incluye verificacion de correo via Gmail SMTP para confirmar cuentas antes de iniciar sesion.
 
 ## Estructura
-- `public/index.php`: front controller con rutas `/api/register` y `/api/login`.
+- `public/index.php`: front controller con rutas `/api/register`, `/api/login`, verificacion y reset de contrasena.
 - `src/`: bootstrap de PDO, controladores, servicios y repositorio.
-- `.env`: configuración de conexión a MySQL.
+- `.env`: configuracion de conexion a MySQL y SMTP.
 
 ## Requisitos
 - PHP 8.1+
 - MySQL/MariaDB en `localhost:3306`
-- Extensión PDO MySQL habilitada
+- Extension PDO MySQL habilitada
 
-## Configuración de Base de Datos
+## Configuracion de Base de Datos
 
-### 1. Crear la base de datos y usuario
-Ejecuta el script SQL completo desde MySQL:
-
+1) Crear la base de datos y usuario:
 ```bash
-# Opción 1: Desde línea de comandos
 mysql -u root -p < setup-database.sql
-
-# Opción 2: Desde phpMyAdmin o MySQL Workbench
-# Abre setup-database.sql y ejecuta todo el contenido
 ```
 
-### 2. Verificar configuración en .env
-El archivo `.env` debe contener:
+2) Verificar configuracion en `.env`:
 ```env
 DB_DSN="mysql:host=localhost;dbname=liveswim;charset=utf8mb4"
 DB_USER="liveSwim"
 DB_PASS="1234"
 ```
 
-### 3. Usuario de prueba
-Después de ejecutar `setup-database.sql`, tendrás:
-- **Email**: test@test.com
-- **Password**: test123
+3) Configurar correo (Gmail SMTP) para enviar el codigo:
+```env
+MAIL_ENABLED=true
+MAIL_HOST="smtp.gmail.com"
+MAIL_PORT=587
+MAIL_SECURE="tls"
+MAIL_USER="tu-cuenta@gmail.com"
+MAIL_PASS="tu-password-de-aplicacion"
+MAIL_FROM="no-reply@liveswim.local"
+MAIL_FROM_NAME="Live Swim"
+```
+- Usa una contrasena de aplicacion de Gmail (no la contrasena normal).
+- Si falta configuracion o `MAIL_ENABLED=false`, la API no intentara enviar correos.
+
+4) Usuario de prueba creado por el script:
+- Email: `test@test.com`
+- Password: `test123`
 
 ## Arranque con XAMPP
-El proyecto está configurado para funcionar con XAMPP en el puerto 80:
+- Frontend apunta a: `http://localhost/Proyecto-Final-TFC/backend-php/auth-php/public/api`
+- Prueba rapida: abre `http://localhost/Proyecto-Final-TFC/backend-php/auth-php/public/`
 
-1. Asegúrate de que Apache esté corriendo en XAMPP
-2. El frontend accede a la API en:
-   ```
-   http://localhost/Proyecto-Final-TFC/backend-php/auth-php/public/api
-   ```
-
-3. Para verificar que funciona, accede a:
-   ```
-   http://localhost/Proyecto-Final-TFC/backend-php/auth-php/public/
-   ```
-   Deberías ver: `{"status":"ok","service":"auth-php","database":"MySQL on localhost:3306"}`
-
-### Alternativa: Servidor PHP integrado (puerto 8000)
+Alternativa: servidor PHP integrado (puerto 8000):
 ```bash
 cd auth-php
 php -S localhost:8000 -t public
 ```
-Si usas esta opción, cambia en `auth.service.ts`:
-```typescript
+Si usas esta opcion, cambia en `auth.service.ts`:
+```ts
 private readonly baseUrl = 'http://localhost:8000/api';
 ```
 
 ## Endpoints
-- `POST /api/register` body: `{ "name": "", "email": "", "password": "" }`
-- `POST /api/login` body: `{ "email": "", "password": "" }`
+- `POST /api/register` body: `{ "name": "", "email": "", "password": "" }` (envia codigo de verificacion al correo)
+- `POST /api/login` body: `{ "email": "", "password": "" }` (requiere correo verificado)
+- `POST /api/email/send-code` body: `{ "email": "" }` reenvia codigo de verificacion
+- `POST /api/email/verify` body: `{ "email": "", "code": "" }` valida el codigo y marca el correo como verificado
+- `POST /api/password-reset` body: `{ "email": "" }` solicita codigo de cambio de contrasena (requiere correo verificado)
+- `PUT /api/password-reset` body: `{ "code": "", "newPassword": "" }`
 
-Responden JSON con `message` y `user`.
+Responden JSON con `message` y `user` segun el caso.
 
-## Solución de problemas
-
-### Error de conexión a la base de datos
-1. Verifica que MySQL esté corriendo en el puerto 3306
-2. Verifica que el usuario `liveSwim` existe y tiene permisos
-3. Verifica que la base de datos `liveswim` existe
-
-### Verificar conexión MySQL
-```bash
-mysql -u liveSwim -p1234 -e "USE liveswim; SHOW TABLES;"
-```
+## Solucion de problemas
+1. Verifica MySQL en puerto 3306 y que el usuario `liveSwim` tenga permisos.
+2. Si Gmail bloquea el envio, confirma que usas una contrasena de aplicacion y que el dispositivo esta autorizado.
+3. Para ver columnas nuevas, ejecuta `DESCRIBE users;` tras el arranque.

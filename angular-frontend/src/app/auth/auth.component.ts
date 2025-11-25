@@ -17,6 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../services/auth.service';
 import { ConfirmationService } from '../shared/services/confirmation.service';
+import { animate, style, transition, trigger } from '@angular/animations';
 
 @Component({
   selector: 'app-auth',
@@ -33,7 +34,15 @@ import { ConfirmationService } from '../shared/services/confirmation.service';
     MatProgressSpinnerModule
   ],
   templateUrl: './auth.component.html',
-  styleUrls: ['./auth.component.scss']
+  styleUrls: ['./auth.component.scss'],
+  animations: [
+    trigger('fadeIn', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(6px)' }),
+        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ])
+    ])
+  ]
 })
 export class AuthComponent implements OnInit {
   mode: 'login' | 'register' = 'login';
@@ -45,7 +54,7 @@ export class AuthComponent implements OnInit {
   formSubmitted = false;
 
   private readonly passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-  private readonly namePattern = /^[a-zA-ZÀ-ÿ]+(?:\s[a-zA-ZÀ-ÿ]+)*$/;
+  private readonly namePattern = /^[a-zA-ZÁÉÍÓÚáéíóúÑñ]+(?:\s[a-zA-ZÁÉÍÓÚáéíóúÑñ]+)*$/;
 
   constructor(
     private authService: AuthService,
@@ -124,11 +133,11 @@ export class AuthComponent implements OnInit {
 
     this.confirmation
       .confirm({
-        title: this.mode === 'login' ? 'Confirmar inicio de sesión' : 'Confirmar registro',
+        title: this.mode === 'login' ? 'Confirmar inicio de sesion' : 'Confirmar registro',
         message: this.mode === 'login'
-          ? '¿Deseas iniciar sesión con las credenciales ingresadas?'
-          : '¿Deseas crear la nueva cuenta con estos datos?',
-        confirmText: this.mode === 'login' ? 'Iniciar sesión' : 'Registrarme',
+          ? 'Deseas iniciar sesion con las credenciales ingresadas?'
+          : 'Deseas crear la nueva cuenta con estos datos?',
+        confirmText: this.mode === 'login' ? 'Iniciar sesion' : 'Registrarme',
         confirmColor: 'primary'
       })
       .subscribe((confirmed) => {
@@ -143,17 +152,28 @@ export class AuthComponent implements OnInit {
         request.subscribe({
           next: () => {
             this.loading = false;
-            this.message = this.mode === 'login'
-              ? 'Inicio de sesión exitoso'
-              : 'Registro exitoso';
+            if (this.mode === 'login') {
+              this.message = 'Inicio de sesion exitoso';
+              setTimeout(() => {
+                this.router.navigate(['/']);
+              }, 1000);
+              return;
+            }
+
+            this.message = 'Registro exitoso. Revisa tu correo y confirma tu cuenta.';
+            this.mode = 'login';
+            this.passwordVisible = false;
+            this.authForm.reset({ email: formValue.email });
+            this.formSubmitted = false;
+            this.updateNameValidators();
 
             setTimeout(() => {
-              this.router.navigate(['/']);
+              this.router.navigate(['/verify-email'], { queryParams: { email: formValue.email } });
             }, 1000);
           },
           error: (err: any) => {
             this.loading = false;
-            this.error = err?.error?.message || 'Ocurrió un error';
+            this.error = err?.error?.message || 'Ocurrio un error';
           }
         });
       });
@@ -182,17 +202,17 @@ export class AuthComponent implements OnInit {
     }
 
     if (control.hasError('email')) {
-      return 'Ingresa un correo válido';
+      return 'Ingresa un correo valido';
     }
 
     if (control.hasError('minlength')) {
       const minLength = control.getError('minlength').requiredLength;
-      return `Mínimo ${minLength} caracteres`;
+      return `Minimo ${minLength} caracteres`;
     }
 
     if (control.hasError('pattern')) {
       if (controlName === 'password') {
-        return 'Usa al menos una mayúscula, una minúscula y un número.';
+        return 'Usa al menos una mayuscula, una minuscula y un numero.';
       }
       if (controlName === 'name') {
         return 'Solo letras y espacios.';
