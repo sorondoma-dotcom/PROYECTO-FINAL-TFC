@@ -19,22 +19,20 @@ API sencilla en PHP para gestionar usuarios (login/registro) con MySQL. Incluye 
 mysql -u root -p < setup-database.sql
 ```
 
-2) Verificar configuracion en `.env`:
+
+3) Configurar correo (Gmail SMTP) para enviar el codigo:
 ```env
 DB_DSN="mysql:host=localhost;dbname=liveswim;charset=utf8mb4"
 DB_USER="liveSwim"
 DB_PASS="1234"
-```
 
-3) Configurar correo (Gmail SMTP) para enviar el codigo:
-```env
 MAIL_ENABLED=true
 MAIL_HOST="smtp.gmail.com"
 MAIL_PORT=587
 MAIL_SECURE="tls"
-MAIL_USER="tu-cuenta@gmail.com"
-MAIL_PASS="tu-password-de-aplicacion"
-MAIL_FROM="no-reply@liveswim.local"
+MAIL_USER="swimlive669@gmail.com"
+MAIL_PASS="orcd tixd ueqy wrnu "
+MAIL_FROM="swimlive669@gmail.com"
 MAIL_FROM_NAME="Live Swim"
 ```
 - Usa una contrasena de aplicacion de Gmail (no la contrasena normal).
