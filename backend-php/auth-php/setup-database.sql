@@ -4,12 +4,7 @@
 -- 1. Crear la base de datos
 CREATE DATABASE IF NOT EXISTS liveswim CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- 2. Crear el usuario (si no existe)
-CREATE USER IF NOT EXISTS 'liveSwim'@'localhost' IDENTIFIED BY '1234';
 
--- 3. Otorgar privilegios al usuario
-GRANT ALL PRIVILEGES ON liveswim.* TO 'liveSwim'@'localhost';
-FLUSH PRIVILEGES;
 
 -- 4. Usar la base de datos
 USE liveswim;
