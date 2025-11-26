@@ -1,0 +1,224 @@
+<div class="perfil-wrapper">
+  <mat-card class="hero mat-elevation-z4">
+    <div class="hero__header">
+      <div class="hero__photo">
+        @if (athlete.imageUrl) {
+          <img [src]="athlete.imageUrl" [alt]="athlete.name" loading="lazy">
+        } @else {
+          <div class="photo-placeholder">
+            <mat-icon>person</mat-icon>
+          </div>
+        }
+        <button mat-stroked-button color="primary" routerLink="/nadadores" class="back-btn">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al ranking
+        </button>
+      </div>
+
+      <div class="hero__info">
+        <p class="breadcrumb">Nadadores - Perfil</p>
+        <h1>{{ athlete.name || 'Nadador' }}</h1>
+        <mat-chip-set class="chips">
+          <mat-chip color="primary" selected>{{ athlete.country || athlete.nationality || 'Sin pais' }}</mat-chip>
+          @if (athlete.age) { <mat-chip>{{ athlete.age }} anos</mat-chip> }
+          <mat-chip>{{ athlete.gender === 'M' ? 'Masculino' : 'Femenino' }}</mat-chip>
+          <mat-chip>{{ athlete.distance }}m - {{ getStrokeLabel(athlete.stroke) }} - {{ athlete.pool }}</mat-chip>
+        </mat-chip-set>
+        <div class="hero__actions">
+          <button mat-raised-button color="primary" (click)="loadRankingData()" [disabled]="loading">
+            @if (loading) { Cargando... } @else { Refrescar datos }
+          </button>
+          @if (athlete.profileUrl) {
+            <button mat-stroked-button color="accent" (click)="openExternalProfile()">
+              <mat-icon>open_in_new</mat-icon>
+              Perfil oficial
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="hero__metric" *ngIf="records.length">
+        <p>Mejor marca</p>
+        <h2>{{ records[0].bestTime }}</h2>
+        <small>{{ records[0].competition || 'Competencia' }}</small>
+      </div>
+      <div class="hero__metric medals" *ngIf="athlete.medals">
+        <p>Medallas (WA/JO)</p>
+        <div class="medal-row">
+          <span class="gold">Oro {{ athlete.medals.gold }}</span>
+          <span class="silver">Plata {{ athlete.medals.silver }}</span>
+          <span class="bronze">Bronce {{ athlete.medals.bronze }}</span>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+
+  <div class="grid">
+    <mat-card class="panel mat-elevation-z3">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Datos biometricos</p>
+          <h3>Ficha rapida</h3>
+        </div>
+        @if (loadingBio) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
+      </div>
+      <div class="bio-grid">
+        <div class="bio-item">
+          <span class="label">Edad</span>
+          <span class="value">{{ athlete.age || 'Sin dato' }}</span>
+        </div>
+        <div class="bio-item">
+          <span class="label">Nacimiento</span>
+          <span class="value">{{ athlete.birth || 'No disponible' }}</span>
+        </div>
+        <div class="bio-item">
+          <span class="label">Nacionalidad</span>
+          <span class="value">{{ athlete.nationality || athlete.country || 'Sin pais' }}</span>
+        </div>
+        <div class="bio-item">
+          <span class="label">Altura</span>
+          <span class="value">{{ athlete.height || 'Pendiente' }}</span>
+        </div>
+        <div class="bio-item">
+          <span class="label">Peso</span>
+          <span class="value">{{ athlete.weight || 'Pendiente' }}</span>
+        </div>
+        <div class="bio-item">
+          <span class="label">Club / Equipo</span>
+          <span class="value">{{ athlete.club || 'No registrado' }}</span>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Records personales</p>
+          <h3>Mejores marcas</h3>
+        </div>
+        @if (loading) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
+      </div>
+      @if (records.length) {
+        <div class="records-list">
+          @for (record of records; track record.label) {
+            <div class="record-card">
+              <div class="record-card__header">
+                <span class="record-label">{{ record.label }}</span>
+                @if (record.points) {
+                  <span class="points-chip">{{ record.points }} pts</span>
+                }
+              </div>
+              <div class="record-card__body">
+                <div>
+                  <p class="small-label">Mejor tiempo</p>
+                  <h4>{{ record.bestTime }}</h4>
+                </div>
+                <div>
+                  <p class="small-label">Competencia</p>
+                  <p class="muted">{{ record.competition || 'No disponible' }}</p>
+                </div>
+                <div>
+                  <p class="small-label">Fecha</p>
+                  <p class="muted">{{ record.date || 'Sin dato' }}</p>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty">Sin registros para este nadador en este filtro.</div>
+      }
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3 chart-panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Evolucion</p>
+          <h3>Grafica de progresion</h3>
+        </div>
+      </div>
+      @if (loading) {
+        <div class="center">
+          <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+        </div>
+      } @else if (hasChartData) {
+        <canvas
+          baseChart
+          [data]="lineChartData"
+          [type]="'line'"
+          [options]="lineChartOptions">
+        </canvas>
+      } @else {
+        <div class="empty">Aun no hay suficientes marcas para graficar.</div>
+      }
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Comparacion</p>
+          <h3>Promedio de su categoria</h3>
+        </div>
+      </div>
+      @if (averages.athleteBest !== null && averages.categoryAverage !== null) {
+        <div class="average-row">
+          <div>
+            <p class="small-label">Tu mejor</p>
+            <h4>{{ formatSeconds(averages.athleteBest) }}</h4>
+          </div>
+          <div>
+            <p class="small-label">Promedio listado</p>
+            <h4>{{ formatSeconds(averages.categoryAverage) }}</h4>
+          </div>
+        </div>
+        <div class="gap-row">
+          <span class="gap-label" [class.positive]="averages.diff !== null && averages.diff < 0">
+            {{ averageDiffLabel() }} ({{ averageGapSeconds() }})
+          </span>
+          <mat-progress-bar
+            mode="determinate"
+            [color]="averages.diff !== null && averages.diff <= 0 ? 'primary' : 'warn'"
+            [value]="progressValue()">
+          </mat-progress-bar>
+        </div>
+      } @else {
+        <div class="empty">Necesitamos al menos una marca tuya y datos de la prueba para comparar.</div>
+      }
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Eventos proximos</p>
+          <h3>Calendario sugerido</h3>
+        </div>
+        @if (loadingCompetitions) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
+      </div>
+      @if (upcomingEvents.length) {
+        <mat-list>
+          @for (event of upcomingEvents; track event.name) {
+            <mat-list-item>
+              <div mat-line class="event-title">{{ event.name }}</div>
+              <div mat-line class="muted">
+                {{ event.city || '' }} {{ event.countryCode || '' }} - {{ formatDateLabel(event.startDate || event.date || event.endDate) }}
+              </div>
+              <mat-chip-set class="event-tags">
+                @if (event.poolName) { <mat-chip>{{ event.poolName }}</mat-chip> }
+                @if (event.stage) { <mat-chip color="primary" selected>{{ event.stage }}</mat-chip> }
+              </mat-chip-set>
+            </mat-list-item>
+          }
+        </mat-list>
+      } @else if (!loadingCompetitions) {
+        <div class="empty">No hay eventos proximos para este pais o disciplina.</div>
+      }
+    </mat-card>
+  </div>
+
+  @if (rankingError) {
+    <div class="error-box">
+      <mat-icon color="warn">error</mat-icon>
+      <span>{{ rankingError }}</span>
+    </div>
+  }
+</div>

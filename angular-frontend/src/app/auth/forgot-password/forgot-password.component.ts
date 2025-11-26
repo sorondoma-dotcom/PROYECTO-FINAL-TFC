@@ -56,15 +56,15 @@ export class ForgotPasswordComponent {
     this.requestSubmitted = true;
 
     if (!this.emailPattern.test(this.email)) {
-      this.error = 'Ingresa un correo válido';
+      this.error = 'Ingresa un correo valido';
       return;
     }
 
     this.confirmation
       .confirm({
-        title: 'Enviar código de recuperación',
-        message: `Enviaremos un código a ${this.email}. ¿Deseas continuar?`,
-        confirmText: 'Enviar código',
+        title: 'Enviar codigo de recuperacion',
+        message: `Enviaremos un codigo a ${this.email}. Deseas continuar?`,
+        confirmText: 'Enviar codigo',
         confirmColor: 'primary'
       })
       .subscribe((confirmed) => {
@@ -81,20 +81,24 @@ export class ForgotPasswordComponent {
         this.authService.requestPasswordReset(this.email).subscribe({
           next: (res) => {
             this.loading = false;
-            this.message = res?.message || 'Código generado correctamente';
-            this.resetCode = res?.reset?.code || res?.code || '';
-            this.expiresAt = res?.reset?.expiresAt || res?.expiresAt || '';
+            const payload = res?.reset || res || {};
+            const emailSent = payload.emailSent ?? false;
 
-            if (this.resetCode) {
-              setTimeout(() => {
-                this.step = 'reset';
-                this.message = '';
-              }, 1500);
-            }
+            this.resetCode = payload.code || '';
+            this.expiresAt = payload.expiresAt || '';
+            this.message =
+              payload.message ||
+              (emailSent
+                ? 'Te enviamos un codigo a tu correo.'
+                : 'Codigo generado. Usa el que mostramos abajo.');
+
+            this.step = 'reset';
+            this.resetSubmitted = false;
+            this.code = '';
           },
           error: (err) => {
             this.loading = false;
-            this.error = err?.error?.message || err?.error?.error || 'No pudimos generar el código';
+            this.error = err?.error?.message || err?.error?.error || 'No pudimos generar el codigo';
           }
         });
       });
@@ -109,19 +113,19 @@ export class ForgotPasswordComponent {
     }
 
     if (!this.passwordPattern.test(this.newPassword)) {
-      this.error = 'Incluye mayúsculas, minúsculas y números en la contraseña.';
+      this.error = 'Incluye mayusculas, minusculas y numeros en la contrasena.';
       return;
     }
 
     if (this.newPassword !== this.confirmPassword) {
-      this.error = 'Las contraseñas no coinciden';
+      this.error = 'Las contrasenas no coinciden';
       return;
     }
 
     this.confirmation
       .confirm({
-        title: 'Confirmar actualización',
-        message: 'Se reemplazará la contraseña actual por la nueva. ¿Deseas continuar?',
+        title: 'Confirmar actualizacion',
+        message: 'Se reemplazara la contrasena actual por la nueva. Deseas continuar?',
         confirmText: 'Actualizar',
         confirmColor: 'accent'
       })
@@ -137,16 +141,16 @@ export class ForgotPasswordComponent {
         this.authService.resetPassword(this.code, this.newPassword).subscribe({
           next: (res) => {
             this.loading = false;
-            this.message = res?.message || 'Contraseña actualizada correctamente';
+            this.message = res?.message || 'Contrasena actualizada correctamente';
 
             setTimeout(() => {
-              // Redirigir al login después de 2 segundos
+              // Redirigir al login despues de 2 segundos
               window.location.href = '/auth';
             }, 2000);
           },
           error: (err) => {
             this.loading = false;
-            this.error = err?.error?.error || err?.error?.message || 'No se pudo actualizar la contraseña';
+            this.error = err?.error?.error || err?.error?.message || 'No se pudo actualizar la contrasena';
           }
         });
       });
@@ -167,6 +171,8 @@ export class ForgotPasswordComponent {
     this.confirmPassword = '';
     this.message = '';
     this.error = '';
+    this.resetCode = '';
+    this.expiresAt = '';
     this.resetSubmitted = false;
   }
 }

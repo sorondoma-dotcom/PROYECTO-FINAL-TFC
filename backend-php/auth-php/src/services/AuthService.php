@@ -97,20 +97,35 @@ class AuthService
         }
 
         $code = (string) random_int(100000, 999999);
-        $expiresAt = time() + 600;
+        $expiresAt = new \DateTimeImmutable('+10 minutes');
 
         $this->ensureSession();
         $_SESSION['password_reset'] = [
             'email' => $email,
             'code' => $code,
-            'expires_at' => $expiresAt,
+            'expires_at' => $expiresAt->getTimestamp(),
         ];
 
-        return [
+        $emailSent = false;
+        if ($this->mailer->isEnabled()) {
+            $this->mailer->sendPasswordResetCode($user->email, $user->name, $code, $expiresAt);
+            $emailSent = true;
+        }
+
+        $response = [
+            'message' => $emailSent
+                ? 'Hemos enviado un codigo de recuperacion a tu correo'
+                : 'Codigo generado (envio por correo deshabilitado en el servidor)',
+            'emailSent' => $emailSent,
             'email' => $email,
-            'code' => $code,
-            'expiresAt' => date(DATE_ATOM, $expiresAt),
+            'expiresAt' => $expiresAt->format(DATE_ATOM),
         ];
+
+        if (!$emailSent) {
+            $response['code'] = $code;
+        }
+
+        return $response;
     }
 
     public function resetPassword(string $code, string $newPassword): array

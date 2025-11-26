@@ -8,9 +8,11 @@ import { Observable } from 'rxjs';
 export class DatosService {
   private url = "http://localhost:3000/api/natacion";
   private rankingsUrl = "http://localhost:3000/api/world-aquatics/rankings";
+  private athletesUrl = "http://localhost:3000/api/world-aquatics/athletes";
   private competitionsUrl = "http://localhost:3000/api/world-aquatics/competitions";
   private competitionResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results";
   private competitionEventResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results/event";
+  private athleteProfileUrl = "http://localhost:3000/api/world-aquatics/athletes/profile";
 
   constructor(private http:HttpClient ) { }
   getDatosApi(){
@@ -95,6 +97,27 @@ export class DatosService {
     if (options.unitId) params = params.set('unitId', options.unitId);
     if (options.refresh) params = params.set('refresh', 'true');
     return this.http.get(this.competitionEventResultsUrl, { params });
+  }
+
+  getAthletes(filters: {
+    gender?: string;
+    discipline?: string;
+    nationality?: string;
+    name?: string;
+  } = {}): Observable<any> {
+    let params = new HttpParams();
+    if (filters.gender) params = params.set('gender', filters.gender);
+    if (filters.discipline) params = params.set('discipline', filters.discipline);
+    if (filters.nationality) params = params.set('nationality', filters.nationality);
+    if (filters.name) params = params.set('name', filters.name);
+    return this.http.get(this.athletesUrl, { params });
+  }
+
+  getAthleteProfile(filters: { url?: string; slug?: string }): Observable<any> {
+    let params = new HttpParams();
+    if (filters.url) params = params.set('url', filters.url);
+    if (filters.slug) params = params.set('slug', filters.slug);
+    return this.http.get(this.athleteProfileUrl, { params });
   }
 
   postHighlightedRankings(payload: any): Observable<any> {

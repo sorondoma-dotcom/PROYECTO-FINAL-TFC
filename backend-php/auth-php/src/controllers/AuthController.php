@@ -41,7 +41,7 @@ class AuthController
     public function logout(): void
     {
         $this->service->logout();
-        jsonResponse(['message' => 'Sesión finalizada']);
+        jsonResponse(['message' => 'Sesion finalizada']);
     }
 
     public function requestPasswordReset(): void
@@ -49,7 +49,7 @@ class AuthController
         $input = $this->getJsonInput();
         try {
             $reset = $this->service->requestPasswordReset($input['email'] ?? '');
-            jsonResponse(['message' => 'Código generado', 'reset' => $reset]);
+            jsonResponse($reset);
         } catch (\InvalidArgumentException $e) {
             jsonResponse(['error' => $e->getMessage()], 400);
         } catch (\Throwable $e) {

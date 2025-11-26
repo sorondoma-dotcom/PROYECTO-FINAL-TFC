@@ -620,6 +620,159 @@ async function fetchAthletes(params = {}) {
   return result;
 }
 
+async function fetchAthleteProfile(params = {}) {
+  const { url = "", slug = "" } = params;
+  if (!url && !slug) {
+    throw new Error("Debes proporcionar la URL o el slug del atleta");
+  }
+
+  const targetUrl = resolveWorldAquaticsUrl(url || `/athletes/${slug}`);
+  const cacheKey = `athlete-profile-${targetUrl}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  const { data: html } = await axios.get(targetUrl, {
+    headers: { "User-Agent": USER_AGENT },
+  });
+
+  const $ = cheerio.load(html);
+  const first = $(".athlete-header__athlete-firstname").first().text().trim();
+  const last = $(".athlete-header__athlete-lastname").first().text().trim();
+  const name = [first, last].filter(Boolean).join(" ").trim();
+  const nationality =
+    $(".athlete-header__athlete-nationality--country").first().text().trim() ||
+    null;
+  const profileImage =
+    $(".athlete-header__profile--image").first().attr("src") || null;
+  const birth = $(".athlete-header__birthdate")
+    .first()
+    .text()
+    .trim()
+    .replace("Born", "")
+    .trim() || null;
+
+  const medals = { gold: 0, silver: 0, bronze: 0 };
+  $(".athlete-header__bar-chart-wrapper").each((_, el) => {
+    const text = $(el).find(".athlete-header__bar-chart-medal-wrapper").text();
+    const val = parseInt(String(text).replace(/\D+/g, ""), 10) || 0;
+    if ($(el).find(".athlete-header__athlete-medal--gold").length) medals.gold = val;
+    if ($(el).find(".athlete-header__athlete-medal--silver").length) medals.silver = val;
+    if ($(el).find(".athlete-header__athlete-medal--bronze").length) medals.bronze = val;
+  });
+
+  const bestResults = [];
+  $(".athlete-table--best-results tbody tr").each((_, row) => {
+    const cells = $(row).find("td");
+    if (!cells || cells.length === 0) return;
+    const event = $(cells[0]).text().trim();
+    const time = $(cells[1]).find("strong").text().trim() || $(cells[1]).text().trim();
+    const medal = $(cells[2]).text().trim() || null;
+    const pool = $(cells[3]).text().trim() || null;
+    const age = $(cells[4]).text().trim() || null;
+    const competition = $(cells[5]).text().trim() || null;
+    const compCountry = $(cells[6]).text().trim() || null;
+    const date = $(cells[7]).text().trim() || null;
+    bestResults.push({
+      event,
+      time,
+      medal,
+      pool,
+      age,
+      competition,
+      compCountry,
+      date,
+    });
+  });
+
+  const result = {
+    success: true,
+    url: targetUrl,
+    name,
+    nationality,
+    profileImage: profileImage ? resolveWorldAquaticsUrl(profileImage) : null,
+    birth: birth || null,
+    medals,
+    bestResults,
+  };
+
+  cache.set(cacheKey, result, 60 * 60);
+  return result;
+}
+
+async function fetchAthletesLight(params = {}) {
+  const {
+    gender = "",
+    discipline = "SW",
+    nationality = "",
+    name = "",
+  } = params;
+
+  const url = `https://www.worldaquatics.com/athletes?gender=${encodeURIComponent(
+    gender
+  )}&discipline=${encodeURIComponent(
+    discipline
+  )}&nationality=${encodeURIComponent(
+    nationality
+  )}&name=${encodeURIComponent(name)}`;
+
+  const { data: html } = await axios.get(url, {
+    headers: { "User-Agent": USER_AGENT },
+  });
+
+  const $ = cheerio.load(html);
+  const atletas = [];
+  $(".athlete-table__row").each((_, row) => {
+    const $row = $(row);
+    const profileHref =
+      $row.attr("data-link") ||
+      $row.find(".athlete-table__cta-link").attr("href") ||
+      "";
+    const profileUrl = resolveWorldAquaticsUrl(profileHref);
+    const country =
+      $row.find(".athlete-table__flag img").attr("alt") ||
+      $row.find(".athlete-table__country").text().trim() ||
+      null;
+    const nameText = $row.find(".athlete-table__name").text().trim();
+    const birth = $row
+      .find("td")
+      .eq(3)
+      .text()
+      .trim()
+      .replace(/\s+/g, " ");
+    const genderCell = $row
+      .find("td")
+      .eq(2)
+      .text()
+      .trim()
+      .toUpperCase();
+    const rowGender =
+      genderCell.startsWith("M") ? "M" : genderCell.startsWith("F") ? "F" : "";
+    const imageUrl =
+      $row.find(".athlete-headshot img").attr("src") ||
+      $row.find(".athlete-headshot__placeholder").attr("src") ||
+      null;
+
+    if (nameText) {
+      atletas.push({
+        name: nameText,
+        nationality: country,
+        country,
+        birth,
+        gender: rowGender || gender,
+        imageUrl: imageUrl ? resolveWorldAquaticsUrl(imageUrl) : null,
+        profileUrl,
+      });
+    }
+  });
+
+  return {
+    success: true,
+    url,
+    total: atletas.length,
+    atletas,
+  };
+}
+
 function resolveWorldAquaticsUrl(raw = "") {
   if (!raw) return "";
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
@@ -1599,8 +1752,10 @@ function buildCompetitionCacheKey(parts) {
 module.exports = {
   fetchRankings,
   fetchAthletes,
+  fetchAthletesLight,
   fetchCompetitionsList,
   fetchCompetitionEvents,
   fetchCompetitionEventResults,
+  fetchAthleteProfile,
 };
 

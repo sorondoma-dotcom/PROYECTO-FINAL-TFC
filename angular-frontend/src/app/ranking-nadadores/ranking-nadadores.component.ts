@@ -14,7 +14,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationService } from '../shared/services/confirmation.service';
-import { ActivatedRoute, Route } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-ranking-nadadores',
@@ -84,7 +84,8 @@ export class RankingNadadoresComponent implements OnInit {
     private dialog: MatDialog,
     private active: ActivatedRoute,
     private confirmation: ConfirmationService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -342,6 +343,28 @@ export class RankingNadadoresComponent implements OnInit {
     if (img) {
       img.style.display = 'none';
     }
+  }
+
+  verPerfil(nadador: any) {
+    const filters = this.rankingForm?.value || {};
+    const nameParam = encodeURIComponent(nadador?.name || '');
+    this.router.navigate(['/nadadores', 'perfil', nameParam], {
+      queryParams: {
+        country: nadador?.country,
+        imageUrl: nadador?.imageUrl,
+        profileUrl: nadador?.profileUrl,
+        age: nadador?.age,
+        gender: filters.gender,
+        distance: filters.distance,
+        stroke: filters.stroke,
+        pool: filters.poolConfiguration,
+        points: nadador?.points
+      },
+      state: {
+        performer: nadador,
+        filters
+      }
+    });
   }
 }
 

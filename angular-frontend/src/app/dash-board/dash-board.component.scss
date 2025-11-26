@@ -10,11 +10,11 @@ $text-main: rgba(0, 0, 0, 0.87);
 .dashboard-container {
   max-width: 1800px;
   margin: 0 auto;
-  padding: 2.5rem;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
   background: var(--dashboard-bg);
   border-radius: $border-radius-lg;
   min-height: 100%;
-  height: 79.5vh;
+  height: auto;
   border: 1px solid var(--dashboard-border-soft);
 
   // Sombra más marcada tanto en claro como en oscuro
@@ -306,19 +306,25 @@ $text-main: rgba(0, 0, 0, 0.87);
 }
 
 .featured-grid {
+  --carousel-gap: clamp(1rem, 2vw, 2rem);
+  --items-per-view: 3;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--carousel-gap);
 
   &.carousel {
     display: flex;
     transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    gap: 2rem;
+    gap: var(--carousel-gap);
     will-change: transform;
 
     .featured-card {
-      flex: 0 0 calc(33.333% - 1.333rem);
-      min-width: 340px;
+      flex: 0 0
+        calc(
+          (100% - (var(--items-per-view) - 1) * var(--carousel-gap)) /
+          var(--items-per-view)
+        );
+      min-width: 260px;
     }
   }
 }
@@ -356,7 +362,8 @@ $text-main: rgba(0, 0, 0, 0.87);
   flex-direction: column;
   overflow: hidden;
   box-shadow: $shadow-sm;
-  height: 500px; // Reducido de 600px a 500px
+  height: auto;
+  min-height: 460px; // Mantener presencia sin forzar altura fija
 
   &::before {
     content: '';
@@ -869,6 +876,26 @@ $text-main: rgba(0, 0, 0, 0.87);
   }
 }
 
+// Ajustes responsivos para ranking cards
+.ranking-card {
+  mat-card-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+
+  mat-card-content {
+    padding: 1rem;
+  }
+
+  .ranking-item {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .athlete-info .athlete-details {
+    flex-wrap: wrap;
+  }
+}
+
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -905,10 +932,11 @@ $text-main: rgba(0, 0, 0, 0.87);
   }
 
   .featured-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 
     &.carousel .featured-card {
-      flex: 0 0 calc(50% - 1rem);
+      min-width: 240px;
+      max-width: none;
     }
   }
 
@@ -986,13 +1014,6 @@ $text-main: rgba(0, 0, 0, 0.87);
     scroll-snap-align: start;
   }
 
-  .featured-grid.carousel {
-    .featured-card {
-      flex: 0 0 calc(100% - 2rem);
-      min-width: 280px;
-    }
-  }
-
   .stat-card {
     .stat-content {
       flex-direction: column;
@@ -1017,7 +1038,8 @@ $text-main: rgba(0, 0, 0, 0.87);
   }
 
   .featured-card {
-    height: 450px; // Reducido de 550px a 450px
+    height: auto;
+    min-height: 400px; // Reducido para pantallas pequenas sin fijar altura
 
     .competition-logo-container {
       height: 120px; // Reducido de 150px a 120px
@@ -1046,6 +1068,25 @@ $text-main: rgba(0, 0, 0, 0.87);
     display: flex;
     justify-content: center;
     margin-top: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .featured-card {
+    min-height: 420px;
+
+    mat-card-content {
+      padding: 0.9rem;
+    }
+  }
+
+  .featured-grid {
+    gap: 1rem;
+  }
+
+  .featured-grid.carousel .ranking-card {
+    flex: 0 0 100%;
+    min-width: 100%;
   }
 }
 

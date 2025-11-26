@@ -1,4 +1,5 @@
 const worldService = require('../services/worldAquatics.service');
+const { fetchAthletesFromDb } = require('../services/athletes.db.service');
 
 async function rankings(req, res) {
   try {
@@ -17,6 +18,46 @@ async function athletes(req, res) {
     res.json(result);
   } catch (error) {
     res.status(500).json({ success: false, error: 'Error al obtener atletas de World Aquatics', mensaje: error.message });
+  }
+}
+
+async function athleteProfile(req, res) {
+  try {
+    const params = req.query || {};
+    if (!params.url && !params.slug) {
+      return res.status(400).json({
+        success: false,
+        error: 'Debes proporcionar la URL o el slug del atleta',
+      });
+    }
+    const result = await worldService.fetchAthleteProfile(params);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener el perfil del atleta',
+      mensaje: error.message,
+    });
+  }
+}
+
+async function athletesDb(req, res) {
+  try {
+    const { limit, offset, gender, country, name } = req.query || {};
+    const result = await fetchAthletesFromDb({
+      limit: limit ? parseInt(limit, 10) : undefined,
+      offset: offset ? parseInt(offset, 10) : undefined,
+      gender,
+      country,
+      name,
+    });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener atletas desde la base de datos',
+      mensaje: error.message,
+    });
   }
 }
 
@@ -111,4 +152,6 @@ module.exports = {
   competitions,
   competitionResults,
   competitionEventResult,
+  athleteProfile,
+  athletesDb,
 };

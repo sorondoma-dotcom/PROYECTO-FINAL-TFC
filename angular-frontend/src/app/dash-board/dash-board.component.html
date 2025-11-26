@@ -116,7 +116,7 @@
       <div class="featured-section">
         <div class="section-header">
           <h2>🌟 Competiciones Destacadas</h2>
-          @if (competicionesDestacadas.length > itemsPerViewCompetitions) {
+          @if (competicionesDestacadas.length > visibleCompetitionsPerView) {
             <div class="carousel-controls">
               <button
                 mat-icon-button
@@ -127,7 +127,7 @@
                 <mat-icon>chevron_left</mat-icon>
               </button>
               <span class="carousel-indicator">
-                {{ currentCompetitionIndex + 1 }} - {{ Math.min(currentCompetitionIndex + itemsPerViewCompetitions, competicionesDestacadas.length) }} de {{ competicionesDestacadas.length }}
+                {{ currentCompetitionIndex + 1 }} - {{ Math.min(currentCompetitionIndex + visibleCompetitionsPerView, competicionesDestacadas.length) }} de {{ competicionesDestacadas.length }}
               </span>
               <button
                 mat-icon-button
@@ -141,7 +141,10 @@
           }
         </div>
         <div class="carousel-container">
-          <div class="featured-grid carousel" [style.transform]="'translateX(-' + (currentCompetitionIndex * (100 / itemsPerViewCompetitions)) + '%)'">
+          <div
+            class="featured-grid carousel"
+            [style.--items-per-view]="visibleCompetitionsPerView"
+            [style.transform]="competitionTranslate">
           @for (comp of competicionesDestacadas; track trackCompetition($index, comp)) {
             <mat-card class="featured-card">
               <!-- Logo de la competición -->
@@ -245,7 +248,7 @@
     <div class="featured-section">
       <div class="section-header">
         <h2>🏅 Nadadores destacados por prueba</h2>
-        @if (eventosTop.length > itemsPerViewRankings) {
+        @if (eventosTop.length > visibleRankingsPerView) {
           <div class="carousel-controls">
             <button
               mat-icon-button
@@ -256,7 +259,7 @@
               <mat-icon>chevron_left</mat-icon>
             </button>
             <span class="carousel-indicator">
-              {{ currentRankingIndex + 1 }} - {{ Math.min(currentRankingIndex + itemsPerViewRankings, eventosTop.length) }} de {{ eventosTop.length }}
+              {{ currentRankingIndex + 1 }} - {{ Math.min(currentRankingIndex + visibleRankingsPerView, eventosTop.length) }} de {{ eventosTop.length }}
             </span>
             <button
               mat-icon-button
@@ -297,7 +300,10 @@
 
       @if (eventosTop && eventosTop.length > 0) {
         <div class="carousel-container">
-          <div class="featured-grid carousel" [style.transform]="'translateX(-' + (currentRankingIndex * (100 / itemsPerViewRankings)) + '%)'">
+          <div
+            class="featured-grid carousel"
+            [style.--items-per-view]="visibleRankingsPerView"
+            [style.transform]="rankingTranslate">
           @for (ev of eventosTop; track ev.key) {
             <mat-card class="featured-card ranking-card">
               <mat-card-header>

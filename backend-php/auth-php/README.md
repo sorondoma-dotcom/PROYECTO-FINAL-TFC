@@ -61,7 +61,7 @@ private readonly baseUrl = 'http://localhost:8000/api';
 - `POST /api/login` body: `{ "email": "", "password": "" }` (requiere correo verificado)
 - `POST /api/email/send-code` body: `{ "email": "" }` reenvia codigo de verificacion
 - `POST /api/email/verify` body: `{ "email": "", "code": "" }` valida el codigo y marca el correo como verificado
-- `POST /api/password-reset` body: `{ "email": "" }` solicita codigo de cambio de contrasena (requiere correo verificado)
+- `POST /api/password-reset` body: `{ "email": "" }` envia codigo de cambio de contrasena al correo (solo devuelve el codigo en la respuesta si el SMTP esta deshabilitado)
 - `PUT /api/password-reset` body: `{ "code": "", "newPassword": "" }`
 
 Responden JSON con `message` y `user` segun el caso.

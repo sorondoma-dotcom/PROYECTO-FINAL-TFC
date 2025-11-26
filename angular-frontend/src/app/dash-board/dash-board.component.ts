@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -71,6 +71,18 @@ export class DashBoardComponent implements OnInit {
     this.selectedIndex = event.index;
   }
 
+  @HostListener('window:resize')
+  onResize(): void {
+    this.currentCompetitionIndex = Math.min(
+      this.currentCompetitionIndex,
+      this.maxCompetitionIndex
+    );
+    this.currentRankingIndex = Math.min(
+      this.currentRankingIndex,
+      this.maxRankingIndex
+    );
+  }
+
   get tabs() {
     const base = [{ key: 'resumen', label: 'Resumen' }];
     // IMPORTANTE: Siempre mostrar la pestaña "Destacadas", incluso si está cargando
@@ -101,6 +113,10 @@ export class DashBoardComponent implements OnInit {
           console.log('📋 Lista de competiciones:', list.length); // Debug
 
           this.competicionesDestacadas = this.procesarCompeticiones(list);
+          this.currentCompetitionIndex = Math.min(
+            this.currentCompetitionIndex,
+            this.maxCompetitionIndex
+          );
           console.log(
             '🌟 Competiciones destacadas procesadas:',
             this.competicionesDestacadas.length
@@ -496,6 +512,10 @@ export class DashBoardComponent implements OnInit {
     forkJoin(requests).subscribe({
       next: (res: any[]) => {
         this.eventosTop = res.filter((ev: any) => !ev.error && ev.top.length > 0) as TopEvent[];
+        this.currentRankingIndex = Math.min(
+          this.currentRankingIndex,
+          this.maxRankingIndex
+        );
         const errores = res.filter((ev: any) => ev.error);
         if (errores.length > 0 && this.eventosTop.length === 0) {
           this.errorRankings = 'No se pudieron cargar los rankings. Por favor, intenta más tarde.';
@@ -608,7 +628,7 @@ export class DashBoardComponent implements OnInit {
 
   // Métodos para el carrusel de competiciones
   get maxCompetitionIndex(): number {
-    return Math.max(0, this.competicionesDestacadas.length - this.itemsPerViewCompetitions);
+    return Math.max(0, this.competicionesDestacadas.length - this.visibleCompetitionsPerView);
   }
 
   get canScrollCompetitionsLeft(): boolean {
@@ -633,7 +653,7 @@ export class DashBoardComponent implements OnInit {
 
   // Métodos para el carrusel de rankings
   get maxRankingIndex(): number {
-    return Math.max(0, this.eventosTop.length - this.itemsPerViewRankings);
+    return Math.max(0, this.eventosTop.length - this.visibleRankingsPerView);
   }
 
   get canScrollRankingsLeft(): boolean {
@@ -654,5 +674,40 @@ export class DashBoardComponent implements OnInit {
     if (this.canScrollRankingsRight) {
       this.currentRankingIndex++;
     }
+  }
+
+  private getResponsiveMaxPerView(): number {
+    const width = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    if (width <= 768) return 1;
+    if (width <= 1280) return 2;
+    return 3;
+  }
+
+  get visibleCompetitionsPerView(): number {
+    if (this.competicionesDestacadas.length === 0) return 1;
+    const maxPerView = Math.min(
+      this.itemsPerViewCompetitions,
+      this.getResponsiveMaxPerView()
+    );
+    return Math.min(maxPerView, this.competicionesDestacadas.length);
+  }
+
+  get visibleRankingsPerView(): number {
+    if (this.eventosTop.length === 0) return 1;
+    const maxPerView = Math.min(
+      this.itemsPerViewRankings,
+      this.getResponsiveMaxPerView()
+    );
+    return Math.min(maxPerView, this.eventosTop.length);
+  }
+
+  get competitionTranslate(): string {
+    const step = 100 / this.visibleCompetitionsPerView;
+    return `translateX(-${this.currentCompetitionIndex * step}%)`;
+  }
+
+  get rankingTranslate(): string {
+    const step = 100 / this.visibleRankingsPerView;
+    return `translateX(-${this.currentRankingIndex * step}%)`;
   }
 }

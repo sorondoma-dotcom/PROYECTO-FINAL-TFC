@@ -6,6 +6,7 @@ import { ResultadoPruebaComponent } from './resultado-prueba/resultado-prueba.co
 import { AuthComponent } from './auth/auth.component';
 import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.component';
 import { VerifyEmailComponent } from './auth/verify-email/verify-email.component';
+import { PerfilNadadorComponent } from './perfil-nadador/perfil-nadador.component';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -14,7 +15,8 @@ export const routes: Routes = [
    { path: 'verify-email', component: VerifyEmailComponent },
   { path: '', component: DashBoardComponent, canActivate: [authGuard] },
   { path: 'competiciones', component: CompeticionComponent, canActivate: [authGuard] },
-  { path: 'nadadores', component: RankingNadadoresComponent, canActivate: [authGuard] },
+  { path: 'nadadores/perfil/:name', component: PerfilNadadorComponent, canActivate: [authGuard] },
+  { path: 'nadadores', component: RankingNadadoresComponent, canActivate: [authGuard], pathMatch: 'full' },
   { path: 'resultado-prueba', component: ResultadoPruebaComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: 'auth' },
 ];

@@ -18,10 +18,19 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-header('Access-Control-Allow-Origin: http://localhost:4200');
-header('Access-Control-Allow-Credentials: true');
+$allowedOrigins = [
+    'http://localhost:4200',
+    'https://0bfkk9hz-4200.uks1.devtunnels.ms',
+];
+$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if (in_array($requestOrigin, $allowedOrigins, true)) {
+    header("Access-Control-Allow-Origin: {$requestOrigin}");
+    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin'); // responde seg�n origen permitido
+}
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+header('Access-Control-Max-Age: 86400');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);

@@ -35,6 +35,24 @@ class MailService
         }
     }
 
+    public function sendPasswordResetCode(string $recipientEmail, string $recipientName, string $code, \DateTimeInterface $expiresAt): void
+    {
+        if (!$this->enabled) {
+            return;
+        }
+
+        try {
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress($recipientEmail, $recipientName);
+            $this->mailer->Subject = 'Codigo para restablecer tu contrasena';
+            $this->mailer->Body = $this->buildPasswordResetBody($recipientName, $code, $expiresAt);
+            $this->mailer->AltBody = $this->mailer->Body;
+            $this->mailer->send();
+        } catch (MailException $e) {
+            throw new \RuntimeException('No se pudo enviar el correo de recuperacion: ' . $e->getMessage());
+        }
+    }
+
     public function isEnabled(): bool
     {
         return $this->enabled;
@@ -81,5 +99,16 @@ class MailService
             . "{$code}\n\n"
             . "El codigo expira en 15 minutos.\n\n"
             . "Si no solicitaste esta cuenta, ignora este mensaje.\n";
+    }
+
+    private function buildPasswordResetBody(string $name, string $code, \DateTimeInterface $expiresAt): string
+    {
+        $safeName = trim($name) !== '' ? $name : 'nadador';
+        $expiresLocal = $expiresAt->format('d/m/Y H:i');
+
+        return "Hola {$safeName},\n\n"
+            . "Recibimos una solicitud para restablecer tu contrasena. Usa este codigo para completar el proceso:\n\n"
+            . "{$code}\n\n"
+            . "El codigo expira el {$expiresLocal}. Si no pediste el cambio, puedes ignorar este correo.\n";
     }
 }
