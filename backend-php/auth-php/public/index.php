@@ -2,24 +2,31 @@
 require __DIR__ . '/../src/bootstrap.php';
 require __DIR__ . '/../src/controllers/AuthController.php';
 require __DIR__ . '/../src/controllers/RankingController.php';
+require __DIR__ . '/../src/controllers/AthleteController.php';
 require __DIR__ . '/../src/services/AuthService.php';
 require __DIR__ . '/../src/services/MailService.php';
 require __DIR__ . '/../src/services/RankingService.php';
+require __DIR__ . '/../src/services/AthleteResultService.php';
 require __DIR__ . '/../src/repositories/UserRepository.php';
 require __DIR__ . '/../src/repositories/SwimmingRankingRepository.php';
+require __DIR__ . '/../src/repositories/AthleteResultRepository.php';
 require __DIR__ . '/../src/models/User.php';
 require __DIR__ . '/../src/models/SwimmingRanking.php';
+require __DIR__ . '/../src/models/AthleteResult.php';
 require __DIR__ . '/../src/lib/PHPMailer/Exception.php';
 require __DIR__ . '/../src/lib/PHPMailer/PHPMailer.php';
 require __DIR__ . '/../src/lib/PHPMailer/SMTP.php';
 
 use App\Controllers\AuthController;
 use App\Controllers\RankingController;
+use App\Controllers\AthleteController;
 use App\Repositories\UserRepository;
 use App\Repositories\SwimmingRankingRepository;
+use App\Repositories\AthleteResultRepository;
 use App\Services\AuthService;
 use App\Services\MailService;
 use App\Services\RankingService;
+use App\Services\AthleteResultService;
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -58,7 +65,7 @@ if (empty($uri)) {
 
 // Rutas publicas que NO requieren autenticacion
 $publicRoutes = [
-    'GET' => ['/api/health', '/', '/index.php', '/api/rankings'],
+    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats'],
     'POST' => ['/api/login', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
     'PUT' => ['/api/password-reset']
 ];
@@ -89,6 +96,10 @@ $rankingRepository = new SwimmingRankingRepository();
 $rankingService = new RankingService($rankingRepository);
 $rankingController = new RankingController($rankingService);
 
+$athleteResultRepository = new AthleteResultRepository();
+$athleteResultService = new AthleteResultService($athleteResultRepository);
+$athleteController = new AthleteController($athleteResultService);
+
 if ($method === 'POST' && $uri === '/api/register') {
     $authController->register();
 } elseif ($method === 'POST' && $uri === '/api/login') {
@@ -105,6 +116,12 @@ if ($method === 'POST' && $uri === '/api/register') {
     $authController->verifyEmail();
 } elseif ($method === 'GET' && $uri === '/api/rankings') {
     $rankingController->index();
+} elseif ($method === 'GET' && $uri === '/api/athletes/results') {
+    $athleteController->getResults();
+} elseif ($method === 'GET' && $uri === '/api/athletes/results/medals') {
+    $athleteController->getMedals();
+} elseif ($method === 'GET' && $uri === '/api/athletes/results/stats') {
+    $athleteController->getStats();
 } elseif ($method === 'GET' && ($uri === '/api/health' || $uri === '/' || $uri === '/index.php')) {
     jsonResponse(['status' => 'ok', 'service' => 'auth-php', 'database' => 'MySQL on localhost:3306']);
 } else {
