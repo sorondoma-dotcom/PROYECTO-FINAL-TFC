@@ -15,6 +15,7 @@ import { Competition } from '../models/competition.interface';
 
 interface AthleteProfile {
   name: string;
+  athleteId?: number | null;
   country?: string;
   nationality?: string;
   imageUrl?: string;
@@ -75,6 +76,7 @@ export class PerfilNadadorComponent implements OnInit {
 
   athlete: AthleteProfile = {
     name: '',
+    athleteId: null,
     country: '',
     nationality: '',
     imageUrl: '',
@@ -93,6 +95,7 @@ export class PerfilNadadorComponent implements OnInit {
 
   upcomingEvents: Competition[] = [];
   performances: any[] = [];
+  dbResults: any[] = [];
   rankingData: any[] = [];
   records: PersonalRecord[] = [];
   averages: AverageInfo = { athleteBest: null, categoryAverage: null, diff: null };
@@ -114,14 +117,21 @@ export class PerfilNadadorComponent implements OnInit {
         fill: false,
         tension: 0.3,
         borderColor: '#1976d2',
+        backgroundColor: 'rgba(25, 118, 210, 0.1)',
         pointBackgroundColor: '#1976d2',
-        pointRadius: 5
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        borderWidth: 3
       }
     ]
   };
 
   lineChartOptions: ChartOptions<'line'> = {
     responsive: true,
+    maintainAspectRatio: true,
+    aspectRatio: 2.5,
     plugins: {
       legend: { display: false },
       tooltip: {
@@ -131,10 +141,40 @@ export class PerfilNadadorComponent implements OnInit {
       }
     },
     scales: {
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 35,
+          autoSkip: true,
+          maxTicksLimit: 10,
+          font: {
+            size: 11
+          }
+        },
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.05)'
+        }
+      },
       y: {
         ticks: {
-          callback: (value) => this.formatSeconds(Number(value))
+          callback: (value) => this.formatSeconds(Number(value)),
+          padding: 10,
+          font: {
+            size: 12
+          }
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.08)'
         }
+      }
+    },
+    layout: {
+      padding: {
+        top: 20,
+        right: 20,
+        bottom: 10,
+        left: 10
       }
     }
   };
@@ -149,6 +189,7 @@ export class PerfilNadadorComponent implements OnInit {
     this.populateFromRoute();
     this.loadAthleteBio();
     this.loadRankingData();
+    this.loadDbResults();
     this.loadUpcomingCompetitions();
   }
 
@@ -164,6 +205,7 @@ export class PerfilNadadorComponent implements OnInit {
     this.athlete = {
       ...this.athlete,
       name: paramName || stateAthlete.name || '',
+      athleteId: stateAthlete.athleteId ?? null,
       country: query['country'] || stateAthlete.country || '',
       nationality: stateAthlete.nationality || '',
       imageUrl: query['imageUrl'] || stateAthlete.imageUrl || '',
@@ -175,6 +217,23 @@ export class PerfilNadadorComponent implements OnInit {
       pool: query['pool'] || filters.poolConfiguration || 'LCM',
       points: query['points'] || stateAthlete.points || null
     };
+  }
+
+  loadDbResults(): void {
+    const athleteId = this.athlete.athleteId;
+    if (!athleteId) {
+      return;
+    }
+
+    this.datosService.getAthleteResults(athleteId).subscribe({
+      next: (res) => {
+        const list = Array.isArray(res?.results) ? res.results : [];
+        this.dbResults = list;
+      },
+      error: () => {
+        this.dbResults = [];
+      }
+    });
   }
 
   loadAthleteBio(): void {

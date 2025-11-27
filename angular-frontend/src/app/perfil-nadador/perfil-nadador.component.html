@@ -1,28 +1,42 @@
 <div class="perfil-wrapper">
-  <mat-card class="hero mat-elevation-z4">
+  <mat-card class="hero mat-elevation-z6">
+    <div class="hero__topbar">
+      <button mat-stroked-button color="primary" routerLink="/nadadores" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+        Volver al ranking
+      </button>
+      <p class="breadcrumb">Nadadores · Perfil destacado</p>
+    </div>
+
     <div class="hero__header">
-      <div class="hero__photo">
-        @if (athlete.imageUrl) {
-          <img [src]="athlete.imageUrl" [alt]="athlete.name" loading="lazy">
-        } @else {
-          <div class="photo-placeholder">
-            <mat-icon>person</mat-icon>
-          </div>
-        }
-        <button mat-stroked-button color="primary" routerLink="/nadadores" class="back-btn">
-          <mat-icon>arrow_back</mat-icon>
-          Volver al ranking
-        </button>
+      <div class="hero__photo-block">
+        <div class="photo-frame">
+          @if (athlete.imageUrl) {
+            <img [src]="athlete.imageUrl" [alt]="athlete.name" loading="lazy">
+          } @else {
+            <div class="photo-placeholder">
+              <mat-icon>person</mat-icon>
+            </div>
+          }
+          <span class="photo-glow"></span>
+        </div>
+        <div class="mini-meta">
+          <span class="pill">{{ athlete.club || 'Club no registrado' }}</span>
+          <span class="pill pill--light">{{ athlete.country || athlete.nationality || 'Pais por confirmar' }}</span>
+        </div>
       </div>
 
       <div class="hero__info">
-        <p class="breadcrumb">Nadadores - Perfil</p>
+        <p class="eyebrow">Enfocado en el agua</p>
         <h1>{{ athlete.name || 'Nadador' }}</h1>
+        <p class="hero__tagline">
+          {{ athlete.distance }}m · {{ getStrokeLabel(athlete.stroke) }} · {{ athlete.pool || 'Piscina' }}
+        </p>
         <mat-chip-set class="chips">
-          <mat-chip color="primary" selected>{{ athlete.country || athlete.nationality || 'Sin pais' }}</mat-chip>
+          <mat-chip color="primary" selected>{{ athlete.gender === 'M' ? 'Masculino' : 'Femenino' }}</mat-chip>
           @if (athlete.age) { <mat-chip>{{ athlete.age }} anos</mat-chip> }
-          <mat-chip>{{ athlete.gender === 'M' ? 'Masculino' : 'Femenino' }}</mat-chip>
-          <mat-chip>{{ athlete.distance }}m - {{ getStrokeLabel(athlete.stroke) }} - {{ athlete.pool }}</mat-chip>
+          <mat-chip>{{ athlete.nationality || athlete.country || 'Sin pais' }}</mat-chip>
+          <mat-chip>Ranking dinamico</mat-chip>
         </mat-chip-set>
         <div class="hero__actions">
           <button mat-raised-button color="primary" (click)="loadRankingData()" [disabled]="loading">
@@ -37,17 +51,19 @@
         </div>
       </div>
 
-      <div class="hero__metric" *ngIf="records.length">
-        <p>Mejor marca</p>
-        <h2>{{ records[0].bestTime }}</h2>
-        <small>{{ records[0].competition || 'Competencia' }}</small>
-      </div>
-      <div class="hero__metric medals" *ngIf="athlete.medals">
-        <p>Medallas (WA/JO)</p>
-        <div class="medal-row">
-          <span class="gold">Oro {{ athlete.medals.gold }}</span>
-          <span class="silver">Plata {{ athlete.medals.silver }}</span>
-          <span class="bronze">Bronce {{ athlete.medals.bronze }}</span>
+      <div class="hero__metric-stack">
+        <div class="hero__metric" *ngIf="records.length">
+          <p>Mejor marca</p>
+          <h2>{{ records[0].bestTime }}</h2>
+          <small>{{ records[0].competition || 'Competencia' }}</small>
+        </div>
+        <div class="hero__metric medals" *ngIf="athlete.medals">
+          <p>Medallas (WA/JO)</p>
+          <div class="medal-row">
+            <span class="gold">Oro {{ athlete.medals.gold }}</span>
+            <span class="silver">Plata {{ athlete.medals.silver }}</span>
+            <span class="bronze">Bronce {{ athlete.medals.bronze }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -114,10 +130,6 @@
                   <h4>{{ record.bestTime }}</h4>
                 </div>
                 <div>
-                  <p class="small-label">Competencia</p>
-                  <p class="muted">{{ record.competition || 'No disponible' }}</p>
-                </div>
-                <div>
                   <p class="small-label">Fecha</p>
                   <p class="muted">{{ record.date || 'Sin dato' }}</p>
                 </div>
@@ -128,6 +140,41 @@
       } @else {
         <div class="empty">Sin registros para este nadador en este filtro.</div>
       }
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3" *ngIf="dbResults.length">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Historial en base de datos</p>
+          <h3>Resultados guardados</h3>
+        </div>
+      </div>
+      <div class="results-table-wrapper">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th>Prueba</th>
+              <th>Tiempo</th>
+              <th>Medalla</th>
+              <th>Piscina</th>
+              <th>Competicion</th>
+              <th>Pais</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of dbResults">
+              <td>{{ r.event }}</td>
+              <td>{{ r.timeText }}</td>
+              <td>{{ r.medal || '-' }}</td>
+              <td>{{ r.poolLength || '-' }}</td>
+              <td>{{ r.competition || '-' }}</td>
+              <td>{{ r.compCountryCode || '-' }}</td>
+              <td>{{ formatDateLabel(r.raceDate) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </mat-card>
 
     <mat-card class="panel mat-elevation-z3 chart-panel">
@@ -142,12 +189,14 @@
           <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
         </div>
       } @else if (hasChartData) {
-        <canvas
-          baseChart
-          [data]="lineChartData"
-          [type]="'line'"
-          [options]="lineChartOptions">
-        </canvas>
+        <div class="chart-wrapper">
+          <canvas
+            baseChart
+            [data]="lineChartData"
+            [type]="'line'"
+            [options]="lineChartOptions">
+          </canvas>
+        </div>
       } @else {
         <div class="empty">Aun no hay suficientes marcas para graficar.</div>
       }

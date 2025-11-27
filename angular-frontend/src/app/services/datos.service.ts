@@ -9,6 +9,7 @@ export class DatosService {
   private url = "http://localhost:3000/api/natacion";
   private phpApiBase = "http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api";
   private rankingsUrl = `${this.phpApiBase}/rankings`;
+  private athleteResultsUrl = `${this.phpApiBase}/athletes/results`;
   private athletesUrl = "http://localhost:3000/api/world-aquatics/athletes";
   private competitionsUrl = "http://localhost:3000/api/world-aquatics/competitions";
   private competitionResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results";
@@ -125,5 +126,11 @@ export class DatosService {
   postHighlightedRankings(payload: any): Observable<any> {
     const url = `${this.rankingsUrl}/highlighted`;
     return this.http.post(url, payload);
+  }
+
+  getAthleteResults(athleteId: number): Observable<any> {
+    return this.http.get(this.athleteResultsUrl, {
+      params: new HttpParams().set('athleteId', String(athleteId))
+    });
   }
 }
