@@ -52,19 +52,23 @@
       </div>
 
       <div class="hero__metric-stack">
-        <div class="hero__metric" *ngIf="records.length">
-          <p>Mejor marca</p>
-          <h2>{{ records[0].bestTime }}</h2>
-          <small>{{ records[0].competition || 'Competencia' }}</small>
-        </div>
-        <div class="hero__metric medals" *ngIf="athlete.medals">
-          <p>Medallas (WA/JO)</p>
-          <div class="medal-row">
-            <span class="gold">Oro {{ athlete.medals.gold }}</span>
-            <span class="silver">Plata {{ athlete.medals.silver }}</span>
-            <span class="bronze">Bronce {{ athlete.medals.bronze }}</span>
+        @if (records.length) {
+          <div class="hero__metric">
+            <p>Mejor marca</p>p>
+            <h2>{{ records[0].bestTime }}</h2>
+            <small>{{ records[0].competition || 'Competencia' }}</small>
           </div>
-        </div>
+        }
+        @if (athlete.medals) {
+          <div class="hero__metric medals">
+            <p>Medallas (WA/JO)</p>
+            <div class="medal-row">
+              <span class="gold">Oro {{ athlete.medals.gold }}</span>
+              <span class="silver">Plata {{ athlete.medals.silver }}</span>
+              <span class="bronze">Bronce {{ athlete.medals.bronze }}</span>
+            </div>
+          </div>
+        }
       </div>
     </div>
   </mat-card>
@@ -142,40 +146,106 @@
       }
     </mat-card>
 
-    <mat-card class="panel mat-elevation-z3" *ngIf="dbResults.length">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Historial en base de datos</p>
-          <h3>Resultados guardados</h3>
+    @if (athlete.athleteId) {
+      <mat-card class="panel panel--full-width mat-elevation-z3">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Historial completo</p>
+            <h3>Resultados de competiciones</h3>
+            @if (dbResults.length) {
+              <p class="panel__subtitle">{{ dbResults.length }} resultado(s) registrado(s)</p>
+            }
+          </div>v>
         </div>
-      </div>
-      <div class="results-table-wrapper">
-        <table class="results-table">
+        
+        @if (dbResults.length > 0) {
+          <div class="results-table-wrapper">
+            <table class="results-table">
           <thead>
             <tr>
               <th>Prueba</th>
               <th>Tiempo</th>
-              <th>Medalla</th>
-              <th>Piscina</th>
-              <th>Competicion</th>
-              <th>Pais</th>
-              <th>Fecha</th>
+              <th class="text-center">Medalla</th>
+              <th class="text-center">Piscina</th>
+              <th>Competición</th>
+              <th class="text-center">País</th>
+              <th class="text-center">Fecha</th>
+              <th class="text-center">Records</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of dbResults">
-              <td>{{ r.event }}</td>
-              <td>{{ r.timeText }}</td>
-              <td>{{ r.medal || '-' }}</td>
-              <td>{{ r.poolLength || '-' }}</td>
-              <td>{{ r.competition || '-' }}</td>
-              <td>{{ r.compCountryCode || '-' }}</td>
-              <td>{{ formatDateLabel(r.raceDate) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </mat-card>
+              <tr *ngFor="let r of dbResults" class="result-row">
+                <td class="event-cell">
+                  <strong>{{ r.event }}</strong>
+                </td>
+                <td class="time-cell">
+                  <span class="time-badge">{{ r.timeText }}</span>
+                </td>
+                <td class="text-center medal-cell">
+                  @if (r.medal) {
+                    <span class="medal-badge" [class.gold]="r.medal === 'Gold'" 
+                          [class.silver]="r.medal === 'Silver'" [class.bronze]="r.medal === 'Bronze'">
+                      @if (r.medal === 'Gold') {
+                        <mat-icon>emoji_events</mat-icon>
+                      }
+                      @if (r.medal === 'Silver') {
+                        <mat-icon>military_tech</mat-icon>
+                      }
+                      @if (r.medal === 'Bronze') {
+                        <mat-icon>workspace_premium</mat-icon>
+                      }
+                      {{ r.medal }}
+                    </span>
+                  }
+                  @if (!r.medal) {
+                    <span class="muted">-</span>
+                  }
+                </td>
+                <td class="text-center">
+                  @if (r.poolLength) {
+                    <span class="pool-badge">{{ r.poolLength }}</span>
+                  }
+                  @if (!r.poolLength) {
+                    <span class="muted">-</span>
+                  }
+                </td>
+                <td class="competition-cell">
+                  <span class="competition-name">{{ r.competition || 'Sin competición' }}</span>
+                </td>
+                <td class="text-center">
+                  @if (r.compCountryCode) {
+                    <span class="country-badge">{{ r.compCountryCode }}</span>
+                  }
+                  @if (!r.compCountryCode) {
+                    <span class="muted">-</span>
+                  }
+                </td>
+                <td class="text-center date-cell">
+                  <span class="date-text">{{ formatDateLabel(r.raceDate) }}</span>
+                </td>
+                <td class="text-center records-cell">
+                  @if (r.recordTags) {
+                    <span class="record-tag">{{ r.recordTags }}</span>
+                  }
+                  @if (!r.recordTags) {
+                    <span class="muted">-</span>
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      }
+      
+      @if (dbResults.length === 0 && !loading) {
+        <div class="results-empty">
+          <mat-icon>info</mat-icon>n>
+          <p>No hay resultados registrados en la base de datos para este atleta.</p>
+          <small class="muted">ID del atleta: {{ athlete.athleteId }}</small>
+        </div>
+      }
+      </mat-card>
+    }
 
     <mat-card class="panel mat-elevation-z3 chart-panel">
       <div class="panel__header">

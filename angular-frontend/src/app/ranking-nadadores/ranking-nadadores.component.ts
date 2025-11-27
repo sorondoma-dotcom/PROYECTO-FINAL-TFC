@@ -438,10 +438,14 @@ export class RankingNadadoresComponent implements OnInit {
         distance: filters.distance,
         stroke: filters.stroke,
         pool: filters.poolConfiguration,
-        points: nadador?.points
+        points: nadador?.points,
+        athleteId: nadador?.athleteId || null
       },
       state: {
-        performer: nadador,
+        performer: {
+          ...nadador,
+          athleteId: nadador?.athleteId || null
+        },
         filters
       }
     });

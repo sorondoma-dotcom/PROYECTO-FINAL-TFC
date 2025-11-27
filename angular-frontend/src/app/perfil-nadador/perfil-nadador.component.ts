@@ -202,10 +202,14 @@ export class PerfilNadadorComponent implements OnInit {
     const stateAthlete = navState?.performer || {};
     const filters = navState?.filters || {};
 
+    // Intentar obtener athleteId de query params o del state
+    const athleteIdFromQuery = query['athleteId'] ? Number(query['athleteId']) : null;
+    const athleteIdFromState = stateAthlete.athleteId ?? null;
+
     this.athlete = {
       ...this.athlete,
       name: paramName || stateAthlete.name || '',
-      athleteId: stateAthlete.athleteId ?? null,
+      athleteId: athleteIdFromQuery || athleteIdFromState,
       country: query['country'] || stateAthlete.country || '',
       nationality: stateAthlete.nationality || '',
       imageUrl: query['imageUrl'] || stateAthlete.imageUrl || '',
@@ -221,16 +225,23 @@ export class PerfilNadadorComponent implements OnInit {
 
   loadDbResults(): void {
     const athleteId = this.athlete.athleteId;
+    console.log('🏊 loadDbResults - athleteId:', athleteId);
+    
     if (!athleteId) {
+      console.warn('⚠️ No se puede cargar resultados: athleteId es null');
       return;
     }
 
+    console.log('📡 Llamando a getAthleteResults con athleteId:', athleteId);
     this.datosService.getAthleteResults(athleteId).subscribe({
       next: (res) => {
+        console.log('✅ Respuesta de getAthleteResults:', res);
         const list = Array.isArray(res?.results) ? res.results : [];
         this.dbResults = list;
+        console.log('📊 dbResults actualizado:', this.dbResults);
       },
-      error: () => {
+      error: (err) => {
+        console.error('❌ Error al cargar resultados:', err);
         this.dbResults = [];
       }
     });

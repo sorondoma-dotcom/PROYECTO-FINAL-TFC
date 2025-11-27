@@ -150,6 +150,7 @@ table {
 
 .actions-cell {
   display: flex;
+  flex-direction: column;
   gap: 0.4rem;
   flex-wrap: wrap;
 }

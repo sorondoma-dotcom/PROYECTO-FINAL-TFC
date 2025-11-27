@@ -43,9 +43,10 @@ export class NavComponent {
     { label: 'Inicio', icon: 'home', route: '/' },
     { label: 'Competiciones', icon: 'pool', route: '/competiciones' },
     { label: 'Nadadores', icon: 'person', route: '/nadadores' },
-    { label: 'Estadísticas', icon: 'analytics', route: '/estadisticas' },
+    { label: 'Estadisticas', icon: 'analytics', route: '/estadisticas' },
     { label: 'Contacto', icon: 'email', route: '/contacto' }
   ];
+
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,

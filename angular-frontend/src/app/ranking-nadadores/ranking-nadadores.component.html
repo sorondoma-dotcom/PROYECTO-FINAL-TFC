@@ -79,7 +79,6 @@
   }
   @if(!loading && nadadores.length > 0){
     <div class="table-wrapper">
-      <div class="data-source">Datos servidos desde la base de datos LiveSwim (PHP).</div>
     <table mat-table [dataSource]="nadadores" class="ranking-table mat-elevation-z2">
       <ng-container matColumnDef="overallRank">
         <th mat-header-cell *matHeaderCellDef>#</th>

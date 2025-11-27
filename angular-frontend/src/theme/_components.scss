@@ -1,70 +1,125 @@
 @use '@angular/material' as mat;
 
-/* === Estilos globales para tablas, inputs, botones === */
 @mixin global-styles() {
-  /* Botones */
-  .mat-mdc-raised-button, .mat-mdc-stroked-button, .mat-mdc-outlined-button {
-    border-radius: 8px !important;
-    font-weight: 600;
-    text-transform: none;
+  /* === BOTONES === */
+  .mat-mdc-raised-button,
+  .mat-mdc-stroked-button,
+  .mat-mdc-outlined-button {
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0.02em !important;
+    padding: 0.625rem 1.25rem !important;
+    transition: all var(--transition-fast) !important;
   }
 
-  
+  /* === FORM FIELDS === */
   .mat-mdc-form-field {
-    margin-right: 1rem;
+    width: 100%;
+
     .mat-mdc-text-field-wrapper {
-      border-radius: 8px !important;
+      border-radius: var(--radius-md) !important;
+      transition: all var(--transition-fast) !important;
+    }
+
+    .mat-mdc-input-element {
+      font-weight: 500;
     }
   }
 
-  
+  /* === TABLAS === */
   .mat-mdc-table {
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    background: #fafbfc;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-sm);
 
     th.mat-mdc-header-cell {
-      background: mat.m2-get-color-from-palette(mat.$m2-light-blue-palette, 600);
-      color: #fff;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+      color: var(--color-primary-contrast);
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.875rem;
+      padding: 1rem;
+      border: none;
     }
 
     td.mat-mdc-cell {
-      color: #212121;
+      color: var(--color-text-primary);
+      padding: 0.875rem 1rem;
+      border-bottom: 1px solid var(--color-border);
+      transition: background-color var(--transition-fast);
     }
 
     tr:hover td {
-      background: rgba(33, 150, 243, 0.08);
+      background: var(--overlay-light);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  /* === CHIPS === */
+  .mat-mdc-chip {
+    border-radius: var(--radius-full) !important;
+    font-weight: 500 !important;
+    transition: all var(--transition-fast) !important;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  /* === PROGRESS BARS === */
+  .mat-mdc-progress-bar {
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    height: 8px !important;
+
+    .mdc-linear-progress__bar-inner {
+      border-radius: var(--radius-full);
+    }
+  }
+
+  /* === TOOLTIPS === */
+  .mat-mdc-tooltip {
+    background: var(--color-surface-elevated) !important;
+    color: var(--color-text-primary) !important;
+    border: 1px solid var(--color-border) !important;
+    box-shadow: var(--shadow-md) !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 500 !important;
+  }
+
+  /* === SPINNERS === */
+  .mat-mdc-progress-spinner {
+    circle {
+      stroke: var(--color-primary) !important;
     }
   }
 }
 
-/* === Estilos oscuros === */
 @mixin dark-styles() {
+  /* Ajustes específicos para modo oscuro */
   .mat-mdc-table {
-    background-color: #1e1e1e;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-md);
 
     th.mat-mdc-header-cell {
-      background-color: #1565c0;
+      background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
     }
 
     td.mat-mdc-cell {
-      color: #e0e0e0;
+      color: var(--color-text-primary);
+      border-bottom-color: var(--color-border);
     }
 
     tr:hover td {
-      background-color: rgba(66, 165, 245, 0.15);
+      background: var(--overlay-medium);
     }
-  }
-
-  .mat-mdc-form-field {
-    color: #e0e0e0;
-  }
-
-  .mat-mdc-select-panel {
-    background-color: #2a2a2a !important;
-    color: #fff !important;
   }
 }

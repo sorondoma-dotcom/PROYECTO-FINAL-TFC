@@ -10,47 +10,48 @@
 
 
 :root {
-  --font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-family-base: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-family-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', monospace;
   --font-size-base: 16px;
-  --font-size-sm: 0.875rem;
-  --font-size-lg: 1.125rem;
+  --font-size-sm: 0.9rem;
+  --font-size-lg: 1.15rem;
   --font-weight-regular: 400;
-  --font-weight-medium: 500;
+  --font-weight-medium: 600;
   --font-weight-bold: 700;
-  --line-height-base: 1.5;
+  --line-height-base: 1.6;
+
+  --color-primary: #1b75f0;
+  --color-primary-dark: #0f5ac6;
+  --color-accent: #00c2b2;
+  --color-bg: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-surface-strong: #f7f9ff;
+  --color-border: #dfe6f5;
+  --color-border-strong: #cdd7ed;
+  --color-text: #0f172a;
+  --color-text-soft: #64748b;
+  --color-success: #16a34a;
+  --color-warn: #f59e0b;
+  --color-danger: #e11d48;
+
+  --dashboard-bg: #eef2f8;
+  --dashboard-surface: #ffffff;
+  --dashboard-surface-strong: #f5f8ff;
+  --dashboard-border: #dbe4f3;
+  --dashboard-border-soft: #e6ecf8;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  --shadow-soft: 0 12px 34px rgba(15, 23, 42, 0.08);
+  --shadow-card: 0 18px 50px rgba(15, 23, 42, 0.12);
+  --shadow-strong: 0 26px 64px rgba(15, 23, 42, 0.16);
+
+  --gradient-bg: linear-gradient(145deg, #edf2ff 0%, #f7fbff 40%, #f2f8ff 100%);
 }
 
 @include mat.core();
-
-
-html, body {
-  margin: 0 auto;
-  height: 100vh;
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  font-family: var(--font-family-mono);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-mat-card {
-  background: var(--color-surface);
-  color: var(--color-text);
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-button {
-  background-color: var(--color-primary);
-  color: white;
-  border-radius: 8px;
-  font-weight: var(--font-weight-medium);
-  text-transform: none;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: var(--color-primary-dark);
-}
 
 
 $light-theme: mat.m2-define-light-theme(( 
@@ -81,17 +82,86 @@ html, body {
   height: 100%;
   margin: 0;
   font-family: var(--font-family-base);
-  background-color: #f5f5f5;
-  color: #212121;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  background: var(--gradient-bg);
+  color: var(--color-text);
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+body {
+  background-color: var(--color-bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+mat-card {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--shadow-card);
+  }
+}
+
+button {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-bold);
+  text-transform: none;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+  border: 1px solid transparent;
+}
+
+button:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+a {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
 
 @include components.global-styles();
 
 
 .dark-theme {
-  background-color: #121212;
-  color: #e0e0e0;
+  --color-bg: #0b101a;
+  --color-surface: #0f172a;
+  --color-surface-strong: #111c2f;
+  --color-border: #1f2a3b;
+  --color-border-strong: #2a374c;
+  --color-text: #e2e8f0;
+  --color-text-soft: #94a3b8;
+  --dashboard-bg: #0b101a;
+  --dashboard-surface: #0f172a;
+  --dashboard-surface-strong: #111c2f;
+  --dashboard-border: #1f2a3b;
+  --dashboard-border-soft: #1a2534;
+  --shadow-soft: 0 14px 38px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 22px 58px rgba(0, 0, 0, 0.5);
+
+  background-color: var(--color-bg);
+  color: var(--color-text);
 
   @include mat.all-component-colors($dark-theme);
   @include components.dark-styles();
