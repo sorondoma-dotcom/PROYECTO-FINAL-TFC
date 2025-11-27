@@ -42,12 +42,6 @@
           <button mat-raised-button color="primary" (click)="loadRankingData()" [disabled]="loading">
             @if (loading) { Cargando... } @else { Refrescar datos }
           </button>
-          @if (athlete.profileUrl) {
-            <button mat-stroked-button color="accent" (click)="openExternalProfile()">
-              <mat-icon>open_in_new</mat-icon>
-              Perfil oficial
-            </button>
-          }
         </div>
       </div>
 
