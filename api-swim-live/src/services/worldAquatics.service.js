@@ -560,6 +560,364 @@ async function fetchRankings(params = {}) {
   }
 }
 
+async function fetchCompetitionsList(options = {}) {
+  const {
+    group = "FINA",
+    year = new Date().getFullYear(),
+    month = "latest",
+    discipline,
+    disciplines,
+    refresh = false,
+    cacheTtl = DEFAULT_COMP_TTL,
+  } = options;
+
+  const disciplineParam = disciplines || discipline || "SW";
+
+  const normalizedCacheKey = `world-aquatics-competitions-${group}-${year}-${month}-${disciplineParam}`;
+
+  if (!refresh) {
+    const cached = cache.get(normalizedCacheKey);
+    if (cached) {
+      logger.debug({ cacheKey: normalizedCacheKey }, "Competencias obtenidas desde caché");
+      return cached;
+    }
+  }
+
+  const query = new URLSearchParams({
+    group: group || "",
+    year: String(year || ""),
+    month: month || "",
+    disciplines: disciplineParam || "",
+  });
+
+  const requestUrl = `https://www.worldaquatics.com/results?${query.toString()}`;
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(USER_AGENT);
+
+    await page.goto(requestUrl, {
+      waitUntil: "networkidle2",
+      timeout: 120000,
+    });
+
+    // Intentar aceptar banner de cookies si aparece
+    await page
+      .evaluate(() => {
+        const selectors = [
+          '[data-cookie-accept]',
+          '.cookie-banner__accept',
+          '.js-accept-cookies',
+          '.cookie-consent__accept',
+        ];
+
+        for (const selector of selectors) {
+          const btn = document.querySelector(selector);
+          if (btn) {
+            btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+            return true;
+          }
+        }
+
+        const fallback = Array.from(document.querySelectorAll("button"))
+          .filter((btn) => btn && btn.textContent)
+          .find((btn) => /accept|consent/i.test(btn.textContent));
+
+        if (fallback) {
+          fallback.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+          return true;
+        }
+
+        return false;
+      })
+      .catch(() => false);
+
+    await delay(3000);
+
+    await page.waitForSelector(
+      ".results-competition-listing__list .results-competition-listing__item",
+      { timeout: 45000 }
+    );
+
+    const competitions = await page.evaluate(() => {
+      const cleanText = (value) =>
+        value && typeof value === "string"
+          ? value.replace(/\s+/g, " ").trim()
+          : null;
+
+      const normalizeUrl = (href) => {
+        if (!href) return null;
+        try {
+          const url = new URL(href, window.location.origin);
+          return url.toString();
+        } catch (_) {
+          return href;
+        }
+      };
+
+      const absolutize = (src) => {
+        if (!src) return null;
+        if (src.startsWith("//")) {
+          return `${window.location.protocol}${src}`;
+        }
+        if (src.startsWith("/")) {
+          return `${window.location.origin}${src}`;
+        }
+        return src;
+      };
+
+      const listing = document.querySelector(
+        ".results-competition-listing"
+      );
+      if (!listing) return [];
+
+      const results = [];
+
+      const monthWrappers = listing.querySelectorAll(
+        ".results-competition-listing__date-wrapper"
+      );
+
+      monthWrappers.forEach((monthWrapper) => {
+        const monthNameNode = monthWrapper.childNodes?.[0] || null;
+        const monthName = cleanText(monthNameNode?.textContent || "");
+        const yearNode = monthWrapper.querySelector(
+          ".results-competition-listing__year"
+        );
+        const yearText = cleanText(yearNode?.textContent || "");
+        const monthNumberAttr = monthWrapper.getAttribute("data-month");
+        const monthNumber = monthNumberAttr
+          ? Number.parseInt(monthNumberAttr, 10)
+          : null;
+
+        let listElement = monthWrapper.nextElementSibling;
+        while (listElement && listElement.tagName !== "OL") {
+          listElement = listElement.nextElementSibling;
+        }
+
+        const items = listElement
+          ? listElement.querySelectorAll(".results-competition-listing__item")
+          : [];
+
+        items.forEach((item) => {
+          const anchor = item.querySelector("a.competition-item__link");
+          if (!anchor) return;
+
+          const dateText =
+            cleanText(
+              anchor.querySelector(
+                ".competition-item__date.u-show-tablet"
+              )?.textContent
+            ) ||
+            cleanText(
+              anchor.querySelector(
+                ".competition-item__date.u-hide-tablet"
+              )?.textContent
+            );
+
+          const name = cleanText(
+            anchor.querySelector(".competition-item__name")?.textContent || ""
+          );
+          const stage = cleanText(
+            anchor.querySelector(".competition-item__stage")?.textContent || ""
+          );
+
+          const locationNode = anchor.querySelector(
+            ".competition-item__location"
+          );
+          const locationText = cleanText(locationNode?.textContent || "");
+
+          let city = null;
+          let countryName = null;
+          if (locationText) {
+            const parts = locationText
+              .split(",")
+              .map((part) => part.trim())
+              .filter(Boolean);
+
+            if (parts.length === 1) {
+              countryName = parts[0];
+            } else if (parts.length === 2) {
+              countryName = parts[0];
+              city = parts[1];
+            } else if (parts.length >= 3) {
+              countryName = parts[1] || parts[0];
+              city = parts.slice(2).join(", ") || null;
+            }
+          }
+
+          const flagImg = anchor.querySelector(
+            ".competition-item__flag img"
+          );
+          const countryCode = cleanText(flagImg?.getAttribute("alt") || "");
+          const flagImage = absolutize(flagImg?.getAttribute("src") || "");
+
+          const picture = anchor.querySelector(
+            ".competition-item__logo picture"
+          );
+          let logo = null;
+          if (picture) {
+            const source = picture.querySelector("source[srcset]");
+            if (source) {
+              const srcset = source.getAttribute("srcset") || "";
+              const candidates = srcset
+                .split(",")
+                .map((entry) => entry.trim())
+                .filter(Boolean);
+              if (candidates.length) {
+                const best = candidates[candidates.length - 1]
+                  .split(" ")[0]
+                  .trim();
+                logo = absolutize(best);
+              }
+            }
+            if (!logo) {
+              const img = picture.querySelector("img");
+              logo = absolutize(img?.getAttribute("src") || "");
+            }
+          }
+
+          const poolName = cleanText(
+            anchor.querySelector(".competition-item__pool")?.textContent || ""
+          );
+
+          const startDate = item.getAttribute("data-from") || null;
+          const endDate = item.getAttribute("data-to") || null;
+
+          results.push({
+            name,
+            stage: stage || null,
+            date: dateText || null,
+            startDate,
+            endDate,
+            poolName: poolName || null,
+            city,
+            countryName: countryName || null,
+            countryCode: countryCode || null,
+            flagImage: flagImage || null,
+            logo: logo || null,
+            url: normalizeUrl(anchor.getAttribute("href")),
+            month: monthName || null,
+            year: yearText || null,
+            monthNumber: Number.isFinite(monthNumber) ? monthNumber : null,
+            locationText,
+          });
+        });
+      });
+
+      return results;
+    });
+
+    const normalizeIso = (value) => {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toISOString();
+    };
+
+    const competitionsWithDates = competitions.map((item) => {
+      const startDate = normalizeIso(item.startDate);
+      let endDate = normalizeIso(item.endDate);
+
+      if (!endDate && item.date && startDate) {
+        const start = new Date(startDate);
+        const rangeRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2})\s*-\s*(?:((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*)\s*)?(\d{1,2})/i;
+        const match = item.date.match(rangeRegex);
+        if (match) {
+          const [, startMonthName, , , endMonthName, endDay] = match;
+          const endMonthIndex = endMonthName
+            ? [
+                "jan",
+                "feb",
+                "mar",
+                "apr",
+                "may",
+                "jun",
+                "jul",
+                "aug",
+                "sep",
+                "oct",
+                "nov",
+                "dec",
+              ].indexOf(endMonthName.toLowerCase().slice(0, 3))
+            : start.getUTCMonth();
+
+          if (endMonthIndex !== -1) {
+            const derived = new Date(start);
+            derived.setUTCMonth(endMonthIndex);
+            derived.setUTCDate(Number.parseInt(endDay, 10));
+            endDate = Number.isNaN(derived.getTime())
+              ? null
+              : derived.toISOString();
+          }
+        }
+      }
+
+      return {
+        name: item.name || "",
+        stage: item.stage,
+        date: item.date,
+        startDate,
+        endDate,
+        poolName: item.poolName,
+        city: item.city,
+        countryCode: item.countryCode,
+        flagImage: item.flagImage,
+        logo: item.logo,
+        url: item.url,
+        month: item.month,
+        year: item.year,
+        monthNumber: Number.isFinite(item.monthNumber)
+          ? item.monthNumber
+          : null,
+      };
+    });
+
+    const response = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      url: requestUrl,
+      params: {
+        group,
+        year,
+        month,
+        discipline: disciplineParam,
+      },
+      competitions: competitionsWithDates,
+      total: competitionsWithDates.length,
+    };
+
+    if (cacheTtl > 0) {
+      cache.set(normalizedCacheKey, response, cacheTtl);
+    }
+
+    return response;
+  } catch (error) {
+    logger.error(
+      { err: error.message, url: requestUrl },
+      "Error obteniendo listado de competiciones"
+    );
+    throw new Error(
+      `No se pudieron obtener las competiciones solicitadas: ${error.message}`
+    );
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (_) {}
+    }
+  }
+}
+
 async function fetchCompetitionEvents(options = {}) {
   const { slug = "", url = "", refresh = false } = options;
 
@@ -1148,23 +1506,44 @@ function parseCompetitionPath(input = "") {
   }
 
   const segments = path.split("/").filter(Boolean);
+
+  const sanitizeSlugSegments = (rawSegments = []) => {
+    const cleaned = rawSegments.filter(Boolean).map((segment) => segment.trim());
+    if (cleaned.length) {
+      const last = cleaned[cleaned.length - 1].toLowerCase();
+      if (last === "results" || last === "results/") {
+        cleaned.pop();
+      }
+    }
+    return cleaned;
+  };
+
   const idx = segments.indexOf("competitions");
   if (idx === -1) {
+    const [competitionId, ...rest] = segments;
+    const cleanedRest = sanitizeSlugSegments(rest);
     return {
-      competitionId: segments[0] || null,
-      slug: segments.slice(1).join("/") || null,
+      competitionId: competitionId || null,
+      slug: cleanedRest.length ? cleanedRest.join("/") : null,
     };
   }
 
   const competitionId = segments[idx + 1] || null;
-  const slug = segments.slice(idx + 2).join("/") || null;
-  return { competitionId, slug };
+  const remaining = segments.slice(idx + 2);
+  const cleanedRemaining = sanitizeSlugSegments(remaining);
+
+  return {
+    competitionId,
+    slug: cleanedRemaining.length ? cleanedRemaining.join("/") : null,
+  };
 }
 
 function buildCompetitionResultsUrl(parts, eventGuid = "") {
   const safeId = parts.competitionId || "95";
   const suffix = parts.slug ? `/${parts.slug}` : "";
-  const eventParam = eventGuid ? `?event=${eventGuid}` : "?disciplines=";
+  const eventParam = eventGuid
+    ? `?event=${encodeURIComponent(eventGuid)}`
+    : "";
   return `https://www.worldaquatics.com/competitions/${safeId}${suffix}/results${eventParam}`;
 }
 
