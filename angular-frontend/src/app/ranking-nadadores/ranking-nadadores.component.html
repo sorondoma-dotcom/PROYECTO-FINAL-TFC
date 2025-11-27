@@ -79,114 +79,115 @@
   }
   @if(!loading && nadadores.length > 0){
     <div class="table-wrapper">
+      <div class="data-source">Datos servidos desde la base de datos LiveSwim (PHP).</div>
     <table mat-table [dataSource]="nadadores" class="ranking-table mat-elevation-z2">
-      <!-- Numero en el Ranking -->
       <ng-container matColumnDef="overallRank">
-        <th mat-header-cell *matHeaderCellDef>Ranking</th>
-        <td mat-cell *matCellDef="let n" data-label="Ranking">{{ n.overallRank }}</td>
-      </ng-container>
-      <!-- País -->
-      <ng-container matColumnDef="country">
-        <th mat-header-cell *matHeaderCellDef>País</th>
-        <td mat-cell *matCellDef="let n" data-label="País">
-          <span>{{ n.country | countryFlag }}</span>
-          <span style="margin-left: 0.3em;">{{ n.country }}</span>
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let n" data-label="Posicion">
+          <span class="rank-badge" [ngClass]="{'gold': n.overallRank === 1, 'silver': n.overallRank === 2, 'bronze': n.overallRank === 3}">
+            {{ n.overallRank }}
+          </span>
         </td>
       </ng-container>
-      <!-- Nombre con imagen -->
-      <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef>Nadador</th>
-        <td mat-cell *matCellDef="let n" data-label="Nadador">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
+
+      <ng-container matColumnDef="athlete">
+        <th mat-header-cell *matHeaderCellDef>Atleta</th>
+        <td mat-cell *matCellDef="let n" data-label="Atleta">
+          <div class="athlete-cell">
             @if(n.imageUrl) {
-              <img
-                [src]="n.imageUrl"
-                [alt]="n.name"
-                class="athlete-photo"
-                (error)="onImageError($event)"
-                loading="lazy"
-              >
+              <img [src]="n.imageUrl" [alt]="n.name" class="athlete-photo" (error)="onImageError($event)" loading="lazy">
             } @else {
               <div class="athlete-photo-placeholder">
                 <mat-icon>person</mat-icon>
               </div>
             }
-            <div class="athlete-name-wrapper">
-              @if(n.profileUrl) {
-                <a [href]="n.profileUrl" target="_blank" rel="noopener noreferrer" class="athlete-link">
-                  {{ n.name }}
-                  <mat-icon class="external-link-icon">open_in_new</mat-icon>
-                </a>
-              } @else {
-                <span>{{ n.name }}</span>
+            <div class="athlete-meta">
+              <div class="name-line">
+                @if(n.profileUrl){
+                  <a [href]="n.profileUrl" target="_blank" rel="noopener noreferrer" class="athlete-link">
+                    {{ n.name }}
+                    <mat-icon class="external-link-icon">open_in_new</mat-icon>
+                  </a>
+                } @else {
+                  <span>{{ n.name }}</span>
+                }
+              </div>
+              <div class="meta-line">
+                <span class="country-flag">{{ n.country | countryFlag }}</span>
+                <span class="country-code">{{ n.country }}</span>
+                @if(n.age){
+                  <span class="dot">&middot;</span>
+                  <span>{{ n.age }} anios</span>
+                }
+              </div>
+              <div class="meta-line detail">
+                <span class="pill">{{ n.distance }}m</span>
+                <span class="pill">{{ n.stroke }}</span>
+                <span class="pill">{{ n.poolConfiguration }}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="performance">
+        <th mat-header-cell *matHeaderCellDef>Marca</th>
+        <td mat-cell *matCellDef="let n" data-label="Marca">
+          <div class="performance">
+            <div class="time-block">
+              <span class="time-text">{{ n.time }}</span>
+              @if(n.recordTag){
+                <span class="record-tag">{{ n.recordTag }}</span>
+              }
+            </div>
+            <div class="tags">
+              @if(n.points){
+                <span class="points-chip">{{ n.points }} pts</span>
+              }
+              @if(n.tag){
+                <span class="pill neutral">{{ n.tag }}</span>
               }
             </div>
           </div>
         </td>
       </ng-container>
-      <!-- Edad -->
-      <ng-container matColumnDef="age">
-        <th mat-header-cell *matHeaderCellDef>Edad</th>
-        <td mat-cell *matCellDef="let n" data-label="Edad">{{ n.age }}</td>
-      </ng-container>
-      <!-- Tiempo -->
-      <ng-container matColumnDef="time">
-        <th mat-header-cell *matHeaderCellDef>Tiempo</th>
-        <td mat-cell *matCellDef="let n" data-label="Tiempo">{{ n.time }}</td>
-      </ng-container>
-      <!-- Puntos FINA -->
-      <ng-container matColumnDef="points">
-        <th mat-header-cell *matHeaderCellDef>Puntos FINA</th>
-        <td mat-cell *matCellDef="let n" data-label="Puntos FINA">{{ n.points }}</td>
-      </ng-container>
-      <!-- Tipo de marca -->
-      <ng-container matColumnDef="tag">
-        <th mat-header-cell *matHeaderCellDef>Tipo de marca</th>
-        <td mat-cell *matCellDef="let n" data-label="Tipo de marca">{{ n.tag }}</td>
-      </ng-container>
-      <!-- Competición -->
+
       <ng-container matColumnDef="competition">
-        <th mat-header-cell *matHeaderCellDef>Competición</th>
-        <td mat-cell *matCellDef="let n" data-label="Competición">{{ n.competition }}</td>
-      </ng-container>
-      <!-- País de la competición -->
-      <ng-container matColumnDef="location">
-        <th mat-header-cell *matHeaderCellDef>País competición</th>
-        <td mat-cell *matCellDef="let n" data-label="País competición">
-          <span>{{ n.location | countryFlag }}</span>
-          <span style="margin-left: 0.3em;">{{ n.location }}</span>
+        <th mat-header-cell *matHeaderCellDef>Competicion</th>
+        <td mat-cell *matCellDef="let n" data-label="Competicion">
+          <div class="competition">
+            <div class="competition-name">{{ n.competition || '-' }}</div>
+            <div class="meta-line">
+              <span>{{ n.location | countryFlag }}</span>
+              <span class="country-code">{{ n.location }}</span>
+            </div>
+          </div>
         </td>
       </ng-container>
-      <!-- Fecha -->
+
       <ng-container matColumnDef="date">
         <th mat-header-cell *matHeaderCellDef>Fecha</th>
         <td mat-cell *matCellDef="let n" data-label="Fecha">{{ n.date }}</td>
       </ng-container>
-      <!-- Acciones -->
+
       <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef>Ver Timeline</th>
-        <td mat-cell *matCellDef="let n" data-label="Timeline" class="actions-cell">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let n" data-label="Acciones" class="actions-cell">
           <button mat-stroked-button color="accent" (click)="verTimeline(n)">
             <mat-icon>timeline</mat-icon> Timeline
           </button>
-        </td>
-      </ng-container>
-      <!-- Perfil -->
-      <ng-container matColumnDef="profile">
-        <th mat-header-cell *matHeaderCellDef>Perfil</th>
-        <td mat-cell *matCellDef="let n" data-label="Perfil" class="actions-cell">
           <button mat-stroked-button color="primary" (click)="verPerfil(n)">
             <mat-icon>person</mat-icon> Perfil
           </button>
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="['overallRank','country','name','age','time','points','tag','competition','location','date','actions','profile']"></tr>
-      <tr mat-row *matRowDef="let row; columns: ['overallRank','country','name','age','time','points','tag','competition','location','date','actions','profile'];"></tr>
+      <tr mat-header-row *matHeaderRowDef="['overallRank','athlete','performance','competition','date','actions']"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['overallRank','athlete','performance','competition','date','actions'];"></tr>
     </table>
     </div>
 
-    <!-- Información de paginación y botón "Cargar más" -->
+    <!-- Informacion de paginacion y boton "Cargar mas" -->
     @if(hayMasRegistros) {
       <div class="pagination-info mat-elevation-z1">
         <div class="records-info">
@@ -208,7 +209,7 @@
           } @else {
             <ng-container>
               <mat-icon>expand_more</mat-icon>
-              <span>Cargar más registros</span>
+              <span>Cargar mas registros</span>
             </ng-container>
           }
         </button>

@@ -43,6 +43,117 @@ table {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
 }
 
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--primary-color, #1976d2);
+  &.gold { background: linear-gradient(135deg, #f5c542, #f0a202); }
+  &.silver { background: linear-gradient(135deg, #cdd3d8, #9da7b1); }
+  &.bronze { background: linear-gradient(135deg, #d2a679, #b47846); }
+}
+
+.athlete-cell {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+}
+
+.athlete-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.name-line {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.meta-line {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-secondary, #666);
+  font-size: 0.92rem;
+
+  &.detail {
+    gap: 0.4rem;
+  }
+}
+
+.dot {
+  color: var(--text-secondary, #666);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--chip-bg, #eef2f7);
+  color: var(--text-secondary, #555);
+  font-size: 0.82rem;
+  text-transform: capitalize;
+
+  &.neutral {
+    background: #f3f3f3;
+    color: #444;
+  }
+}
+
+.performance {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.time-block {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.time-text {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.record-tag {
+  background: #ffe9c7;
+  color: #c06b00;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.points-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  background: #e3f2fd;
+  color: #0d47a1;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.competition-name {
+  font-weight: 600;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
 // Estilos para las fotos de los nadadores
 .athlete-photo {
   width: 50px;
@@ -102,7 +213,7 @@ table {
   }
 }
 
-// Estilos para paginación y botón "Cargar más"
+// Estilos para paginacion y boton "Cargar mas"
 .pagination-info {
   display: flex;
   flex-direction: column;

@@ -7,7 +7,8 @@ import { Observable } from 'rxjs';
 })
 export class DatosService {
   private url = "http://localhost:3000/api/natacion";
-  private rankingsUrl = "http://localhost:3000/api/world-aquatics/rankings";
+  private phpApiBase = "http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api";
+  private rankingsUrl = `${this.phpApiBase}/rankings`;
   private athletesUrl = "http://localhost:3000/api/world-aquatics/athletes";
   private competitionsUrl = "http://localhost:3000/api/world-aquatics/competitions";
   private competitionResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results";
@@ -29,6 +30,7 @@ export class DatosService {
     stroke: string,
     poolConfiguration: 'LCM' | 'SCM',
     limit?: number,
+    offset?: number,
     year?: string,
     startDate?: string,
     endDate?: string,
@@ -41,10 +43,10 @@ export class DatosService {
       .set('poolConfiguration', params.poolConfiguration);
 
     if (params.limit != null) httpParams = httpParams.set('limit', String(params.limit));
+    if (params.offset != null) httpParams = httpParams.set('offset', String(params.offset));
     if (params.year) httpParams = httpParams.set('year', params.year);
     if (params.startDate) httpParams = httpParams.set('startDate', params.startDate);
     if (params.endDate) httpParams = httpParams.set('endDate', params.endDate);
-    if (params.clearCache) httpParams = httpParams.set('clearCache', 'true');
 
     return this.http.get(this.rankingsUrl, { params: httpParams });
   }
