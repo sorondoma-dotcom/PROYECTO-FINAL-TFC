@@ -48,7 +48,7 @@
       <div class="hero__metric-stack">
         @if (records.length) {
           <div class="hero__metric">
-            <p>Mejor marca</p>p>
+            <p>Mejor marca</p>
             <h2>{{ records[0].bestTime }}</h2>
             <small>{{ records[0].competition || 'Competencia' }}</small>
           </div>
@@ -168,7 +168,8 @@
             </tr>
           </thead>
           <tbody>
-              <tr *ngFor="let r of dbResults" class="result-row">
+            @for(r of dbResults; track r.id) {
+              <tr class="result-row">
                 <td class="event-cell">
                   <strong>{{ r.event }}</strong>
                 </td>
@@ -226,6 +227,7 @@
                   }
                 </td>
               </tr>
+            } 
             </tbody>
           </table>
         </div>

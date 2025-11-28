@@ -13,13 +13,12 @@
     </div>
   }
 
-  <!-- Tabs -->
+  
   @if (!loading) {
     <mat-tab-group [dynamicHeight]="true" (selectedTabChange)="onTabChange($event)">
       @for (t of tabs; track t.key; let i = $index) {
         <mat-tab [label]="t.label">
           @if (selectedIndex === i) {
-            <!-- Contenido lazy por pestaña -->
             @if (t.key === 'resumen') {
               <ng-container *ngTemplateOutlet="tplResumen"></ng-container>
             } @else if (t.key === 'destacadas') {
@@ -33,13 +32,8 @@
     </mat-tab-group>
   }
 
-  <!-- TEMPLATES -->
-
-  <!-- RESUMEN -->
   <ng-template #tplResumen>
     <div class="dashboard-grid">
-      <!-- (Este bloque es el de tus tarjetas de estadísticas, idéntico al original) -->
-      <!-- Total Competiciones -->
       <mat-card class="dashboard-card stat-card">
         <mat-card-content>
           <div class="stat-content">
@@ -151,15 +145,15 @@
               @if (comp.logo) {
                 <div class="competition-logo-container">
                   <img [src]="comp.logo"
-                       [alt]="comp.name"
-                       class="competition-logo"
-                       (error)="onImageError($event)">
+                        [alt]="comp.name"
+                        class="competition-logo"
+                        (error)="onImageError($event)">
                 </div>
               }
 
               <mat-card-header>
                 <div class="card-header-content">
-                   @if (comp.flagImage) {
+                    @if (comp.flagImage) {
                             <img
                               [src]="comp.flagImage"
                               [alt]="comp.countryCode || 'Bandera'"

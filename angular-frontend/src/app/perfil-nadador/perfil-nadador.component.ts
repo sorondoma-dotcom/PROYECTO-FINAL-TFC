@@ -187,20 +187,36 @@ export class PerfilNadadorComponent implements OnInit {
 
   ngOnInit(): void {
     this.populateFromRoute();
-    this.loadAthleteBio();
-    this.loadRankingData();
-    this.loadDbResults();
-    this.loadUpcomingCompetitions();
+    // Agregar pequeño delay para asegurar que populateFromRoute se completó
+    setTimeout(() => {
+      this.loadAthleteBio();
+      this.loadRankingData();
+      this.loadDbResults();
+      this.loadUpcomingCompetitions();
+    }, 0);
   }
 
   populateFromRoute(): void {
-    const navState = this.router.getCurrentNavigation()?.extras.state as any;
+    // Intentar obtener datos de getCurrentNavigation primero (para navegaciones recientes)
+    let navState = this.router.getCurrentNavigation()?.extras.state as any;
+    
+    // Si no hay nav state, intentar obtener del navegador history
+    if (!navState) {
+      navState = (window.history.state) || {};
+      console.log('📍 Usando window.history.state:', navState);
+    }
+
     const params = this.route.snapshot.params;
     const query = this.route.snapshot.queryParams;
 
     const paramName = params['name'] ? decodeURIComponent(params['name']) : '';
     const stateAthlete = navState?.performer || {};
     const filters = navState?.filters || {};
+
+    console.log('📍 populateFromRoute - params:', params);
+    console.log('📍 populateFromRoute - paramName:', paramName);
+    console.log('📍 populateFromRoute - stateAthlete:', stateAthlete);
+    console.log('📍 populateFromRoute - query params:', query);
 
     // Intentar obtener athleteId de query params o del state
     const athleteIdFromQuery = query['athleteId'] ? Number(query['athleteId']) : null;
@@ -221,30 +237,60 @@ export class PerfilNadadorComponent implements OnInit {
       pool: query['pool'] || filters.poolConfiguration || 'LCM',
       points: query['points'] || stateAthlete.points || null
     };
+
+    console.log('✅ Atleta populado:', this.athlete);
   }
 
   loadDbResults(): void {
     const athleteId = this.athlete.athleteId;
-    console.log('🏊 loadDbResults - athleteId:', athleteId);
-    
-    if (!athleteId) {
-      console.warn('⚠️ No se puede cargar resultados: athleteId es null');
+    const athleteName = this.athlete.name;
+
+    console.log('🔍 loadDbResults - athleteId:', athleteId, '| athleteName:', athleteName);
+    console.log('🔍 loadDbResults - full athlete:', this.athlete);
+
+    // Si no tiene ID, intenta buscar por nombre
+    if (!athleteId && !athleteName) {
+      console.warn('⚠️ No se puede cargar resultados: athleteId y nombre están vacíos');
       return;
     }
 
-    console.log('📡 Llamando a getAthleteResults con athleteId:', athleteId);
-    this.datosService.getAthleteResults(athleteId).subscribe({
-      next: (res) => {
-        console.log('✅ Respuesta de getAthleteResults:', res);
-        const list = Array.isArray(res?.results) ? res.results : [];
-        this.dbResults = list;
-        console.log('📊 dbResults actualizado:', this.dbResults);
-      },
-      error: (err) => {
-        console.error('❌ Error al cargar resultados:', err);
-        this.dbResults = [];
-      }
-    });
+    if (athleteId) {
+      // Buscar por ID
+      console.log('📊 Buscando resultados por ID:', athleteId);
+      this.datosService.getAthleteResults(athleteId).subscribe({
+        next: (res) => {
+          const list = Array.isArray(res?.results) ? res.results : [];
+          this.dbResults = list;
+          console.log(`✅ ${list.length} resultados encontrados por ID`);
+          console.log('📊 Respuesta completa:', res);
+        },
+        error: (err) => {
+          console.error('❌ Error al cargar resultados por ID:', err);
+          console.error('❌ Error status:', err.status);
+          console.error('❌ Error message:', err.message);
+          this.dbResults = [];
+        }
+      });
+    } else if (athleteName) {
+      // Buscar por nombre si no tiene ID
+      console.log(`🔍 Buscando resultados para: ${athleteName}`);
+      console.log(`🔍 Nombre codificado: ${encodeURIComponent(athleteName)}`);
+      this.datosService.getAthleteResultsByName(athleteName).subscribe({
+        next: (res) => {
+          const list = Array.isArray(res?.results) ? res.results : [];
+          this.dbResults = list;
+          console.log(`✅ ${list.length} resultados encontrados para ${athleteName}`);
+          console.log('📊 Respuesta completa:', res);
+        },
+        error: (err) => {
+          console.error('❌ Error al cargar resultados por nombre:', err);
+          console.error('❌ Error status:', err.status);
+          console.error('❌ Error message:', err.message);
+          console.error('❌ Error headers:', err.headers);
+          this.dbResults = [];
+        }
+      });
+    }
   }
 
   loadAthleteBio(): void {

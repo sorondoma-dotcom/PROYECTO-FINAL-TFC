@@ -31,6 +31,20 @@ class AthleteResultService
     }
 
     /**
+     * Obtiene los resultados de un atleta por nombre con filtros opcionales
+     * 
+     * @param string $athleteName
+     * @param array $filters
+     * @return array
+     */
+    public function getAthleteResultsByName(string $athleteName, array $filters = []): array
+    {
+        $results = $this->repository->getResultsByAthleteName($athleteName, $filters);
+        
+        return array_map(fn($result) => $result->toArray(), $results);
+    }
+
+    /**
      * Obtiene el conteo de medallas de un atleta
      * 
      * @param int $athleteId

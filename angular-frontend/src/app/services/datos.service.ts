@@ -133,4 +133,10 @@ export class DatosService {
       params: new HttpParams().set('athleteId', String(athleteId))
     });
   }
+
+  getAthleteResultsByName(athleteName: string): Observable<any> {
+    return this.http.get(this.athleteResultsUrl, {
+      params: new HttpParams().set('name', athleteName)
+    });
+  }
 }

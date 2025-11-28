@@ -616,9 +616,40 @@ export class DashBoardComponent implements OnInit {
   }
 
   navigateToAthleteRanking(event: TopEvent, entry: RankingEntryView): void {
-    // Si el atleta tiene profileUrl, abrirlo en nueva pestaña
-    if (entry.profileUrl) {
-      window.open(entry.profileUrl, '_blank', 'noopener,noreferrer');
+    if (entry.name) {
+      this.router.navigate(['/nadadores', 'perfil', encodeURIComponent(entry.name)], {
+        queryParams: {
+          country: entry.country || '',
+          imageUrl: entry.imageUrl || '',
+          profileUrl: entry.profileUrl || '',
+          gender: event.gender,
+          distance: event.distance,
+          stroke: event.stroke,
+          pool: event.poolConfiguration,
+          points: entry.overallRank || null,
+          athleteId: null
+        },
+        state: {
+          performer: {
+            name: entry.name,
+            country: entry.country,
+            imageUrl: entry.imageUrl,
+            profileUrl: entry.profileUrl,
+            gender: event.gender,
+            distance: event.distance,
+            stroke: event.stroke,
+            pool: event.poolConfiguration,
+            points: entry.overallRank,
+            athleteId: null
+          },
+          filters: {
+            gender: event.gender,
+            distance: event.distance,
+            stroke: event.stroke,
+            poolConfiguration: event.poolConfiguration
+          }
+        }
+      });
       return;
     }
 

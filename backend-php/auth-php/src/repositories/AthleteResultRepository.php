@@ -29,34 +29,77 @@ class AthleteResultRepository
         $sql = "SELECT * FROM resultados WHERE athlete_id = :athlete_id";
         $params = ['athlete_id' => $athleteId];
 
+        return $this->executeResultsQuery($sql, $params, $filters);
+    }
+
+    /**
+     * Obtiene todos los resultados de un atleta por su nombre
+     * 
+     * @param string $athleteName Nombre del atleta
+     * @param array $filters Filtros opcionales (event, poolLength, etc.)
+     * @return AthleteResult[]
+     */
+    public function getResultsByAthleteName(string $athleteName, array $filters = []): array
+    {
+        $sql = "SELECT r.* FROM resultados r 
+                INNER JOIN atletas a ON r.athlete_id = a.athlete_id 
+                WHERE LOWER(a.athlete_name) = LOWER(:athlete_name)";
+        $params = ['athlete_name' => $athleteName];
+
+        return $this->executeResultsQuery($sql, $params, $filters);
+    }
+
+    /**
+     * Método auxiliar para ejecutar queries de resultados con filtros
+     * 
+     * @param string $sql
+     * @param array $params
+     * @param array $filters
+     * @return AthleteResult[]
+     */
+    private function executeResultsQuery(string $sql, array $params, array $filters = []): array
+    {
         // Agregar filtros opcionales
         if (!empty($filters['event'])) {
-            $sql .= " AND event LIKE :event";
+            // Detectar si es una query con JOIN
+            $isJoin = stripos($sql, 'INNER JOIN') !== false;
+            $prefix = $isJoin ? 'r.' : '';
+            $sql .= " AND {$prefix}event LIKE :event";
             $params['event'] = '%' . $filters['event'] . '%';
         }
 
         if (!empty($filters['poolLength'])) {
-            $sql .= " AND pool_length = :pool_length";
+            $isJoin = stripos($sql, 'INNER JOIN') !== false;
+            $prefix = $isJoin ? 'r.' : '';
+            $sql .= " AND {$prefix}pool_length = :pool_length";
             $params['pool_length'] = $filters['poolLength'];
         }
 
         if (!empty($filters['medal'])) {
-            $sql .= " AND medal = :medal";
+            $isJoin = stripos($sql, 'INNER JOIN') !== false;
+            $prefix = $isJoin ? 'r.' : '';
+            $sql .= " AND {$prefix}medal = :medal";
             $params['medal'] = $filters['medal'];
         }
 
         if (!empty($filters['yearFrom'])) {
-            $sql .= " AND YEAR(race_date) >= :year_from";
+            $isJoin = stripos($sql, 'INNER JOIN') !== false;
+            $prefix = $isJoin ? 'r.' : '';
+            $sql .= " AND YEAR({$prefix}race_date) >= :year_from";
             $params['year_from'] = $filters['yearFrom'];
         }
 
         if (!empty($filters['yearTo'])) {
-            $sql .= " AND YEAR(race_date) <= :year_to";
+            $isJoin = stripos($sql, 'INNER JOIN') !== false;
+            $prefix = $isJoin ? 'r.' : '';
+            $sql .= " AND YEAR({$prefix}race_date) <= :year_to";
             $params['year_to'] = $filters['yearTo'];
         }
 
         // Ordenar por fecha más reciente primero
-        $sql .= " ORDER BY race_date DESC, id DESC";
+        $isJoin = stripos($sql, 'INNER JOIN') !== false;
+        $prefix = $isJoin ? 'r.' : '';
+        $sql .= " ORDER BY {$prefix}race_date DESC, {$prefix}id DESC";
 
         // Limitar resultados si se especifica
         if (!empty($filters['limit'])) {
@@ -80,7 +123,7 @@ class AthleteResultRepository
 
             return array_map(fn($row) => AthleteResult::fromArray($row), $rows);
         } catch (\PDOException $e) {
-            error_log("Error en getResultsByAthleteId: " . $e->getMessage());
+            error_log("Error en executeResultsQuery: " . $e->getMessage());
             return [];
         }
     }
