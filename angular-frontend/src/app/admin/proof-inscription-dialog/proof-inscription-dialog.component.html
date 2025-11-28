@@ -1,0 +1,187 @@
+<div class="inscription-dialog-container">
+  <h2 mat-dialog-title>Inscribir Atletas a Prueba</h2>
+
+  <mat-dialog-content>
+    <mat-tab-group>
+      <!-- TAB 1: Información de la Prueba -->
+      <mat-tab label="Prueba">
+        <div class="tab-content">
+          <div class="proof-info-card">
+            <div class="info-row">
+              <span class="label">Nombre:</span>
+              <strong>{{ proof.nombre_prueba }}</strong>
+            </div>
+            <div class="info-row">
+              <span class="label">Distancia:</span>
+              <strong>{{ proof.distancia }}m</strong>
+            </div>
+            <div class="info-row">
+              <span class="label">Estilo:</span>
+              <strong>{{ proof.estilo }}</strong>
+            </div>
+            <div class="info-row">
+              <span class="label">Género:</span>
+              <strong>{{ getGenderLabel(proof.genero) }}</strong>
+            </div>
+            <div class="info-row">
+              <span class="label">Total Inscripciones:</span>
+              <strong>{{ proof.total_inscripciones || 0 }}</strong>
+            </div>
+          </div>
+
+          <!-- Series actuales -->
+          @if (seriesInfo.length > 0) {
+            <div class="series-summary">
+              <h3>Series Actuales</h3>
+              <div class="series-grid">
+                @for (serie of seriesInfo; track $index) {
+                  <div class="serie-summary">
+                    <div class="serie-number">Serie {{ serie.number }}</div>
+                    <div class="serie-count">{{ serie.athletes.length }} / 8</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- TAB 2: Atletas Disponibles -->
+      <mat-tab label="Atletas Disponibles ({{ availableAthletes.length }})">
+        <div class="tab-content">
+          @if (loadingAthletes) {
+            <div class="loading">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+          } @else if (!loadingAthletes && availableAthletes.length === 0) {
+            <div class="no-data">
+              Todos los atletas confirmados ya están inscritos en esta prueba.
+            </div>
+          } @else if (!loadingAthletes && availableAthletes.length > 0) {
+            <div class="athletes-table">
+              <div class="search-box">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Buscar atleta</mat-label>
+                  <input matInput [(ngModel)]="searchText" placeholder="Nombre, país...">
+                  <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <table mat-table [dataSource]="filteredAthletes" class="athletes-table-element">
+                <!-- Checkbox Column -->
+                <ng-container matColumnDef="select">
+                  <th mat-header-cell *matHeaderCellDef>
+                    <mat-checkbox
+                      [checked]="isAllSelected()"
+                      (change)="toggleSelectAll()">
+                    </mat-checkbox>
+                  </th>
+                  <td mat-cell *matCellDef="let element">
+                    <mat-checkbox
+                      [checked]="isAthleteSelected(element)"
+                      (change)="toggleAthleteSelection(element)">
+                    </mat-checkbox>
+                  </td>
+                </ng-container>
+
+                <!-- Name Column -->
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>Atleta</th>
+                  <td mat-cell *matCellDef="let element">{{ element.athlete_name }}</td>
+                </ng-container>
+
+                <!-- Gender Column -->
+                <ng-container matColumnDef="gender">
+                  <th mat-header-cell *matHeaderCellDef>Género</th>
+                  <td mat-cell *matCellDef="let element">
+                    <mat-chip [highlighted]="element.gender === proof.genero">
+                      {{ element.gender === 'M' ? 'M' : 'F' }}
+                    </mat-chip>
+                  </td>
+                </ng-container>
+
+                <!-- Country Column -->
+                <ng-container matColumnDef="country">
+                  <th mat-header-cell *matHeaderCellDef>País</th>
+                  <td mat-cell *matCellDef="let element">{{ element.country_code }}</td>
+                </ng-container>
+
+                <!-- Age Column -->
+                <ng-container matColumnDef="age">
+                  <th mat-header-cell *matHeaderCellDef>Edad</th>
+                  <td mat-cell *matCellDef="let element">{{ element.age || '-' }}</td>
+                </ng-container>
+
+                <!-- Predicted Serie Column -->
+                <ng-container matColumnDef="serie">
+                  <th mat-header-cell *matHeaderCellDef>Serie (Predicha)</th>
+                  <td mat-cell *matCellDef="let element">
+                    @if (isAthleteSelected(element)) {
+                      <strong class="serie-predict">Serie {{ predictSerieForNewAthlete(element) }}</strong>
+                    } @else {
+                      <span class="serie-predict-disabled">-</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
+            </div>
+          }
+        </div>
+      </mat-tab>
+
+      <!-- TAB 3: Atletas Inscritos -->
+      <mat-tab label="Inscritos ({{ registeredAthletes.length }})">
+        <div class="tab-content">
+          @if (registeredAthletes.length === 0) {
+            <div class="no-data">
+              Sin inscripciones en esta prueba aún.
+            </div>
+          } @else {
+            <div class="registered-section">
+                @for (serie of seriesInfo; track $index; let sIndex = $index) {
+                <div class="serie-card">
+                  <h3 class="serie-title">Serie {{ serie.number }} ({{ serie.athletes.length }} / 8)</h3>
+                  <div class="athletes-in-serie">
+                      @for (athlete of serie.athletes; track $index; let i = $index) {
+                      <div class="athlete-registered">
+                        <span class="dorsal">{{ i + 1 }}</span>
+                        <span class="name">{{ athlete.athlete_name }}</span>
+                        <span class="country">{{ athlete.country_code }}</span>
+                        <button
+                          mat-icon-button
+                          matTooltip="Quitar"
+                          (click)="removeAthleteFromProof(athlete)"
+                          [disabled]="removingAthleteId === athlete.id">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancelar</button>
+    <button
+      mat-raised-button
+      color="primary"
+      [disabled]="selectedAthletes.length === 0 || registering"
+      (click)="registerSelectedAthletes()">
+      @if (!registering) {
+        <mat-icon>person_add</mat-icon>
+      } @else {
+        <mat-spinner diameter="20"></mat-spinner>
+      }
+      {{ registering ? 'Inscribiendo...' : ('Inscribir (' + selectedAthletes.length + ')') }}
+    </button>
+  </mat-dialog-actions>
+</div>

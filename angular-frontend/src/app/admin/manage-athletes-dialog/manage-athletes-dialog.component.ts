@@ -228,6 +228,9 @@ interface Athlete {
       border-top: 1px solid #e0e0e0;
     }
   `]
+  ,
+  templateUrl: './manage-athletes-dialog.component.html',
+  styleUrls: ['./manage-athletes-dialog.component.scss']
 })
 export class ManageAthletesDialogComponent implements OnInit {
   athletes: Athlete[] = [];

@@ -1,0 +1,73 @@
+<div class="edit-proof-container">
+  <h2 mat-dialog-title>Editar Prueba</h2>
+  
+  <mat-dialog-content>
+    <form [formGroup]="proofForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Nombre Prueba</mat-label>
+        <input matInput formControlName="nombre_prueba" placeholder="ej: 100m Freestyle">
+        <mat-error *ngIf="proofForm.get('nombre_prueba')?.hasError('required')">
+          Campo requerido
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Distancia (m)</mat-label>
+        <mat-select formControlName="distancia">
+          <mat-option value="50">50m</mat-option>
+          <mat-option value="100">100m</mat-option>
+          <mat-option value="200">200m</mat-option>
+          <mat-option value="400">400m</mat-option>
+          <mat-option value="800">800m</mat-option>
+          <mat-option value="1500">1500m</mat-option>
+        </mat-select>
+        <mat-error *ngIf="proofForm.get('distancia')?.hasError('required')">
+          Selecciona una distancia
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Estilo</mat-label>
+        <mat-select formControlName="estilo">
+          <mat-option value="Libre">Libre</mat-option>
+          <mat-option value="Espalda">Espalda</mat-option>
+          <mat-option value="Pecho">Pecho</mat-option>
+          <mat-option value="Mariposa">Mariposa</mat-option>
+          <mat-option value="Combinado">Combinado</mat-option>
+        </mat-select>
+        <mat-error *ngIf="proofForm.get('estilo')?.hasError('required')">
+          Selecciona un estilo
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Género</mat-label>
+        <mat-select formControlName="genero">
+          <mat-option value="M">Masculino</mat-option>
+          <mat-option value="F">Femenino</mat-option>
+          <mat-option value="Mixto">Mixto</mat-option>
+        </mat-select>
+        <mat-error *ngIf="proofForm.get('genero')?.hasError('required')">
+          Selecciona un género
+        </mat-error>
+      </mat-form-field>
+
+      <div class="info-box">
+        <p><strong>Inscripciones actuales:</strong> {{ data.proof.total_inscripciones || 0 }}</p>
+        <p class="note">⚠️ Al cambiar distancia/estilo/género, la prueba se modificará para todos los atletas inscritos.</p>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cancelar</button>
+    <button 
+      mat-raised-button 
+      color="primary"
+      [disabled]="proofForm.invalid || saving"
+      (click)="onSave()">
+      <mat-icon *ngIf="!saving">save</mat-icon>
+      {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
+    </button>
+  </mat-dialog-actions>
+</div>

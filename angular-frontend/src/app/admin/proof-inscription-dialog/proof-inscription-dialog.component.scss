@@ -1,0 +1,199 @@
+.inscription-dialog-container {
+  min-width: 800px;
+  max-width: 1200px;
+}
+
+.tab-content {
+  padding: 20px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.no-data {
+  text-align: center;
+  color: #999;
+  padding: 40px 20px;
+  font-style: italic;
+}
+
+.proof-info-card {
+  background: #f0f7ff;
+  border: 1px solid #b3d9f2;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #ddd;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-weight: 500;
+  color: #666;
+  min-width: 150px;
+}
+
+.series-summary {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.series-summary h3 {
+  margin: 0 0 12px 0;
+  color: #0c7cc0;
+}
+
+.series-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+.serie-summary {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  text-align: center;
+}
+
+.serie-number {
+  font-weight: 600;
+  color: #0f9de8;
+  margin-bottom: 4px;
+}
+
+.serie-count {
+  font-size: 14px;
+  color: #666;
+}
+
+.search-box {
+  margin-bottom: 16px;
+}
+
+.athletes-table-element {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table th {
+  background: #f5f5f5;
+  font-weight: 600;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+table td {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+table tr:hover {
+  background: #f9f9f9;
+}
+
+.serie-predict {
+  color: #0f9de8;
+  font-size: 14px;
+}
+
+.serie-predict-disabled {
+  color: #ccc;
+}
+
+.registered-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.serie-card {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.serie-title {
+  margin: 0 0 12px 0;
+  color: #0c7cc0;
+  font-size: 16px;
+}
+
+.athletes-in-serie {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.athlete-registered {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+}
+
+.dorsal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #0f9de8;
+  color: white;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.country {
+  color: #999;
+  font-size: 12px;
+  min-width: 40px;
+}
+
+mat-dialog-actions {
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+@media (max-width: 1024px) {
+  .inscription-dialog-container {
+    min-width: auto;
+    max-width: 100%;
+  }
+
+  .athletes-in-serie {
+    grid-template-columns: 1fr;
+  }
+}

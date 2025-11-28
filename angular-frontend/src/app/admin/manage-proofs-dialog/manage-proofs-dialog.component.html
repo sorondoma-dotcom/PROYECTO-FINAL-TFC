@@ -1,0 +1,136 @@
+<div class="proof-manager-container">
+  <h2 mat-dialog-title>Gestionar Pruebas</h2>
+
+  <mat-dialog-content>
+    <mat-tab-group>
+      <!-- TAB 1: Crear nueva prueba -->
+      <mat-tab label="Nueva Prueba">
+        <div class="tab-content">
+          <form [formGroup]="proofForm">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Nombre Prueba</mat-label>
+              <input matInput formControlName="nombre_prueba" placeholder="ej: 100m Freestyle">
+              <mat-error>Campo requerido</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Distancia (m)</mat-label>
+              <mat-select formControlName="distancia">
+                <mat-option value="50">50m</mat-option>
+                <mat-option value="100">100m</mat-option>
+                <mat-option value="200">200m</mat-option>
+                <mat-option value="400">400m</mat-option>
+                <mat-option value="800">800m</mat-option>
+                <mat-option value="1500">1500m</mat-option>
+              </mat-select>
+              <mat-error>Selecciona una distancia</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Estilo</mat-label>
+              <mat-select formControlName="estilo">
+                <mat-option value="Libre">Libre</mat-option>
+                <mat-option value="Espalda">Espalda</mat-option>
+                <mat-option value="Pecho">Pecho</mat-option>
+                <mat-option value="Mariposa">Mariposa</mat-option>
+                <mat-option value="Combinado">Combinado</mat-option>
+              </mat-select>
+              <mat-error>Selecciona un estilo</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Género</mat-label>
+              <mat-select formControlName="genero">
+                <mat-option value="M">Masculino</mat-option>
+                <mat-option value="F">Femenino</mat-option>
+                <mat-option value="Mixto">Mixto</mat-option>
+              </mat-select>
+              <mat-error>Selecciona un género</mat-error>
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="primary"
+              class="full-width"
+              (click)="crearPrueba()"
+              [disabled]="proofForm.invalid || saving">
+              @if (!saving) { <mat-icon>add</mat-icon> } @else { <mat-spinner diameter="20"></mat-spinner> }
+              {{ saving ? 'Creando...' : 'Crear Prueba' }}
+            </button>
+          </form>
+        </div>
+      </mat-tab>
+
+      <!-- TAB 2: Listado de pruebas -->
+      <mat-tab label="Pruebas ({{ proofs.length }})">
+        <div class="tab-content">
+          @if (loading) {
+            <div class="loading">
+              <mat-spinner diameter="40"></mat-spinner>
+            </div>
+          } @else if (!loading && proofs.length === 0) {
+            <div class="no-data">
+              No hay pruebas aún. Crea la primera prueba en la pestaña anterior.
+            </div>
+          } @else {
+            <div class="proofs-list">
+              @for (proof of proofs; track $index; let i = $index) {
+                <div class="proof-card">
+                  <div class="proof-header">
+                    <div class="proof-info">
+                      <h3>{{ proof.nombre_prueba }}</h3>
+                      <div class="proof-details">
+                        <mat-chip-set aria-label="Detalles">
+                          <mat-chip selected>{{ proof.distancia }}m</mat-chip>
+                          <mat-chip [highlighted]="true">{{ proof.estilo }}</mat-chip>
+                          <mat-chip>{{ getGenderLabel(proof.genero) }}</mat-chip>
+                          <mat-chip>{{ proof.total_inscripciones || 0 }} atletas</mat-chip>
+                        </mat-chip-set>
+                      </div>
+                    </div>
+                    <div class="proof-actions">
+                      <button mat-icon-button matTooltip="Editar" (click)="editarPrueba(proof)">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button matTooltip="Eliminar" color="warn" (click)="eliminarPrueba(proof)">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Series para esta prueba -->
+                  @if (proof.series && (proof.series | keyvalue).length > 0) {
+                    <div class="series-section">
+                      <h4>Series ({{ (proof.series | keyvalue).length }})</h4>
+                      @for (serie of proof.series | keyvalue; track $index; let si = $index) {
+                        <div class="serie-card">
+                          <strong>Serie {{ serie.key }}: {{ serie.value.length }} atletas</strong>
+                          <div class="athletes-list">
+                            @for (athlete of serie.value; track $index; let ai = $index) {
+                              <div class="athlete-item">
+                                <span class="athlete-name">{{ athlete.athlete_name }}</span>
+                                <span class="athlete-country">{{ athlete.country_code }}</span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <div class="no-athletes">
+                      Sin inscripciones aún
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="onCancel()">Cerrar</button>
+  </mat-dialog-actions>
+</div>

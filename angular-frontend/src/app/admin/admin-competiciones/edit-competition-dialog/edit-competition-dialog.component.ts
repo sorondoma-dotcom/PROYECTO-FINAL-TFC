@@ -19,77 +19,8 @@ import { MatButtonModule } from '@angular/material/button';
     MatButtonModule,
     MatDialogModule
   ],
-  template: `
-    <h2 mat-dialog-title>Editar competición</h2>
-    <mat-dialog-content>
-      <form [formGroup]="editForm" class="form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Nombre</mat-label>
-          <input matInput formControlName="nombre" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Descripción</mat-label>
-          <textarea matInput formControlName="descripcion" rows="3"></textarea>
-        </mat-form-field>
-
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>País</mat-label>
-            <input matInput formControlName="pais" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>Ciudad</mat-label>
-            <input matInput formControlName="ciudad" />
-          </mat-form-field>
-        </div>
-
-        <div class="form-row">
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>Estado</mat-label>
-            <mat-select formControlName="estado">
-              <mat-option value="pendiente">Pendiente</mat-option>
-              <mat-option value="en_curso">En curso</mat-option>
-              <mat-option value="finalizada">Finalizada</mat-option>
-              <mat-option value="cancelada">Cancelada</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="half-width">
-            <mat-label>Tipo piscina</mat-label>
-            <mat-select formControlName="tipo_piscina">
-              <mat-option value="25m">25m</mat-option>
-              <mat-option value="50m">50m</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </form>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="onCancel()">Cancelar</button>
-      <button mat-raised-button color="primary" (click)="onSave()">Guardar</button>
-    </mat-dialog-actions>
-  `,
-  styles: [`
-    .form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .half-width {
-      width: 100%;
-    }
-  `]
+  templateUrl: './edit-competition-dialog.component.html',
+  styleUrls: ['./edit-competition-dialog.component.scss']
 })
 export class EditCompetitionDialogComponent {
   editForm!: FormGroup;
