@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-11-2025 a las 16:25:08
+-- Tiempo de generación: 28-11-2025 a las 13:32:46
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -268,6 +268,296 @@ INSERT INTO `atletas` (`athlete_id`, `athlete_name`, `age`, `gender`, `country_c
 (1633425, 'Ilya KHARUN', 20, 'M', 'CAN', NULL, 'https://www.worldaquatics.com/athletes/1633425/ilya-kharun'),
 (1663568, 'Molly CARSON', 19, 'F', 'USA', NULL, 'https://www.worldaquatics.com/athletes/1663568/molly-carson'),
 (1673325, 'Shin OHASHI', 16, 'M', 'JPN', NULL, 'https://www.worldaquatics.com/athletes/1673325/shin-ohashi');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `competiciones_agendadas`
+--
+
+CREATE TABLE `competiciones_agendadas` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `nombre` varchar(255) NOT NULL,
+  `descripcion` longtext DEFAULT NULL,
+  `pais` varchar(100) DEFAULT NULL,
+  `ciudad` varchar(100) DEFAULT NULL,
+  `tipo_piscina` enum('25m','50m') DEFAULT '50m',
+  `fecha_inicio` datetime NOT NULL,
+  `fecha_fin` datetime DEFAULT NULL,
+  `lugar_evento` varchar(255) DEFAULT NULL,
+  `creada_por` int(11) DEFAULT NULL,
+  `estado` enum('pendiente','en_curso','finalizada','cancelada') DEFAULT 'pendiente',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `competiciones_agendadas`
+--
+
+INSERT INTO `competiciones_agendadas` (`id`, `nombre`, `descripcion`, `pais`, `ciudad`, `tipo_piscina`, `fecha_inicio`, `fecha_fin`, `lugar_evento`, `creada_por`, `estado`, `created_at`, `updated_at`) VALUES
+(6, 'Campeonato naciona de españa', 'España', 'España', 'Madrid', '50m', '2025-11-28 13:20:00', '2025-11-30 15:00:00', 'Campeonato naciona de españa', 1, 'pendiente', '2025-11-28 12:23:41', '2025-11-28 12:23:41');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `competiciones_pruebas`
+--
+
+CREATE TABLE `competiciones_pruebas` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `competicion_id` int(10) UNSIGNED NOT NULL,
+  `nombre_prueba` varchar(255) NOT NULL,
+  `distancia` int(11) DEFAULT 100,
+  `estilo` enum('Libre','Espalda','Pecho','Mariposa','Combinado') NOT NULL,
+  `genero` enum('M','F','Mixto') DEFAULT 'Mixto',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `competiciones_pruebas`
+--
+
+INSERT INTO `competiciones_pruebas` (`id`, `competicion_id`, `nombre_prueba`, `distancia`, `estilo`, `genero`, `created_at`) VALUES
+(7, 6, '100 freestyle', 100, 'Libre', 'F', '2025-11-28 12:24:05');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `inscripciones_atleticas`
+--
+
+CREATE TABLE `inscripciones_atleticas` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `competicion_id` int(10) UNSIGNED NOT NULL,
+  `athlete_id` int(10) UNSIGNED NOT NULL,
+  `numero_dorsal` int(11) DEFAULT NULL,
+  `estado_inscripcion` enum('inscrito','confirmado','retirado','descalificado') DEFAULT 'inscrito',
+  `notas` text DEFAULT NULL,
+  `inscrito_en` datetime DEFAULT current_timestamp(),
+  `confirmado_en` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `inscripciones_atleticas`
+--
+
+INSERT INTO `inscripciones_atleticas` (`id`, `competicion_id`, `athlete_id`, `numero_dorsal`, `estado_inscripcion`, `notas`, `inscrito_en`, `confirmado_en`) VALUES
+(69, 6, 1006055, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(70, 6, 1051356, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(71, 6, 1057263, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(72, 6, 1008104, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(73, 6, 1020160, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(74, 6, 1043468, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(75, 6, 1001828, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(76, 6, 1057125, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(77, 6, 1136196, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(78, 6, 1134973, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(79, 6, 1012663, NULL, 'inscrito', NULL, '2025-11-28 13:24:27', NULL),
+(80, 6, 1003868, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(81, 6, 1017661, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(82, 6, 1190208, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(83, 6, 1020014, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(84, 6, 1020804, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(85, 6, 1019653, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(86, 6, 1019816, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(87, 6, 1026519, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(88, 6, 1019930, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(89, 6, 1001117, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(90, 6, 1009660, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(91, 6, 1188018, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(92, 6, 1010666, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(93, 6, 1663568, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(94, 6, 1002586, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(95, 6, 1133580, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(96, 6, 1020106, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(97, 6, 1017513, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(98, 6, 1134854, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(99, 6, 1000477, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(100, 6, 1136702, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(101, 6, 1046710, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(102, 6, 1000685, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(103, 6, 1009076, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(104, 6, 1048421, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(105, 6, 1006110, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(106, 6, 1137154, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(107, 6, 1290629, NULL, 'inscrito', NULL, '2025-11-28 13:24:28', NULL),
+(108, 6, 1000661, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(109, 6, 1000553, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(110, 6, 1020778, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(111, 6, 1019978, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(112, 6, 1020846, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(113, 6, 1002059, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(114, 6, 1001344, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(115, 6, 1000812, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(116, 6, 1016318, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(117, 6, 1252422, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(118, 6, 1005898, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(119, 6, 1000622, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(120, 6, 1020725, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(121, 6, 1325047, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(122, 6, 1000482, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(123, 6, 1190607, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(124, 6, 1000760, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(125, 6, 1133442, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(126, 6, 1011497, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(127, 6, 1019881, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(128, 6, 1000490, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(129, 6, 1006109, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(130, 6, 1010658, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(131, 6, 1000002, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(132, 6, 1020594, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(133, 6, 1011197, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(134, 6, 1020316, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(135, 6, 1189393, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(136, 6, 1007869, NULL, 'inscrito', NULL, '2025-11-28 13:24:29', NULL),
+(137, 6, 1000938, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(138, 6, 1006057, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(139, 6, 1020798, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(140, 6, 1190176, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(141, 6, 1004157, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(142, 6, 1011443, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(143, 6, 1188574, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(145, 6, 1005616, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(146, 6, 1003916, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(147, 6, 1000951, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(148, 6, 1168311, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(149, 6, 1190858, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(150, 6, 1000837, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(151, 6, 1000901, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(152, 6, 1003891, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(153, 6, 1137575, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(154, 6, 1000688, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(155, 6, 1002697, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(156, 6, 1010806, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(157, 6, 1017530, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(158, 6, 1023487, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(159, 6, 1020107, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(160, 6, 1057344, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(161, 6, 1137368, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(162, 6, 1051347, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(163, 6, 1415844, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(164, 6, 1002815, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL),
+(165, 6, 1002483, NULL, 'inscrito', NULL, '2025-11-28 13:24:30', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `inscripciones_pruebas`
+--
+
+CREATE TABLE `inscripciones_pruebas` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `inscripcion_atletica_id` int(10) UNSIGNED NOT NULL,
+  `prueba_id` int(10) UNSIGNED NOT NULL,
+  `tiempo_inscripcion` varchar(32) DEFAULT NULL,
+  `tiempo_competencia` varchar(32) DEFAULT NULL,
+  `clasificacion` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `inscripciones_pruebas`
+--
+
+INSERT INTO `inscripciones_pruebas` (`id`, `inscripcion_atletica_id`, `prueba_id`, `tiempo_inscripcion`, `tiempo_competencia`, `clasificacion`, `created_at`, `updated_at`) VALUES
+(22, 142, 7, NULL, NULL, NULL, '2025-11-28 12:30:47', '2025-11-28 12:30:47'),
+(23, 150, 7, NULL, NULL, NULL, '2025-11-28 12:30:47', '2025-11-28 12:30:47'),
+(24, 98, 7, NULL, NULL, NULL, '2025-11-28 12:30:47', '2025-11-28 12:30:47'),
+(25, 136, 7, NULL, NULL, NULL, '2025-11-28 12:30:47', '2025-11-28 12:30:47'),
+(26, 155, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(27, 137, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(28, 154, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(29, 165, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(30, 151, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(31, 147, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(32, 164, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(33, 152, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(34, 146, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(35, 141, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(36, 145, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(37, 138, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(38, 156, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(39, 157, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(40, 159, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(41, 139, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(42, 158, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(43, 162, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(44, 160, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(45, 161, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(46, 153, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(47, 148, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(48, 143, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(49, 140, 7, NULL, NULL, NULL, '2025-11-28 12:31:06', '2025-11-28 12:31:06'),
+(50, 149, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(51, 163, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(52, 131, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(53, 122, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(54, 128, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(55, 109, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(56, 119, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(57, 108, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(58, 124, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(59, 115, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(60, 114, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(61, 113, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(62, 118, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(63, 129, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(64, 130, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(65, 133, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(66, 126, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(67, 116, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(68, 127, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(69, 111, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(70, 134, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(71, 132, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(72, 120, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(73, 110, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(74, 112, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(75, 125, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(76, 135, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(77, 123, 7, NULL, NULL, NULL, '2025-11-28 12:31:07', '2025-11-28 12:31:07'),
+(78, 117, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(79, 121, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(80, 99, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(81, 102, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(82, 89, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(83, 94, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(84, 80, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(85, 105, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(86, 103, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(87, 90, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(88, 92, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(89, 97, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(90, 81, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(91, 85, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(92, 86, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(93, 88, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(94, 83, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(95, 96, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(96, 84, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(97, 87, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(98, 101, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(99, 104, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(100, 95, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(101, 100, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(102, 106, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(103, 91, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(104, 82, 7, NULL, NULL, NULL, '2025-11-28 12:31:08', '2025-11-28 12:31:08'),
+(105, 107, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(106, 93, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(107, 75, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(108, 69, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(109, 72, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(110, 79, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(111, 73, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(112, 74, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(113, 70, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(114, 76, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(115, 71, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(116, 78, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09'),
+(117, 77, 7, NULL, NULL, NULL, '2025-11-28 12:31:09', '2025-11-28 12:31:09');
 
 -- --------------------------------------------------------
 
@@ -7085,6 +7375,8 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `email_verified_at` datetime DEFAULT NULL,
+  `role` varchar(50) DEFAULT 'user',
+  `is_admin` tinyint(1) DEFAULT 0,
   `verification_code_hash` varchar(255) DEFAULT NULL,
   `verification_expires_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -7093,83 +7385,119 @@ CREATE TABLE `users` (
 -- Volcado de datos para la tabla `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `email_verified_at`, `verification_code_hash`, `verification_expires_at`) VALUES
-(1, 'Usuario Test', 'test@test.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '2025-11-24 13:15:29', NULL, NULL, NULL),
-(4, 'aaaaa', 'aaaa@aaaa.a', '$2y$10$O3nw3bNJMqAgftSIhXccAu7c2Y2ZXKh.KDA/ZWaKq9Vs/u8ASp3We', '2025-11-24 15:09:38', NULL, NULL, NULL),
-(5, 'Miguel', 'prueba2@gmail.com', '$2y$10$/kcdnzMOdwE3sbpYM4RWDuvOP8wJXFkDqOVcYHSd4vT9UNknRTasm', '2025-11-24 15:26:15', NULL, NULL, NULL),
-(18, 'Prueba', 'sorondomiguelalfredo@gmail.com', '$2y$10$Y4GFs7QEk3oACFTL6artF.TjJvb.gnErHOS.hMhXpNpyzPLBzqbau', '2025-11-25 12:55:56', '2025-11-25 13:56:40', NULL, NULL),
-(19, 'antonio', 'antonioalvfer0l0@gmail.com', '$2y$10$ttcZj4Fw3KogySeKB0Lb1.h5b/3ZxqRQtPThbSI7MOgCYsIru7gWi', '2025-11-25 13:13:52', '2025-11-25 14:14:22', NULL, NULL),
-(20, 'miguel', 'sorondoma@gmail.com', '$2y$10$aDXA8enkyQxBYzkNoGsvd.4OKSbjeDDP9E7kANL1E4WdlWWb7ivBO', '2025-11-27 10:18:36', '2025-11-27 11:19:03', NULL, NULL);
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `email_verified_at`, `role`, `is_admin`, `verification_code_hash`, `verification_expires_at`) VALUES
+(1, 'Admin', 'swimlive669@gmail.com', '$2y$10$Y4GFs7QEk3oACFTL6artF.TjJvb.gnErHOS.hMhXpNpyzPLBzqbau', '2025-11-28 09:20:39', '2025-11-28 10:22:41', 'admin', 1, NULL, NULL),
+(3, 'Miguel', 'sorondoma@gmail.com', '$2y$10$yZfoGFJzhKrcJxkUwiZ1F.3w4M3EVLxH4t7RWDFgivXG9fFLHnuIG', '2025-11-28 10:37:32', '2025-11-28 11:37:51', 'user', 0, NULL, NULL);
 
 --
 -- Índices para tablas volcadas
 --
 
 --
--- Indices de la tabla `atletas`
+-- Indices de la tabla `competiciones_agendadas`
 --
-ALTER TABLE `atletas`
-  ADD PRIMARY KEY (`athlete_id`);
+ALTER TABLE `competiciones_agendadas`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nombre` (`nombre`),
+  ADD KEY `creada_por` (`creada_por`),
+  ADD KEY `idx_competiciones_estado` (`estado`),
+  ADD KEY `idx_competiciones_fecha` (`fecha_inicio`);
 
 --
--- Indices de la tabla `resultados`
+-- Indices de la tabla `competiciones_pruebas`
 --
-ALTER TABLE `resultados`
+ALTER TABLE `competiciones_pruebas`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `uniq_result` (`athlete_id`,`event`,`time_text`,`race_date`,`competition`);
+  ADD UNIQUE KEY `unique_prueba` (`competicion_id`,`nombre_prueba`,`distancia`,`estilo`),
+  ADD KEY `idx_pruebas_competicion` (`competicion_id`);
 
 --
--- Indices de la tabla `swimming_rankings`
+-- Indices de la tabla `inscripciones_atleticas`
 --
-ALTER TABLE `swimming_rankings`
+ALTER TABLE `inscripciones_atleticas`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_swimming_rankings_athlete` (`athlete_id`);
+  ADD UNIQUE KEY `unique_inscription` (`competicion_id`,`athlete_id`),
+  ADD KEY `idx_athlete_id` (`athlete_id`),
+  ADD KEY `idx_inscripciones_competicion` (`competicion_id`),
+  ADD KEY `idx_inscripciones_atleta` (`athlete_id`);
+
+--
+-- Indices de la tabla `inscripciones_pruebas`
+--
+ALTER TABLE `inscripciones_pruebas`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_athlete_event` (`inscripcion_atletica_id`,`prueba_id`),
+  ADD KEY `prueba_id` (`prueba_id`);
 
 --
 -- Indices de la tabla `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD UNIQUE KEY `idx_users_email` (`email`);
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
 --
--- AUTO_INCREMENT de la tabla `resultados`
+-- AUTO_INCREMENT de la tabla `competiciones_agendadas`
 --
-ALTER TABLE `resultados`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5365;
+ALTER TABLE `competiciones_agendadas`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT de la tabla `swimming_rankings`
+-- AUTO_INCREMENT de la tabla `competiciones_pruebas`
 --
-ALTER TABLE `swimming_rankings`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1475;
+ALTER TABLE `competiciones_pruebas`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+
+--
+-- AUTO_INCREMENT de la tabla `inscripciones_atleticas`
+--
+ALTER TABLE `inscripciones_atleticas`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=168;
+
+--
+-- AUTO_INCREMENT de la tabla `inscripciones_pruebas`
+--
+ALTER TABLE `inscripciones_pruebas`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Restricciones para tablas volcadas
 --
 
 --
--- Filtros para la tabla `resultados`
+-- Filtros para la tabla `competiciones_agendadas`
 --
-ALTER TABLE `resultados`
-  ADD CONSTRAINT `fk_resultados_atleta` FOREIGN KEY (`athlete_id`) REFERENCES `atletas` (`athlete_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `competiciones_agendadas`
+  ADD CONSTRAINT `competiciones_agendadas_ibfk_1` FOREIGN KEY (`creada_por`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
--- Filtros para la tabla `swimming_rankings`
+-- Filtros para la tabla `competiciones_pruebas`
 --
-ALTER TABLE `swimming_rankings`
-  ADD CONSTRAINT `fk_swimming_rankings_athlete` FOREIGN KEY (`athlete_id`) REFERENCES `atletas` (`athlete_id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `competiciones_pruebas`
+  ADD CONSTRAINT `competiciones_pruebas_ibfk_1` FOREIGN KEY (`competicion_id`) REFERENCES `competiciones_agendadas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `inscripciones_atleticas`
+--
+ALTER TABLE `inscripciones_atleticas`
+  ADD CONSTRAINT `inscripciones_atleticas_ibfk_1` FOREIGN KEY (`competicion_id`) REFERENCES `competiciones_agendadas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `inscripciones_pruebas`
+--
+ALTER TABLE `inscripciones_pruebas`
+  ADD CONSTRAINT `inscripciones_pruebas_ibfk_1` FOREIGN KEY (`inscripcion_atletica_id`) REFERENCES `inscripciones_atleticas` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `inscripciones_pruebas_ibfk_2` FOREIGN KEY (`prueba_id`) REFERENCES `competiciones_pruebas` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
