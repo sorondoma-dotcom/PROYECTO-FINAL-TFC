@@ -21,20 +21,17 @@
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 
+/* GRID PRINCIPAL DEL NAV */
 .toolbar-grid {
-  max-width: 1600px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   height: 70px;
   display: grid;
-  grid-template-columns: minmax(200px, auto) 1fr minmax(auto, 600px);
-  gap: 2rem;
+  grid-template-columns: auto minmax(0, 1fr) auto; /* Zona central flexible */
+  gap: 1rem;
   align-items: center;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: auto 1fr auto;
-    gap: 1.5rem;
-  }
 }
 
 .brand-section {
@@ -43,15 +40,17 @@
   gap: 1.25rem;
 }
 
+/* BOTÓN MENÚ (OCULTO HASTA TABLET) */
 .menu-btn {
   display: none;
   color: #e2e8f0;
 
-  @media (max-width: 960px) {
+  @media (max-width: 1024px) {
     display: inline-flex;
   }
 }
 
+/* LOGO + NOMBRE */
 .brand {
   display: flex;
   align-items: center;
@@ -102,15 +101,11 @@
 }
 
 @keyframes swim {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
+/* LINKS DESKTOP */
 .desktop-links {
   display: flex;
   gap: 0.5rem;
@@ -119,14 +114,19 @@
   a {
     color: var(--color-text);
     border-radius: 8px;
-    padding: 0 1.2rem;
+    padding: 0 1rem;
     text-transform: none;
     font-weight: 500;
     transition: all 0.2s ease;
     opacity: 0.8;
+    font-size: 0.95rem;
 
     mat-icon {
       margin-right: 0.4rem;
+      font-size: 20px;
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
     }
 
     &:hover {
@@ -146,23 +146,40 @@
     background: rgba(66, 165, 245, 0.2);
     color: #64b5f6;
   }
+}
 
-  @media (max-width: 960px) {
+/* REDUCCIÓN SUAVE PARA LAPTOPS (1366px, 1280px) */
+@media (max-width: 1366px) {
+  .desktop-links a {
+    font-size: 0.85rem;
+    padding: 0 0.6rem;
+  }
+
+  .desktop-links a mat-icon {
+    font-size: 18px;
+    margin-right: 0.25rem;
+  }
+}
+
+/* OCULTAR LINKS SOLO EN TABLET (<=1024px) */
+@media (max-width: 1024px) {
+  .desktop-links {
     display: none;
   }
 }
 
 .toolbar-actions {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.75rem;
-  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
 
   button {
     color: var(--color-text);
   }
 }
 
+/* STATUS */
 .status-pill {
   border-radius: 20px;
   border-color: #2196f3;
@@ -188,6 +205,7 @@
   color: var(--color-text);
 }
 
+/* CTA */
 .cta {
   border-radius: 8px;
   text-transform: none;
@@ -203,16 +221,12 @@
   }
 
   @media (max-width: 768px) {
-    span {
-      display: none;
-    }
-
-    mat-icon {
-      margin-right: 0;
-    }
+    span { display: none; }
+    mat-icon { margin-right: 0; }
   }
 }
 
+/* USER CHIP */
 .user-chip {
   background: transparent;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -246,7 +260,7 @@
     color: var(--color-text);
     font-weight: 600;
     font-size: 0.875rem;
-    max-width: 120px;
+    max-width: 90px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -274,6 +288,7 @@
   }
 }
 
+/* PAGE */
 .page-surface {
   position: relative;
   min-height: calc(100% - 70px);
@@ -303,7 +318,7 @@
   padding: clamp(1.5rem, 3vw, 3rem);
 }
 
-// MOBILE NAV
+/* MOBILE NAV */
 .mobile-nav {
   width: min(320px, 100%);
   background: var(--color-surface);
@@ -394,10 +409,11 @@ mat-nav-list {
   }
 }
 
-@media (max-width: 960px) {
+/* AJUSTE GENERAL TABLET */
+@media (max-width: 1024px) {
   .toolbar-grid {
     grid-template-columns: auto 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
     padding: 0 1rem;
     height: auto;
     padding-top: 0.75rem;
@@ -418,6 +434,7 @@ mat-nav-list {
   }
 }
 
+/* MÓVIL */
 @media (max-width: 600px) {
   .toolbar-grid {
     padding: 0 0.75rem;

@@ -43,6 +43,14 @@ use App\Services\CompetitionService;
 use App\Services\ProofService;
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => 'localhost',
+        'secure' => false,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -92,6 +100,27 @@ if (isset($publicRoutes[$method]) && in_array($uri, $publicRoutes[$method], true
 
 // Solo verificar autenticacion si la ruta la requiere
 if ($requiresAuth && empty($_SESSION['user_id'])) {
+    // Logging temporal para depuración: registra session_id, cookies y session
+    try {
+        $logDir = __DIR__ . '/../data';
+        if (!is_dir($logDir)) {
+            @mkdir($logDir, 0755, true);
+        }
+        $logFile = $logDir . '/session_debug.log';
+        $entry = [
+            'ts' => date('c'),
+            'uri' => $uri,
+            'method' => $method,
+            'remote_addr' => $_SERVER['REMOTE_ADDR'] ?? '',
+            'session_id' => function_exists('session_id') ? session_id() : '',
+            'cookies' => $_COOKIE ?? [],
+            'session' => $_SESSION ?? []
+        ];
+        @file_put_contents($logFile, json_encode($entry) . PHP_EOL, FILE_APPEND | LOCK_EX);
+    } catch (	hrowable $e) {
+        // ignorar errores de logging en producción
+    }
+
     header('Content-Type: application/json');
     http_response_code(401);
     die(json_encode([

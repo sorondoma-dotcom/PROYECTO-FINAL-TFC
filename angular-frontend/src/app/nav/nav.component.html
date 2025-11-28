@@ -73,11 +73,6 @@
         </nav>
 
         <div class="toolbar-actions">
-          <button mat-stroked-button class="status-pill" type="button">
-            <mat-icon>bolt</mat-icon>
-            <span>Live</span>
-          </button>
-
           <button
             mat-icon-button
             (click)="toggleTheme()"
@@ -94,11 +89,6 @@
               aria-label="Tienes 3 notificaciones nuevas"
               >notifications</mat-icon
             >
-          </button>
-
-          <button mat-raised-button color="primary" class="cta">
-            <mat-icon>add</mat-icon>
-            <span>Nueva serie</span>
           </button>
 
           @if (authService.isLoggedIn()) {
