@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -13,6 +13,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ProofService, Proof } from '../../services/proof.service';
 import { ConfirmationService } from '../../shared/services/confirmation.service';
+import { EditProofDialogComponent } from '../edit-proof-dialog/edit-proof-dialog.component';
 
 @Component({
   selector: 'app-manage-proofs-dialog',
@@ -316,7 +317,8 @@ export class ManageProofsDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { competicion_id: number },
     private proofService: ProofService,
     private fb: FormBuilder,
-    private confirmation: ConfirmationService
+    private confirmation: ConfirmationService,
+    private dialog: MatDialog
   ) {
     this.initForm();
   }
@@ -358,8 +360,7 @@ export class ManageProofsDialogComponent implements OnInit {
       nombre_prueba: formValue.nombre_prueba,
       distancia: parseInt(formValue.distancia),
       estilo: formValue.estilo,
-      genero: formValue.genero,
-      competicion_id: this.data.competicion_id
+      genero: formValue.genero
     }).subscribe({
       next: () => {
         this.proofForm.reset({ genero: 'Mixto' });
@@ -374,11 +375,23 @@ export class ManageProofsDialogComponent implements OnInit {
   }
 
   editarPrueba(proof: Proof): void {
-    this.confirmation.confirm({
-      title: 'Editar Prueba',
-      message: 'Funcionalidad en desarrollo',
-      confirmText: 'OK'
-    }).subscribe();
+    const dialogRef = this.dialog.open(EditProofDialogComponent, {
+      data: { proof },
+      width: '450px'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result || !proof.id) return;
+
+      this.proofService.updateProof(proof.id, result).subscribe({
+        next: () => {
+          this.loadProofs();
+        },
+        error: (error) => {
+          console.error('Error updating proof:', error);
+        }
+      });
+    });
   }
 
   eliminarPrueba(proof: Proof): void {
