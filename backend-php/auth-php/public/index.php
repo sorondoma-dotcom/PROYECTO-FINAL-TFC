@@ -3,16 +3,24 @@ require __DIR__ . '/../src/bootstrap.php';
 require __DIR__ . '/../src/controllers/AuthController.php';
 require __DIR__ . '/../src/controllers/RankingController.php';
 require __DIR__ . '/../src/controllers/AthleteController.php';
+require __DIR__ . '/../src/controllers/CompetitionController.php';
+require __DIR__ . '/../src/controllers/ProofController.php';
 require __DIR__ . '/../src/services/AuthService.php';
 require __DIR__ . '/../src/services/MailService.php';
 require __DIR__ . '/../src/services/RankingService.php';
 require __DIR__ . '/../src/services/AthleteResultService.php';
+require __DIR__ . '/../src/services/CompetitionService.php';
+require __DIR__ . '/../src/services/ProofService.php';
 require __DIR__ . '/../src/repositories/UserRepository.php';
 require __DIR__ . '/../src/repositories/SwimmingRankingRepository.php';
 require __DIR__ . '/../src/repositories/AthleteResultRepository.php';
+require __DIR__ . '/../src/repositories/CompetitionRepository.php';
+require __DIR__ . '/../src/repositories/InscriptionRepository.php';
 require __DIR__ . '/../src/models/User.php';
 require __DIR__ . '/../src/models/SwimmingRanking.php';
 require __DIR__ . '/../src/models/AthleteResult.php';
+require __DIR__ . '/../src/models/Competition.php';
+require __DIR__ . '/../src/models/Inscription.php';
 require __DIR__ . '/../src/lib/PHPMailer/Exception.php';
 require __DIR__ . '/../src/lib/PHPMailer/PHPMailer.php';
 require __DIR__ . '/../src/lib/PHPMailer/SMTP.php';
@@ -20,13 +28,19 @@ require __DIR__ . '/../src/lib/PHPMailer/SMTP.php';
 use App\Controllers\AuthController;
 use App\Controllers\RankingController;
 use App\Controllers\AthleteController;
+use App\Controllers\CompetitionController;
+use App\Controllers\ProofController;
 use App\Repositories\UserRepository;
 use App\Repositories\SwimmingRankingRepository;
 use App\Repositories\AthleteResultRepository;
+use App\Repositories\CompetitionRepository;
+use App\Repositories\InscriptionRepository;
 use App\Services\AuthService;
 use App\Services\MailService;
 use App\Services\RankingService;
 use App\Services\AthleteResultService;
+use App\Services\CompetitionService;
+use App\Services\ProofService;
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -65,7 +79,7 @@ if (empty($uri)) {
 
 // Rutas publicas que NO requieren autenticacion
 $publicRoutes = [
-    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats'],
+    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats', '/api/competitions'],
     'POST' => ['/api/login', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
     'PUT' => ['/api/password-reset']
 ];
@@ -100,6 +114,17 @@ $athleteResultRepository = new AthleteResultRepository();
 $athleteResultService = new AthleteResultService($athleteResultRepository);
 $athleteController = new AthleteController($athleteResultService);
 
+// Competition repositories and services
+$pdo = getPDO();
+$competitionRepository = new CompetitionRepository($pdo);
+$inscriptionRepository = new InscriptionRepository($pdo);
+$competitionService = new CompetitionService($competitionRepository, $inscriptionRepository);
+$competitionController = new CompetitionController($competitionService);
+
+// Proof services
+$proofService = new ProofService($pdo);
+$proofController = new ProofController($proofService);
+
 if ($method === 'POST' && $uri === '/api/register') {
     $authController->register();
 } elseif ($method === 'POST' && $uri === '/api/login') {
@@ -116,12 +141,44 @@ if ($method === 'POST' && $uri === '/api/register') {
     $authController->verifyEmail();
 } elseif ($method === 'GET' && $uri === '/api/rankings') {
     $rankingController->index();
+} elseif ($method === 'GET' && $uri === '/api/athletes') {
+    $athleteController->getAllAthletes();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results') {
     $athleteController->getResults();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results/medals') {
     $athleteController->getMedals();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results/stats') {
     $athleteController->getStats();
+} elseif ($method === 'GET' && $uri === '/api/competitions') {
+    $competitionController->getAllCompetitions();
+} elseif ($method === 'POST' && $uri === '/api/competitions') {
+    $competitionController->createCompetition();
+} elseif (preg_match('/^\/api\/competitions\/(\d+)$/', $uri, $matches) && $method === 'GET') {
+    $competitionController->getCompetition((int) $matches[1]);
+} elseif (preg_match('/^\/api\/competitions\/(\d+)$/', $uri, $matches) && $method === 'PUT') {
+    $competitionController->updateCompetition((int) $matches[1]);
+} elseif (preg_match('/^\/api\/competitions\/(\d+)$/', $uri, $matches) && $method === 'DELETE') {
+    $competitionController->deleteCompetition((int) $matches[1]);
+} elseif (preg_match('/^\/api\/competitions\/(\d+)\/athletes$/', $uri, $matches) && $method === 'POST') {
+    $competitionController->registerAthlete((int) $matches[1]);
+} elseif (preg_match('/^\/api\/inscriptions\/(\d+)$/', $uri, $matches) && $method === 'DELETE') {
+    $competitionController->unregisterAthlete((int) $matches[1]);
+} elseif (preg_match('/^\/api\/inscriptions\/(\d+)$/', $uri, $matches) && $method === 'PUT') {
+    $competitionController->updateInscription((int) $matches[1]);
+} elseif ($method === 'POST' && preg_match('/^\/api\/competitions\/(\d+)\/proofs$/', $uri, $matches)) {
+    $proofController->createProof();
+} elseif ($method === 'GET' && preg_match('/^\/api\/competitions\/(\d+)\/proofs$/', $uri, $matches)) {
+    $proofController->getProofsByCompetition((int) $matches[1]);
+} elseif ($method === 'GET' && preg_match('/^\/api\/proofs\/(\d+)$/', $uri, $matches)) {
+    $proofController->getProof((int) $matches[1]);
+} elseif ($method === 'PUT' && preg_match('/^\/api\/proofs\/(\d+)$/', $uri, $matches)) {
+    $proofController->updateProof((int) $matches[1]);
+} elseif ($method === 'DELETE' && preg_match('/^\/api\/proofs\/(\d+)$/', $uri, $matches)) {
+    $proofController->deleteProof((int) $matches[1]);
+} elseif ($method === 'POST' && preg_match('/^\/api\/proofs\/(\d+)\/athletes$/', $uri, $matches)) {
+    $proofController->registerAthleteToProof((int) $matches[1]);
+} elseif ($method === 'DELETE' && preg_match('/^\/api\/proofs\/athletes\/(\d+)$/', $uri, $matches)) {
+    $proofController->unregisterAthleteFromProof((int) $matches[1]);
 } elseif ($method === 'GET' && ($uri === '/api/health' || $uri === '/' || $uri === '/index.php')) {
     jsonResponse(['status' => 'ok', 'service' => 'auth-php', 'database' => 'MySQL on localhost:3306']);
 } else {

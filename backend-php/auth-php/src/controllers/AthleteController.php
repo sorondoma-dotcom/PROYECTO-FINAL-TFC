@@ -17,6 +17,32 @@ class AthleteController
     }
 
     /**
+     * GET /api/athletes
+     * Obtiene la lista de todos los atletas de la tabla atletas
+     */
+    public function getAllAthletes(): void
+    {
+        try {
+            $pdo = getPDO();
+            $sql = 'SELECT athlete_id, athlete_name, gender, country_code, age, image_url FROM atletas ORDER BY athlete_name LIMIT 10000';
+            $stmt = $pdo->query($sql);
+            $athletes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            jsonResponse([
+                'success' => true,
+                'total' => count($athletes),
+                'data' => $athletes
+            ], 200);
+        } catch (\Exception $e) {
+            error_log("Error en AthleteController::getAllAthletes: " . $e->getMessage());
+            jsonResponse([
+                'error' => 'Error al obtener los atletas',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * GET /api/athletes/results?athleteId=123 OR /api/athletes/results?name=John%20Doe
      * Obtiene los resultados de un atleta específico por ID o por nombre
      */

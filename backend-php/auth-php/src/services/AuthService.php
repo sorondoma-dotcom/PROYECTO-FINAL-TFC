@@ -298,6 +298,8 @@ class AuthService
             'createdAt' => $user->createdAt,
             'emailVerifiedAt' => $user->emailVerifiedAt,
             'isVerified' => !empty($user->emailVerifiedAt),
+            'role' => $user->role ?? 'user',
+            'isAdmin' => (bool) ($user->isAdmin ?? false),
         ];
     }
 

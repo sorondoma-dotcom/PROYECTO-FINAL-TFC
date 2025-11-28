@@ -8,7 +8,9 @@ import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.
 import { VerifyEmailComponent } from './auth/verify-email/verify-email.component';
 import { PerfilNadadorComponent } from './perfil-nadador/perfil-nadador.component';
 import { EstadisticasComponent } from './estadisticas/estadisticas.component';
+import { AdminCompeticionesComponent } from './admin/admin-competiciones/admin-competiciones.component';
 import { authGuard } from './guards/auth.guard';
+import { AdminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: 'auth', component: AuthComponent },
@@ -20,5 +22,6 @@ export const routes: Routes = [
   { path: 'nadadores', component: RankingNadadoresComponent, canActivate: [authGuard], pathMatch: 'full' },
   { path: 'estadisticas', component: EstadisticasComponent, canActivate: [authGuard] },
   { path: 'resultado-prueba', component: ResultadoPruebaComponent, canActivate: [authGuard] },
+  { path: 'admin/competiciones', component: AdminCompeticionesComponent, canActivate: [authGuard, AdminGuard] },
   { path: '**', redirectTo: 'auth' },
 ];

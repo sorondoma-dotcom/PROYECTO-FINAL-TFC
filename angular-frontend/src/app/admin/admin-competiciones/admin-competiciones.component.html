@@ -1,0 +1,330 @@
+<div class="admin-container">
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>sports</mat-icon>
+        Panel de Administración de Competiciones
+      </mat-card-title>
+    </mat-card-header>
+  </mat-card>
+
+  <mat-tab-group>
+    <!-- Pestaña: Crear/Listar Competiciones -->
+    <mat-tab label="Competiciones">
+      <div class="tab-content">
+        <!-- Formulario de creación -->
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>Agendar Nueva Competición</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="competicionForm" (ngSubmit)="crearCompeticion()" class="form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Nombre de la competición</mat-label>
+                  <input matInput formControlName="nombre" placeholder="Ej: Campeonato Nacional 2025" />
+                  <mat-icon matPrefix>event</mat-icon>
+                  @if (competicionForm.get('nombre')?.invalid && competicionForm.get('nombre')?.touched) {
+                    <mat-error>{{ getErrorMessage('nombre') }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Descripción</mat-label>
+                  <textarea matInput formControlName="descripcion" rows="3"></textarea>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>País</mat-label>
+                  <input matInput formControlName="pais" placeholder="Ej: España" />
+                  <mat-icon matPrefix>public</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Ciudad</mat-label>
+                  <input matInput formControlName="ciudad" placeholder="Ej: Madrid" />
+                  <mat-icon matPrefix>location_city</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Tipo de piscina</mat-label>
+                  <mat-select formControlName="tipo_piscina">
+                    <mat-option value="25m">25 metros</mat-option>
+                    <mat-option value="50m">50 metros</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Fecha de inicio</mat-label>
+                  <input matInput formControlName="fecha_inicio" type="datetime-local" />
+                  <mat-icon matPrefix>calendar_today</mat-icon>
+                  @if (competicionForm.get('fecha_inicio')?.invalid && competicionForm.get('fecha_inicio')?.touched) {
+                    <mat-error>{{ getErrorMessage('fecha_inicio') }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Fecha de finalización</mat-label>
+                  <input matInput formControlName="fecha_fin" type="datetime-local" />
+                  <mat-icon matPrefix>calendar_today</mat-icon>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Lugar del evento</mat-label>
+                  <input matInput formControlName="lugar_evento" placeholder="Ej: Piscina Olímpica" />
+                  <mat-icon matPrefix>location_on</mat-icon>
+                </mat-form-field>
+              </div>
+
+              <div class="form-actions">
+                <button mat-raised-button color="primary" type="submit" [disabled]="loading">
+                  @if (loading) {
+                    <mat-progress-spinner diameter="20" mode="indeterminate"></mat-progress-spinner>
+                  }
+                  <span>Agendar competición</span>
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Lista de competiciones -->
+        <mat-card class="table-card">
+          <mat-card-header>
+            <mat-card-title>Competiciones Agendadas</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @if (loading && competiciones.length === 0) {
+              <div class="loading-container">
+                <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+              </div>
+            } @else if (competiciones.length === 0) {
+              <p class="no-data">No hay competiciones agendadas</p>
+            } @else {
+              <div class="table-container">
+                <table mat-table [dataSource]="competiciones" class="competiciones-table">
+                  <!-- Columna ID -->
+                  <ng-container matColumnDef="id">
+                    <th mat-header-cell *matHeaderCellDef>#</th>
+                    <td mat-cell *matCellDef="let element">{{ element.id }}</td>
+                  </ng-container>
+
+                  <!-- Columna Nombre -->
+                  <ng-container matColumnDef="nombre">
+                    <th mat-header-cell *matHeaderCellDef>Nombre</th>
+                    <td mat-cell *matCellDef="let element">{{ element.nombre }}</td>
+                  </ng-container>
+
+                  <!-- Columna Fecha Inicio -->
+                  <ng-container matColumnDef="fecha_inicio">
+                    <th mat-header-cell *matHeaderCellDef>Fecha Inicio</th>
+                    <td mat-cell *matCellDef="let element">
+                      {{ element.fecha_inicio | date: 'short' }}
+                    </td>
+                  </ng-container>
+
+                  <!-- Columna País -->
+                  <ng-container matColumnDef="pais">
+                    <th mat-header-cell *matHeaderCellDef>País</th>
+                    <td mat-cell *matCellDef="let element">{{ element.pais || '-' }}</td>
+                  </ng-container>
+
+                  <!-- Columna Tipo Piscina -->
+                  <ng-container matColumnDef="tipo_piscina">
+                    <th mat-header-cell *matHeaderCellDef>Piscina</th>
+                    <td mat-cell *matCellDef="let element">
+                      <mat-chip [ngClass]="element.tipo_piscina === '50m' ? 'chip-50' : 'chip-25'">
+                        {{ element.tipo_piscina }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Columna Estado -->
+                  <ng-container matColumnDef="estado">
+                    <th mat-header-cell *matHeaderCellDef>Estado</th>
+                    <td mat-cell *matCellDef="let element">
+                      <mat-chip
+                        [ngClass]="{
+                          'estado-pendiente': element.estado === 'pendiente',
+                          'estado-curso': element.estado === 'en_curso',
+                          'estado-finalizada': element.estado === 'finalizada',
+                          'estado-cancelada': element.estado === 'cancelada'
+                        }"
+                      >
+                        {{ element.estado }}
+                      </mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Columna Inscritos -->
+                  <ng-container matColumnDef="total_inscritos">
+                    <th mat-header-cell *matHeaderCellDef>Inscritos</th>
+                    <td mat-cell *matCellDef="let element">
+                      <mat-chip>{{ element.total_inscritos || 0 }}</mat-chip>
+                    </td>
+                  </ng-container>
+
+                  <!-- Columna Acciones -->
+                  <ng-container matColumnDef="acciones">
+                    <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                    <td mat-cell *matCellDef="let element">
+                      <div class="actions">
+                        <button mat-icon-button [matTooltip]="'Ver y gestionar'" (click)="selectCompetition(element)">
+                          <mat-icon>info</mat-icon>
+                        </button>
+                      </div>
+                    </td>
+                  </ng-container>
+
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Pestaña: Gestionar Atletas -->
+    <mat-tab label="Gestionar Atletas" [disabled]="!selectedCompetition">
+      <div class="tab-content" *ngIf="selectedCompetition">
+        <mat-card class="detail-card">
+          <mat-card-header>
+            <mat-card-title>
+              {{ selectedCompetition.nombre }}
+              <mat-chip class="estado-chip" [ngClass]="'estado-' + selectedCompetition.estado">
+                {{ selectedCompetition.estado }}
+              </mat-chip>
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ selectedCompetition.fecha_inicio | date: 'full' }}
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="detail-info">
+              <p><strong>País:</strong> {{ selectedCompetition.pais || '-' }}</p>
+              <p><strong>Ciudad:</strong> {{ selectedCompetition.ciudad || '-' }}</p>
+              <p><strong>Piscina:</strong> {{ selectedCompetition.tipo_piscina }}</p>
+              <p><strong>Lugar:</strong> {{ selectedCompetition.lugar_evento || '-' }}</p>
+              <p><strong>Total atletas inscritos:</strong> {{ inscripciones.length }}</p>
+            </div>
+
+            <div class="detail-actions">
+              <button mat-raised-button color="primary" (click)="agregarAtletas()">
+                <mat-icon>person_add</mat-icon>
+                Inscribir atletas
+              </button>
+              <button mat-raised-button color="accent" (click)="gestionarPruebas()">
+                <mat-icon>event</mat-icon>
+                Gestionar Pruebas
+              </button>
+              <button mat-raised-button (click)="inscribirEnPrueba()">
+                <mat-icon>assignment</mat-icon>
+                Inscribir en Prueba
+              </button>
+              <button mat-raised-button color="accent" (click)="editarCompeticion()">
+                <mat-icon>edit</mat-icon>
+                Editar
+              </button>
+              <button mat-raised-button color="warn" (click)="eliminarCompeticion()">
+                <mat-icon>delete</mat-icon>
+                Eliminar
+              </button>
+            </div>
+
+            <!-- Tabla de inscripciones -->
+            <div class="inscripciones-section">
+              <h3>Atletas inscritos</h3>
+              @if (inscripciones.length === 0) {
+                <p class="no-data">No hay atletas inscritos en esta competición</p>
+              } @else {
+                <div class="table-container">
+                  <table mat-table [dataSource]="inscripciones" class="inscripciones-table">
+                    <!-- Columna Nombre -->
+                    <ng-container matColumnDef="athlete_name">
+                      <th mat-header-cell *matHeaderCellDef>Nombre del atleta</th>
+                      <td mat-cell *matCellDef="let element">{{ element.athlete_name }}</td>
+                    </ng-container>
+
+                    <!-- Columna País -->
+                    <ng-container matColumnDef="country_code">
+                      <th mat-header-cell *matHeaderCellDef>País</th>
+                      <td mat-cell *matCellDef="let element">{{ element.country_code }}</td>
+                    </ng-container>
+
+                    <!-- Columna Género -->
+                    <ng-container matColumnDef="gender">
+                      <th mat-header-cell *matHeaderCellDef>Género</th>
+                      <td mat-cell *matCellDef="let element">
+                        {{ element.gender === 'M' ? 'Masculino' : 'Femenino' }}
+                      </td>
+                    </ng-container>
+
+                    <!-- Columna Dorsal -->
+                    <ng-container matColumnDef="numero_dorsal">
+                      <th mat-header-cell *matHeaderCellDef>Dorsal</th>
+                      <td mat-cell *matCellDef="let element">
+                        {{ element.numero_dorsal || '-' }}
+                      </td>
+                    </ng-container>
+
+                    <!-- Columna Estado -->
+                    <ng-container matColumnDef="estado_inscripcion">
+                      <th mat-header-cell *matHeaderCellDef>Estado</th>
+                      <td mat-cell *matCellDef="let element">
+                        <mat-chip
+                          [ngClass]="element.estado_inscripcion === 'confirmado' ? 'estado-confirmado' : 'estado-inscrito'"
+                        >
+                          {{ element.estado_inscripcion }}
+                        </mat-chip>
+                      </td>
+                    </ng-container>
+
+                    <!-- Columna Fecha -->
+                    <ng-container matColumnDef="inscrito_en">
+                      <th mat-header-cell *matHeaderCellDef>Inscrito en</th>
+                      <td mat-cell *matCellDef="let element">
+                        {{ element.inscrito_en | date: 'short' }}
+                      </td>
+                    </ng-container>
+
+                    <!-- Columna Acciones -->
+                    <ng-container matColumnDef="acciones">
+                      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="actions">
+                          <button
+                            mat-icon-button
+                            [matTooltip]="element.estado_inscripcion === 'confirmado' ? 'Marcar como inscrito' : 'Confirmar'"
+                            (click)="cambiarEstadoInscripcion(element)"
+                          >
+                            <mat-icon>
+                              {{ element.estado_inscripcion === 'confirmado' ? 'check_circle' : 'circle_outline' }}
+                            </mat-icon>
+                          </button>
+                          <button mat-icon-button matTooltip="Desinscribir" (click)="eliminarAtleta(element)">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumnsInscripciones"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumnsInscripciones;"></tr>
+                  </table>
+                </div>
+              }
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

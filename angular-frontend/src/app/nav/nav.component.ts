@@ -47,6 +47,10 @@ export class NavComponent {
     { label: 'Contacto', icon: 'email', route: '/contacto' }
   ];
 
+  adminMenuItems = [
+    { label: 'Administración', icon: 'admin_panel_settings', route: '/admin/competiciones' }
+  ];
+
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -94,5 +98,18 @@ export class NavComponent {
           error: () => this.router.navigate(['/auth'])
         });
       });
+  }
+
+  isUserAdmin(): boolean {
+    const user = this.authService.currentUser();
+    return user && user.isAdmin === true;
+  }
+
+  get visibleMenuItems() {
+    let items = [...this.menuItems];
+    if (this.isUserAdmin()) {
+      items = items.concat(this.adminMenuItems);
+    }
+    return items;
   }
 }

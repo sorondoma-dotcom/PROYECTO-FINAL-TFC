@@ -11,6 +11,8 @@ class User
     public ?string $emailVerifiedAt;
     public ?string $verificationCodeHash;
     public ?string $verificationExpiresAt;
+    public ?string $role;
+    public ?bool $isAdmin;
 
     public static function fromArray(array $row): self
     {
@@ -23,6 +25,8 @@ class User
         $user->emailVerifiedAt = $row['email_verified_at'] ?? null;
         $user->verificationCodeHash = $row['verification_code_hash'] ?? null;
         $user->verificationExpiresAt = $row['verification_expires_at'] ?? null;
+        $user->role = $row['role'] ?? 'user';
+        $user->isAdmin = (bool) ($row['is_admin'] ?? false);
         return $user;
     }
 }
