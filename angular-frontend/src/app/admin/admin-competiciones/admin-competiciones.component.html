@@ -42,11 +42,17 @@
                   <mat-label>País</mat-label>
                   <input matInput formControlName="pais" placeholder="Ej: España" />
                   <mat-icon matPrefix>public</mat-icon>
+                  @if (competicionForm.get('pais')?.invalid && competicionForm.get('pais')?.touched) {
+                    <mat-error>{{ getErrorMessage('pais') }}</mat-error>
+                  }
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Ciudad</mat-label>
                   <input matInput formControlName="ciudad" placeholder="Ej: Madrid" />
                   <mat-icon matPrefix>location_city</mat-icon>
+                  @if (competicionForm.get('ciudad')?.invalid && competicionForm.get('ciudad')?.touched) {
+                    <mat-error>{{ getErrorMessage('ciudad') }}</mat-error>
+                  }
                 </mat-form-field>
               </div>
 
@@ -60,9 +66,11 @@
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Fecha de inicio</mat-label>
-                  <input matInput formControlName="fecha_inicio" type="datetime-local" />
+                  <input matInput [matDatepicker]="pickerInicio" formControlName="fecha_inicio" [min]="tomorrow" />
+                  <mat-datepicker-toggle matSuffix [for]="pickerInicio"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerInicio [startAt]="tomorrow" [startView]="'month'"></mat-datepicker>
                   <mat-icon matPrefix>calendar_today</mat-icon>
-                  @if (competicionForm.get('fecha_inicio')?.invalid && competicionForm.get('fecha_inicio')?.touched) {
+                  @if ((competicionForm.get('fecha_inicio')?.invalid && competicionForm.get('fecha_inicio')?.touched) || (competicionForm.get('fecha_inicio')?.touched && competicionForm.hasError('fechaInicioNoFuturo'))) {
                     <mat-error>{{ getErrorMessage('fecha_inicio') }}</mat-error>
                   }
                 </mat-form-field>
@@ -70,14 +78,39 @@
 
               <div class="form-row">
                 <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Hora de inicio</mat-label>
+                  <input matInput formControlName="fecha_inicio_hora" type="time" />
+                  @if (competicionForm.get('fecha_inicio_hora')?.invalid && competicionForm.get('fecha_inicio_hora')?.touched) {
+                    <mat-error>Hora requerida</mat-error>
+                  }
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="half-width">
+                  <mat-label>Hora de fin</mat-label>
+                  <input matInput formControlName="fecha_fin_hora" type="time" />
+                  @if ((competicionForm.get('fecha_fin')?.touched || competicionForm.get('fecha_fin_hora')?.touched || competicionForm.get('fecha_inicio')?.touched || competicionForm.get('fecha_inicio_hora')?.touched) && competicionForm.hasError('fechaFinPosterior')) {
+                    <mat-error>{{ getErrorMessage('fecha_fin_hora') }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Fecha de finalización</mat-label>
-                  <input matInput formControlName="fecha_fin" type="datetime-local" />
+                  <input matInput [matDatepicker]="pickerFin" formControlName="fecha_fin" [min]="tomorrow" [max]="competicionForm.get('fecha_inicio')?.value" />
+                  <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerFin [startView]="'month'"></mat-datepicker>
                   <mat-icon matPrefix>calendar_today</mat-icon>
+                  @if ((competicionForm.get('fecha_fin')?.touched || competicionForm.get('fecha_inicio')?.touched) && competicionForm.hasError('fechaFinPosterior')) {
+                    <mat-error>{{ getErrorMessage('fecha_fin') }}</mat-error>
+                  }
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Lugar del evento</mat-label>
                   <input matInput formControlName="lugar_evento" placeholder="Ej: Piscina Olímpica" />
                   <mat-icon matPrefix>location_on</mat-icon>
+                  @if (competicionForm.get('lugar_evento')?.invalid && competicionForm.get('lugar_evento')?.touched) {
+                    <mat-error>{{ getErrorMessage('lugar_evento') }}</mat-error>
+                  }
                 </mat-form-field>
               </div>
 
@@ -193,22 +226,23 @@
 
     <!-- Pestaña: Gestionar Atletas -->
     <mat-tab label="Gestionar Atletas" [disabled]="!selectedCompetition">
-      <div class="tab-content" *ngIf="selectedCompetition">
-        <mat-card class="detail-card">
-          <mat-card-header>
-            <mat-card-title>
+      @if (selectedCompetition) {
+        <div class="tab-content">
+          <mat-card class="detail-card">
+            <mat-card-header>
+              <mat-card-title>
               {{ selectedCompetition.nombre }}
               <mat-chip class="estado-chip" [ngClass]="'estado-' + selectedCompetition.estado">
                 {{ selectedCompetition.estado }}
               </mat-chip>
-            </mat-card-title>
-            <mat-card-subtitle>
+              </mat-card-title>
+              <mat-card-subtitle>
               {{ selectedCompetition.fecha_inicio | date: 'full' }}
-            </mat-card-subtitle>
-          </mat-card-header>
+              </mat-card-subtitle>
+            </mat-card-header>
 
-          <mat-card-content>
-            <div class="detail-info">
+            <mat-card-content>
+              <div class="detail-info">
               <p><strong>País:</strong> {{ selectedCompetition.pais || '-' }}</p>
               <p><strong>Ciudad:</strong> {{ selectedCompetition.ciudad || '-' }}</p>
               <p><strong>Piscina:</strong> {{ selectedCompetition.tipo_piscina }}</p>
@@ -216,7 +250,7 @@
               <p><strong>Total atletas inscritos:</strong> {{ inscripciones.length }}</p>
             </div>
 
-            <div class="detail-actions">
+              <div class="detail-actions">
               <button mat-raised-button color="primary" (click)="agregarAtletas()">
                 <mat-icon>person_add</mat-icon>
                 Inscribir atletas
@@ -322,9 +356,10 @@
                 </div>
               }
             </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      }
     </mat-tab>
   </mat-tab-group>
 </div>

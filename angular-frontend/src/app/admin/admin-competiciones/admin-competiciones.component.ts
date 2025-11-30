@@ -9,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { MatDialogModule, MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule } from '@angular/material/chips';
@@ -40,7 +42,9 @@ import { ProofInscriptionDialogComponent } from '../proof-inscription-dialog/pro
     MatDialogModule,
     MatTabsModule,
     MatChipsModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './admin-competiciones.component.html',
   styleUrls: ['./admin-competiciones.component.scss']
@@ -54,6 +58,7 @@ export class AdminCompeticionesComponent implements OnInit {
   
   // Formularios
   competicionForm!: FormGroup;
+  tomorrow: Date = new Date();
   
   // Tablas
   displayedColumns: string[] = ['id', 'nombre', 'fecha_inicio', 'pais', 'tipo_piscina', 'estado', 'total_inscritos', 'acciones'];
@@ -67,6 +72,8 @@ export class AdminCompeticionesComponent implements OnInit {
     private dialog: MatDialog
   ) {
     this.initForm();
+    const now = new Date();
+    this.tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   }
 
   ngOnInit(): void {
@@ -74,16 +81,26 @@ export class AdminCompeticionesComponent implements OnInit {
   }
 
   private initForm(): void {
-    this.competicionForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(3)]],
-      descripcion: [''],
-      pais: [''],
-      ciudad: [''],
-      tipo_piscina: ['50m', Validators.required],
-      fecha_inicio: ['', Validators.required],
-      fecha_fin: [''],
-      lugar_evento: ['']
-    });
+    // Regex patterns
+    const nombrePattern = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ]+$/; // solo letras, números y espacio
+    const noSpecialCharsPattern = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ,.()-]+$/; // común sin símbolos raros
+    const paisPattern = /^(?:[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:\s+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+){0,3})$/; // 1 a 4 palabras
+
+    this.competicionForm = this.fb.group(
+      {
+        nombre: ['', [Validators.required, Validators.minLength(3), Validators.pattern(nombrePattern)]],
+        descripcion: [''],
+        pais: ['', [Validators.pattern(paisPattern)]],
+        ciudad: ['', [Validators.pattern(noSpecialCharsPattern)]],
+        tipo_piscina: ['50m', Validators.required],
+        fecha_inicio: ['', Validators.required],
+        fecha_inicio_hora: ['', Validators.required],
+        fecha_fin: [''],
+        fecha_fin_hora: [''],
+        lugar_evento: ['', [Validators.pattern(noSpecialCharsPattern)]]
+      },
+      { validators: [this.fechaInicioFuturoValidator(), this.fechaFinNoPosteriorHoraValidator()] }
+    );
   }
 
   loadCompeticiones(): void {
@@ -297,7 +314,74 @@ export class AdminCompeticionesComponent implements OnInit {
 
     if (control.hasError('required')) return 'Campo requerido';
     if (control.hasError('minlength')) return `Mínimo ${control.getError('minlength').requiredLength} caracteres`;
+    if (control.hasError('pattern')) {
+      switch (fieldName) {
+        case 'nombre':
+          return 'Solo letras, números y espacios';
+        case 'pais':
+          return 'Máximo 4 palabras, sin caracteres especiales';
+        case 'ciudad':
+        case 'lugar_evento':
+          return 'Caracteres especiales no permitidos';
+      }
+      return 'Formato inválido';
+    }
+    if (fieldName === 'fecha_inicio' && this.competicionForm.hasError('fechaInicioNoFuturo')) {
+      return 'La fecha de inicio debe ser posterior al día de hoy';
+    }
+    if ((fieldName === 'fecha_fin' || fieldName === 'fecha_fin_hora') && this.competicionForm.hasError('fechaFinPosterior')) {
+      return 'La fecha/hora de finalización no puede ser posterior a la de inicio';
+    }
 
     return '';
+  }
+
+  // Validadores de fechas a nivel de formulario
+  private fechaInicioFuturoValidator() {
+    return (group: FormGroup) => {
+      const inicio = group.get('fecha_inicio')?.value;
+      if (!inicio) return null;
+
+      const inicioDate = new Date(inicio);
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      const inicioDay = new Date(inicioDate.getFullYear(), inicioDate.getMonth(), inicioDate.getDate());
+      const isFuture = inicioDay.getTime() > today.getTime();
+      return isFuture ? null : { fechaInicioNoFuturo: true };
+    };
+  }
+
+  private fechaFinNoPosteriorHoraValidator() {
+    return (group: FormGroup) => {
+      const fechaInicio = group.get('fecha_inicio')?.value;
+      const horaInicio = group.get('fecha_inicio_hora')?.value;
+      const fechaFin = group.get('fecha_fin')?.value;
+      const horaFin = group.get('fecha_fin_hora')?.value;
+
+      if (!fechaInicio || !fechaFin) return null;
+
+      const inicioDate = new Date(fechaInicio);
+      const finDate = new Date(fechaFin);
+
+      // Aplicar horas si están presentes (formato HH:mm)
+      if (horaInicio) {
+        const [h, m] = horaInicio.split(':').map(Number);
+        inicioDate.setHours(h ?? 0, m ?? 0, 0, 0);
+      } else {
+        inicioDate.setHours(0, 0, 0, 0);
+      }
+      if (horaFin) {
+        const [h, m] = horaFin.split(':').map(Number);
+        finDate.setHours(h ?? 0, m ?? 0, 0, 0);
+      } else {
+        finDate.setHours(0, 0, 0, 0);
+      }
+
+      if (isNaN(inicioDate.getTime()) || isNaN(finDate.getTime())) return null;
+
+      // Regla: fin debe ser >= inicio; si fin < inicio => error
+      return finDate.getTime() >= inicioDate.getTime() ? null : { fechaFinPosterior: true };
+    };
   }
 }

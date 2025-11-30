@@ -6,9 +6,11 @@
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Nombre Prueba</mat-label>
         <input matInput formControlName="nombre_prueba" placeholder="ej: 100m Freestyle">
-        <mat-error *ngIf="proofForm.get('nombre_prueba')?.hasError('required')">
-          Campo requerido
-        </mat-error>
+        @if (proofForm.get('nombre_prueba')?.hasError('required')) {
+          <mat-error>
+            Campo requerido
+          </mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
@@ -21,9 +23,11 @@
           <mat-option value="800">800m</mat-option>
           <mat-option value="1500">1500m</mat-option>
         </mat-select>
-        <mat-error *ngIf="proofForm.get('distancia')?.hasError('required')">
-          Selecciona una distancia
-        </mat-error>
+        @if (proofForm.get('distancia')?.hasError('required')) {
+          <mat-error>
+            Selecciona una distancia
+          </mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
@@ -35,9 +39,11 @@
           <mat-option value="Mariposa">Mariposa</mat-option>
           <mat-option value="Combinado">Combinado</mat-option>
         </mat-select>
-        <mat-error *ngIf="proofForm.get('estilo')?.hasError('required')">
-          Selecciona un estilo
-        </mat-error>
+        @if (proofForm.get('estilo')?.hasError('required')) {
+          <mat-error>
+            Selecciona un estilo
+          </mat-error>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
@@ -47,9 +53,11 @@
           <mat-option value="F">Femenino</mat-option>
           <mat-option value="Mixto">Mixto</mat-option>
         </mat-select>
-        <mat-error *ngIf="proofForm.get('genero')?.hasError('required')">
-          Selecciona un género
-        </mat-error>
+        @if (proofForm.get('genero')?.hasError('required')) {
+          <mat-error>
+            Selecciona un género
+          </mat-error>
+        }
       </mat-form-field>
 
       <div class="info-box">
@@ -66,7 +74,9 @@
       color="primary"
       [disabled]="proofForm.invalid || saving"
       (click)="onSave()">
-      <mat-icon *ngIf="!saving">save</mat-icon>
+      @if (!saving) {
+        <mat-icon>save</mat-icon>
+      }
       {{ saving ? 'Guardando...' : 'Guardar Cambios' }}
     </button>
   </mat-dialog-actions>
