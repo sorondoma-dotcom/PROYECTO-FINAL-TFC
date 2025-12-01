@@ -1,4 +1,4 @@
-import { Component, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, DoCheck, Inject, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -9,9 +9,11 @@ import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatMenuModule } from '@angular/material/menu';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../services/auth.service';
 import { ConfirmationService } from '../shared/services/confirmation.service';
+import { NotificationService, NotificationItem } from '../services/notification.service';
 
 @Component({
   selector: 'app-nav',
@@ -28,16 +30,21 @@ import { ConfirmationService } from '../shared/services/confirmation.service';
     MatTooltipModule,
     MatBadgeModule,
     MatDialogModule,
-    RouterOutlet,
-    RouterLink
+    MatMenuModule,
+    RouterOutlet
   ],
   templateUrl: './nav.component.html',
   styleUrl: './nav.component.scss'
 })
-export class NavComponent {
+export class NavComponent implements OnDestroy, DoCheck {
   menuOpen = false;
   isDarkMode = false;
   theme: string = 'light';
+  notifications: NotificationItem[] = [];
+  pendingNotifications = 0;
+  loadingNotifications = false;
+  private notificationBellEnabled = false;
+  private notificationsTimer?: ReturnType<typeof setInterval>;
 
   menuItems = [
     { label: 'Inicio', icon: 'home', route: '/' },
@@ -51,12 +58,15 @@ export class NavComponent {
     { label: 'Administración', icon: 'admin_panel_settings', route: '/admin/competiciones' }
   ];
 
+  athleteMenuItem = { label: 'Mi perfil', icon: 'person_pin', route: '/mi-perfil' };
+
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
     public authService: AuthService,
     private router: Router,
-    private confirmation: ConfirmationService
+    private confirmation: ConfirmationService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -64,6 +74,31 @@ export class NavComponent {
       this.theme = localStorage.getItem('theme') || 'light';
       this.isDarkMode = this.theme === 'dark';
       document.body.classList.toggle('dark-theme', this.isDarkMode);
+    }
+
+    this.notificationBellEnabled = this.canShowNotificationBell();
+
+    if (this.notificationBellEnabled) {
+      this.loadNotifications();
+      this.startNotificationPolling();
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopNotificationPolling();
+  }
+
+  ngDoCheck(): void {
+    const canShow = this.canShowNotificationBell();
+    if (canShow && !this.notificationBellEnabled) {
+      this.notificationBellEnabled = true;
+      this.loadNotifications();
+      this.startNotificationPolling();
+    } else if (!canShow && this.notificationBellEnabled) {
+      this.notificationBellEnabled = false;
+      this.stopNotificationPolling();
+      this.notifications = [];
+      this.pendingNotifications = 0;
     }
   }
 
@@ -97,6 +132,9 @@ export class NavComponent {
           next: () => this.router.navigate(['/auth']),
           error: () => this.router.navigate(['/auth'])
         });
+        this.stopNotificationPolling();
+        this.notifications = [];
+        this.pendingNotifications = 0;
       });
   }
 
@@ -105,11 +143,175 @@ export class NavComponent {
     return user && user.isAdmin === true;
   }
 
+  get userFullName(): string {
+    const user = this.authService.currentUser();
+    const firstName = (user?.name ?? '').trim();
+    const lastName = (user?.lastName ?? '').trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+    if (fullName) {
+      return fullName;
+    }
+    const email = (user?.email ?? '').trim();
+    return email || 'Usuario';
+  }
+
+  get userInitials(): string {
+    const user = this.authService.currentUser();
+    const firstName = (user?.name ?? '').trim();
+    const lastName = (user?.lastName ?? '').trim();
+    const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase().replace(/[^A-ZÁÉÍÓÚÜÑ]/g, '');
+    if (initials) {
+      return initials;
+    }
+    const fallback = (user?.email ?? '').trim();
+    return fallback ? fallback.charAt(0).toUpperCase() : 'U';
+  }
+
+  get userAvatar(): string | null {
+    return this.authService.currentUser()?.avatarUrl ?? null;
+  }
+
   get visibleMenuItems() {
     let items = [...this.menuItems];
+
+    if (this.isAthleteUser()) {
+      const alreadyIncluded = items.some((item) => item.route === this.athleteMenuItem.route);
+      if (!alreadyIncluded) {
+        items = [
+          items[0],
+          items[1],
+          this.athleteMenuItem,
+          ...items.slice(2)
+        ];
+      }
+    }
+
     if (this.isUserAdmin()) {
       items = items.concat(this.adminMenuItems);
     }
     return items;
+  }
+
+  private isAthleteUser(): boolean {
+    const user = this.authService.currentUser();
+    const role = (user?.role ?? '').toString().toLowerCase();
+    const allowedRoles = ['usuario', 'user', 'nadador'];
+    return !!user?.athleteId || allowedRoles.includes(role);
+  }
+
+  canShowNotificationBell(): boolean {
+    if (!isPlatformBrowser(this.platformId)) {
+      return false;
+    }
+    const user = this.authService.currentUser();
+    return !!user?.athleteId;
+  }
+
+  loadNotifications(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    if (!this.canShowNotificationBell()) {
+      this.notifications = [];
+      this.pendingNotifications = 0;
+      return;
+    }
+
+    this.loadingNotifications = true;
+    this.notificationService.getNotifications().subscribe({
+      next: (response) => {
+        this.notifications = response.notifications ?? [];
+        this.pendingNotifications = response.pending ?? 0;
+        this.loadingNotifications = false;
+      },
+      error: (error) => {
+        console.error('Error cargando notificaciones:', error);
+        this.loadingNotifications = false;
+      }
+    });
+  }
+
+  onNotificationsMenuOpened(): void {
+    const unread = this.notifications.filter((notification) => !notification.readAt && notification.status === 'pendiente');
+    unread.forEach((notification) => {
+      this.notificationService.markAsRead(notification.id).subscribe({
+        next: (response) => {
+          if (response?.notification) {
+            this.updateNotification(response.notification);
+          }
+        },
+        error: (error) => console.error('Error marcando notificación como vista:', error)
+      });
+    });
+  }
+
+  respondToNotification(notification: NotificationItem, action: 'accept' | 'reject', event?: MouseEvent): void {
+    event?.stopPropagation();
+
+    const execute = () => {
+      this.notificationService.respond(notification.id, action).subscribe({
+        next: (response) => {
+          if (response?.notification) {
+            this.updateNotification(response.notification);
+            this.loadNotifications();
+          }
+        },
+        error: (error) => console.error('Error actualizando notificación:', error)
+      });
+    };
+
+    if (action === 'reject') {
+      this.confirmation
+        .confirm({
+          title: 'Rechazar participación',
+          message: '¿Seguro que deseas rechazar tu participación en esta competición?',
+          confirmText: 'Rechazar',
+          confirmColor: 'warn'
+        })
+        .subscribe((confirmed) => {
+          if (confirmed) {
+            execute();
+          }
+        });
+      return;
+    }
+
+    execute();
+  }
+
+  notificationStatusLabel(notification: NotificationItem): string {
+    switch (notification.status) {
+      case 'aceptada':
+        return 'Confirmada';
+      case 'rechazada':
+        return 'Rechazada';
+      default:
+        return 'Pendiente';
+    }
+  }
+
+  private updateNotification(data: NotificationItem): void {
+    const index = this.notifications.findIndex((item) => item.id === data.id);
+    if (index !== -1) {
+      this.notifications[index] = {
+        ...this.notifications[index],
+        ...data
+      };
+    }
+  }
+
+  private startNotificationPolling(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    this.stopNotificationPolling();
+    this.notificationsTimer = setInterval(() => this.loadNotifications(), 60000);
+  }
+
+  private stopNotificationPolling(): void {
+    if (this.notificationsTimer) {
+      clearInterval(this.notificationsTimer);
+      this.notificationsTimer = undefined;
+    }
   }
 }

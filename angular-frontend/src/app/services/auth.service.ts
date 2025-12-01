@@ -78,6 +78,29 @@ export class AuthService {
     );
   }
 
+  fetchCurrentUser(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/auth/me`, this.httpOptions).pipe(
+      tap((res: any) => this.saveUser(res?.user))
+    );
+  }
+
+  updateProfile(payload: { name?: string | null; lastName?: string | null }, avatar?: File | null): Observable<any> {
+    const formData = new FormData();
+    if (payload.name !== undefined && payload.name !== null) {
+      formData.append('name', payload.name);
+    }
+    if (payload.lastName !== undefined && payload.lastName !== null) {
+      formData.append('lastName', payload.lastName);
+    }
+    if (avatar instanceof File) {
+      formData.append('avatar', avatar);
+    }
+
+    return this.http.post(`${this.baseUrl}/auth/profile`, formData, this.httpOptions).pipe(
+      tap((res: any) => this.saveUser(res?.user))
+    );
+  }
+
   isLoggedIn(): boolean {
     return !!localStorage.getItem(this.storageKey);
   }
@@ -99,5 +122,9 @@ export class AuthService {
 
   private clearUser(): void {
     localStorage.removeItem(this.storageKey);
+  }
+
+  updateCachedUser(user: any): void {
+    this.saveUser(user);
   }
 }

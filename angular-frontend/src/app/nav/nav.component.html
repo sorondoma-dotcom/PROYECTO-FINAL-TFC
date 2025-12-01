@@ -16,7 +16,7 @@
     @if (authService.isLoggedIn()) {
       <div class="mobile-nav__status">
         <span>Sesión activa</span>
-        <small>{{ authService.currentUser()?.email || 'coach@swimlive.io' }}</small>
+        <small>{{ userFullName }}</small>
       </div>
     }
 
@@ -81,22 +81,73 @@
             <mat-icon>{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
           </button>
 
-          <button mat-icon-button matTooltip="Notificaciones" class="notification">
-            <mat-icon
-              [matBadge]="3"
-              matBadgeColor="warn"
-              matBadgeSize="small"
-              aria-label="Tienes 3 notificaciones nuevas"
-              >notifications</mat-icon
+          @if (canShowNotificationBell()) {
+            <button
+              mat-icon-button
+              matTooltip="Notificaciones"
+              class="notification"
+              [matMenuTriggerFor]="notificationMenu"
             >
-          </button>
+              <mat-icon
+                [matBadge]="pendingNotifications"
+                [matBadgeHidden]="pendingNotifications === 0"
+                matBadgeColor="warn"
+                matBadgeSize="small"
+                aria-label="Tienes notificaciones pendientes"
+                >notifications</mat-icon
+              >
+            </button>
+          }
+
+          <mat-menu #notificationMenu="matMenu" class="notification-menu" (menuOpened)="onNotificationsMenuOpened()">
+            <div class="notification-menu__container">
+              @if (loadingNotifications) {
+                <div class="notification-menu__empty">Cargando notificaciones...</div>
+              } @else if (notifications.length === 0) {
+                <div class="notification-menu__empty">No tienes notificaciones</div>
+              } @else {
+                @for (notification of notifications; track notification.id) {
+                  <div class="notification-item" [class.notification-item--pending]="notification.status === 'pendiente'">
+                    <div class="notification-item__header">
+                      <span class="notification-item__title">{{ notification.title }}</span>
+                      <span class="notification-item__status">{{ notificationStatusLabel(notification) }}</span>
+                    </div>
+                    @if (notification.message) {
+                      <div class="notification-item__message">{{ notification.message }}</div>
+                    }
+                    <div class="notification-item__meta">
+                      <span>{{ notification.createdAt | date: 'short' }}</span>
+                      @if (notification.competitionName) {
+                        <span class="notification-item__meta-separator">•</span>
+                        <span>{{ notification.competitionName }}</span>
+                      }
+                    </div>
+                    @if (notification.status === 'pendiente') {
+                      <div class="notification-item__actions">
+                        <button mat-stroked-button color="primary" (click)="respondToNotification(notification, 'accept', $event)">
+                          Confirmar
+                        </button>
+                        <button mat-stroked-button color="warn" (click)="respondToNotification(notification, 'reject', $event)">
+                          Rechazar
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </mat-menu>
 
           @if (authService.isLoggedIn()) {
-            <button class="user-chip" mat-button [matTooltip]="authService.currentUser()?.name || 'Usuario'" (click)="logout()">
-              <div class="avatar">
-                <span>{{ authService.currentUser()?.name?.charAt(0) || 'U' }}</span>
+            <button class="user-chip" mat-button [matTooltip]="userFullName" (click)="logout()">
+              <div class="avatar" [class.avatar--image]="userAvatar">
+                @if (userAvatar) {
+                  <img [src]="userAvatar" [alt]="userFullName" loading="lazy">
+                } @else {
+                  <span>{{ userInitials }}</span>
+                }
               </div>
-              <span class="user-name">{{ authService.currentUser()?.name || 'Usuario' }}</span>
+              <span class="user-name">{{ userFullName }}</span>
               <mat-icon class="logout-icon">logout</mat-icon>
             </button>
           }

@@ -139,4 +139,10 @@ export class DatosService {
       params: new HttpParams().set('name', athleteName)
     });
   }
+
+  getCurrentAthleteProfile(): Observable<any> {
+    return this.http.get(`${this.phpApiBase}/athletes/me`, {
+      withCredentials: true
+    });
+  }
 }

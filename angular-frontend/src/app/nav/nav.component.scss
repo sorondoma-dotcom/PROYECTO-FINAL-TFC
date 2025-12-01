@@ -205,6 +205,113 @@
   color: var(--color-text);
 }
 
+.notification-menu {
+  padding: 0;
+  max-width: 320px;
+
+  .mdc-menu-surface {
+    padding: 0;
+  }
+}
+
+.notification-menu__container {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 0.75rem 0;
+  min-width: 280px;
+}
+
+.notification-menu__empty {
+  padding: 1.25rem 1.5rem;
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.dark-theme .notification-menu__empty {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.notification-item {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  font-size: 0.9rem;
+
+  &:first-of-type {
+    border-top: none;
+  }
+}
+
+.notification-item--pending {
+  background: rgba(33, 150, 243, 0.08);
+}
+
+.dark-theme .notification-item--pending {
+  background: rgba(66, 165, 245, 0.15);
+}
+
+.notification-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notification-item__title {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.notification-item__status {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(33, 150, 243, 0.8);
+}
+
+.dark-theme .notification-item__status {
+  color: rgba(129, 212, 250, 0.9);
+}
+
+.notification-item__message {
+  color: rgba(0, 0, 0, 0.72);
+  line-height: 1.3;
+}
+
+.dark-theme .notification-item__message {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.notification-item__meta {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.54);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.notification-item__meta-separator {
+  font-weight: 700;
+}
+
+.dark-theme .notification-item__meta {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.notification-item__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+
+  button {
+    text-transform: none;
+    font-size: 0.8rem;
+  }
+}
+
 /* CTA */
 .cta {
   border-radius: 8px;
@@ -254,6 +361,18 @@
     color: white;
     font-weight: 700;
     font-size: 0.875rem;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .avatar.avatar--image {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .user-name {
@@ -285,6 +404,10 @@
   &:hover {
     background: rgba(66, 165, 245, 0.15);
     border-color: #64b5f6;
+  }
+
+  .avatar.avatar--image {
+    border-color: rgba(255, 255, 255, 0.2);
   }
 }
 

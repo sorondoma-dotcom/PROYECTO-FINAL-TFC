@@ -14,6 +14,8 @@ export interface Competition {
   lugar_evento?: string;
   estado?: 'pendiente' | 'en_curso' | 'finalizada' | 'cancelada';
   total_inscritos?: number;
+  logo_path?: string | null;
+  logo_url?: string | null;
 }
 
 export interface Inscription {
@@ -53,7 +55,7 @@ export class CompetitionService {
     return this.http.get<any>(`${this.baseUrl}/competitions/${id}`, this.httpOptions);
   }
 
-  createCompetition(competition: Competition): Observable<any> {
+  createCompetition(competition: Competition | FormData): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/competitions`, competition, this.httpOptions);
   }
 

@@ -67,6 +67,107 @@
     </div>
   </mat-card>
 
+  @if (viewingSelf && canEditProfile) {
+    <mat-card class="panel profile-settings mat-elevation-z4">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Tu cuenta</p>
+          <h3>Actualiza tu perfil</h3>
+        </div>
+        @if (savingProfile) {
+          <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+        }
+      </div>
+
+      <form class="profile-form" [formGroup]="profileForm" (ngSubmit)="submitProfile()">
+        <div class="profile-form__grid">
+          <div class="profile-form__avatar">
+            <div class="avatar-preview" [class.avatar-preview--has-image]="avatarPreview">
+              @if (avatarPreview) {
+                <img [src]="avatarPreview" alt="Avatar actual" loading="lazy">
+              } @else {
+                <mat-icon>person</mat-icon>
+              }
+            </div>
+            <div class="avatar-actions">
+              @if (canUploadAvatar) {
+                <button mat-stroked-button color="primary" type="button" (click)="fileInput.click()" [disabled]="savingProfile">
+                  <mat-icon>photo_camera</mat-icon>
+                  Subir foto
+                </button>
+                <input #fileInput type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarSelected($event)" hidden>
+              } @else {
+                <p class="muted">Ya cuentas con una foto de perfil.</p>
+              }
+
+              @if (selectedAvatar) {
+                <button mat-button type="button" (click)="clearSelectedAvatar()" [disabled]="savingProfile">
+                  <mat-icon>close</mat-icon>
+                  Cancelar
+                </button>
+              }
+            </div>
+          </div>
+
+          <div class="profile-form__fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" autocomplete="off" [disabled]="!canEditProfile">
+              @if (profileForm.get('name')?.hasError('required')) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              } @else if (profileForm.get('name')?.hasError('minlength')) {
+                <mat-error>Debe tener al menos 3 caracteres.</mat-error>
+              } @else if (profileForm.get('name')?.hasError('maxlength')) {
+                <mat-error>Máximo 80 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apellido</mat-label>
+              <input matInput formControlName="lastName" autocomplete="off" [disabled]="!canEditProfile">
+              @if (profileForm.get('lastName')?.hasError('minlength')) {
+                <mat-error>Debe tener al menos 2 caracteres.</mat-error>
+              } @else if (profileForm.get('lastName')?.hasError('maxlength')) {
+                <mat-error>Máximo 80 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            @if (profileError) {
+              <div class="profile-error">
+                <mat-icon color="warn">warning</mat-icon>
+                <span>{{ profileError }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="profile-form__actions">
+          <button mat-stroked-button type="button" (click)="resetProfileForm()" [disabled]="savingProfile || !isProfileDirty">
+            Restablecer
+          </button>
+          <button mat-raised-button color="accent" type="submit" [disabled]="!canSubmitProfile">
+            Guardar cambios
+          </button>
+        </div>
+      </form>
+    </mat-card>
+  }
+
+  @if (viewingSelf && !accountUser?.athleteId) {
+    <mat-card class="panel notice-card mat-elevation-z2">
+      <div class="notice-card__content">
+        <mat-icon color="primary">info</mat-icon>
+        <div>
+          <h3>Completa tu perfil deportivo</h3>
+          <p class="muted">
+            Puedes actualizar tu nombre y apellido en esta página. Si más adelante te asignamos un perfil de nadador,
+            verás aquí tus resultados, rankings y competiciones asociadas.
+          </p>
+        </div>
+      </div>
+    </mat-card>
+  }
+
   <div class="grid">
     <mat-card class="panel mat-elevation-z3">
       <div class="panel__header">
@@ -149,7 +250,7 @@
             @if (dbResults.length) {
               <p class="panel__subtitle">{{ dbResults.length }} resultado(s) registrado(s)</p>
             }
-          </div>v>
+          </div>
         </div>
         
         @if (dbResults.length > 0) {
@@ -235,7 +336,7 @@
       
       @if (dbResults.length === 0 && !loading) {
         <div class="results-empty">
-          <mat-icon>info</mat-icon>n>
+          <mat-icon>info</mat-icon>
           <p>No hay resultados registrados en la base de datos para este atleta.</p>
           <small class="muted">ID del atleta: {{ athlete.athleteId }}</small>
         </div>
@@ -319,6 +420,7 @@
               </div>
               <mat-chip-set class="event-tags">
                 @if (event.poolName) { <mat-chip>{{ event.poolName }}</mat-chip> }
+                @if (event.status) { <mat-chip>{{ event.status | titlecase }}</mat-chip> }
                 @if (event.stage) { <mat-chip color="primary" selected>{{ event.stage }}</mat-chip> }
               </mat-chip-set>
             </mat-list-item>
