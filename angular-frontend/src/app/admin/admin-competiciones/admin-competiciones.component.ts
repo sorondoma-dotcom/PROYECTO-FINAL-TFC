@@ -57,7 +57,7 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
   inscripciones: Inscription[] = [];
   readonly logoBaseUrl = 'http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public';
   selectedTabIndex = 0;
-  
+
   // Formularios
   competicionForm!: FormGroup;
   tomorrow: Date = new Date();
@@ -67,7 +67,7 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
   logoDragActive = false;
 
   @ViewChild('logoInput') logoInput?: ElementRef<HTMLInputElement>;
-  
+
   // Tablas
   displayedColumns: string[] = ['logo', 'id', 'nombre', 'fecha_inicio', 'pais', 'tipo_piscina', 'estado', 'total_inscritos', 'acciones'];
   displayedColumnsInscripciones: string[] = ['athlete_name', 'country_code', 'gender', 'numero_dorsal', 'estado_inscripcion', 'inscrito_en', 'acciones'];
@@ -297,20 +297,6 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
     });
   }
 
-  cambiarEstadoInscripcion(inscripcion: Inscription): void {
-    if (!inscripcion.id) return;
-
-    const nuevoEstado = inscripcion.estado_inscripcion === 'confirmado' ? 'inscrito' : 'confirmado';
-
-    this.competitionService.updateInscription(inscripcion.id, {
-      estado_inscripcion: nuevoEstado as 'inscrito' | 'confirmado'
-    }).subscribe({
-      next: () => {
-        this.loadInscripciones(this.selectedCompetition!.id!);
-      },
-      error: (error) => console.error('Error actualizando inscripción:', error)
-    });
-  }
 
   gestionarPruebas(): void {
     if (!this.selectedCompetition) return;
@@ -333,7 +319,7 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
     this.proofService.getProofsByCompetition(this.selectedCompetition.id!).subscribe({
       next: (response: any) => {
         const proofs = response.proofs || [];
-        
+
         if (proofs.length === 0) {
           this.confirmation.confirm({
             title: 'Sin pruebas',
