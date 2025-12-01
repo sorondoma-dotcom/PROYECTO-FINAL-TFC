@@ -5,22 +5,27 @@ require __DIR__ . '/../src/controllers/RankingController.php';
 require __DIR__ . '/../src/controllers/AthleteController.php';
 require __DIR__ . '/../src/controllers/CompetitionController.php';
 require __DIR__ . '/../src/controllers/ProofController.php';
+require __DIR__ . '/../src/controllers/NotificationController.php';
 require __DIR__ . '/../src/services/AuthService.php';
 require __DIR__ . '/../src/services/MailService.php';
 require __DIR__ . '/../src/services/RankingService.php';
 require __DIR__ . '/../src/services/AthleteResultService.php';
+require __DIR__ . '/../src/services/AthleteProfileService.php';
 require __DIR__ . '/../src/services/CompetitionService.php';
 require __DIR__ . '/../src/services/ProofService.php';
+require __DIR__ . '/../src/services/NotificationService.php';
 require __DIR__ . '/../src/repositories/UserRepository.php';
 require __DIR__ . '/../src/repositories/SwimmingRankingRepository.php';
 require __DIR__ . '/../src/repositories/AthleteResultRepository.php';
 require __DIR__ . '/../src/repositories/CompetitionRepository.php';
 require __DIR__ . '/../src/repositories/InscriptionRepository.php';
+require __DIR__ . '/../src/repositories/NotificationRepository.php';
 require __DIR__ . '/../src/models/User.php';
 require __DIR__ . '/../src/models/SwimmingRanking.php';
 require __DIR__ . '/../src/models/AthleteResult.php';
 require __DIR__ . '/../src/models/Competition.php';
 require __DIR__ . '/../src/models/Inscription.php';
+require __DIR__ . '/../src/models/Notification.php';
 require __DIR__ . '/../src/lib/PHPMailer/Exception.php';
 require __DIR__ . '/../src/lib/PHPMailer/PHPMailer.php';
 require __DIR__ . '/../src/lib/PHPMailer/SMTP.php';
@@ -30,17 +35,21 @@ use App\Controllers\RankingController;
 use App\Controllers\AthleteController;
 use App\Controllers\CompetitionController;
 use App\Controllers\ProofController;
+use App\Controllers\NotificationController;
 use App\Repositories\UserRepository;
 use App\Repositories\SwimmingRankingRepository;
 use App\Repositories\AthleteResultRepository;
 use App\Repositories\CompetitionRepository;
 use App\Repositories\InscriptionRepository;
+use App\Repositories\NotificationRepository;
 use App\Services\AuthService;
 use App\Services\MailService;
 use App\Services\RankingService;
 use App\Services\AthleteResultService;
+use App\Services\AthleteProfileService;
 use App\Services\CompetitionService;
 use App\Services\ProofService;
+use App\Services\NotificationService;
 
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
@@ -117,7 +126,7 @@ if ($requiresAuth && empty($_SESSION['user_id'])) {
             'session' => $_SESSION ?? []
         ];
         @file_put_contents($logFile, json_encode($entry) . PHP_EOL, FILE_APPEND | LOCK_EX);
-    } catch (	hrowable $e) {
+    } catch (\Throwable $e) {
         // ignorar errores de logging en producción
     }
 
@@ -141,18 +150,24 @@ $rankingController = new RankingController($rankingService);
 
 $athleteResultRepository = new AthleteResultRepository();
 $athleteResultService = new AthleteResultService($athleteResultRepository);
-$athleteController = new AthleteController($athleteResultService);
+
+$pdo = getPDO();
+$inscriptionRepository = new InscriptionRepository($pdo);
+$athleteProfileService = new AthleteProfileService($pdo, $inscriptionRepository);
+$athleteController = new AthleteController($athleteResultService, $athleteProfileService);
 
 // Competition repositories and services
-$pdo = getPDO();
 $competitionRepository = new CompetitionRepository($pdo);
-$inscriptionRepository = new InscriptionRepository($pdo);
-$competitionService = new CompetitionService($competitionRepository, $inscriptionRepository);
+$notificationRepository = new NotificationRepository($pdo);
+$notificationService = new NotificationService($notificationRepository, $inscriptionRepository);
+$competitionService = new CompetitionService($competitionRepository, $inscriptionRepository, $notificationService);
 $competitionController = new CompetitionController($competitionService);
 
 // Proof services
 $proofService = new ProofService($pdo);
 $proofController = new ProofController($proofService);
+
+$notificationController = new NotificationController($notificationService);
 
 if ($method === 'POST' && $uri === '/api/register') {
     $authController->register();
@@ -160,6 +175,10 @@ if ($method === 'POST' && $uri === '/api/register') {
     $authController->login();
 } elseif ($method === 'POST' && $uri === '/api/logout') {
     $authController->logout();
+} elseif ($method === 'GET' && $uri === '/api/auth/me') {
+    $authController->currentUser();
+} elseif (($method === 'POST' || $method === 'PUT') && $uri === '/api/auth/profile') {
+    $authController->updateProfile();
 } elseif ($method === 'POST' && $uri === '/api/password-reset') {
     $authController->requestPasswordReset();
 } elseif ($method === 'PUT' && $uri === '/api/password-reset') {
@@ -174,6 +193,8 @@ if ($method === 'POST' && $uri === '/api/register') {
     $athleteController->getAllAthletes();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results') {
     $athleteController->getResults();
+} elseif ($method === 'GET' && $uri === '/api/athletes/me') {
+    $athleteController->getSelfProfile();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results/medals') {
     $athleteController->getMedals();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results/stats') {
@@ -208,6 +229,12 @@ if ($method === 'POST' && $uri === '/api/register') {
     $proofController->registerAthleteToProof((int) $matches[1]);
 } elseif ($method === 'DELETE' && preg_match('/^\/api\/proofs\/athletes\/(\d+)$/', $uri, $matches)) {
     $proofController->unregisterAthleteFromProof((int) $matches[1]);
+} elseif ($method === 'GET' && $uri === '/api/notifications') {
+    $notificationController->listForCurrentUser();
+} elseif ($method === 'POST' && preg_match('/^\/api\/notifications\/(\d+)\/mark-read$/', $uri, $matches)) {
+    $notificationController->markAsRead((int) $matches[1]);
+} elseif ($method === 'POST' && preg_match('/^\/api\/notifications\/(\d+)\/respond$/', $uri, $matches)) {
+    $notificationController->respond((int) $matches[1]);
 } elseif ($method === 'GET' && ($uri === '/api/health' || $uri === '/' || $uri === '/index.php')) {
     jsonResponse(['status' => 'ok', 'service' => 'auth-php', 'database' => 'MySQL on localhost:3306']);
 } else {

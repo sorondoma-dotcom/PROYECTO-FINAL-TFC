@@ -1,0 +1,15 @@
+<div class="result-dialog">
+  <div class="dialog-icon">
+    <mat-icon>{{ icon }}</mat-icon>
+  </div>
+  <div class="dialog-content">
+    <h2>{{ title }}</h2>
+    <p>{{ data.message }}</p>
+  </div>
+  <div class="dialog-actions">
+    <button mat-raised-button color="primary" type="button" (click)="close()">
+      <mat-icon>done</mat-icon>
+      {{ confirmText }}
+    </button>
+  </div>
+</div>

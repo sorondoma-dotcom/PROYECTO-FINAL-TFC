@@ -12,6 +12,7 @@ class Competition
     public string $fecha_inicio;
     public ?string $fecha_fin;
     public ?string $lugar_evento;
+    public ?string $logo_path;
     public ?int $creada_por;
     public string $estado; // pendiente, en_curso, finalizada, cancelada
     public string $created_at;
@@ -29,6 +30,7 @@ class Competition
         $comp->fecha_inicio = $row['fecha_inicio'];
         $comp->fecha_fin = $row['fecha_fin'] ?? null;
         $comp->lugar_evento = $row['lugar_evento'] ?? null;
+        $comp->logo_path = $row['logo_path'] ?? null;
         $comp->creada_por = isset($row['creada_por']) ? (int) $row['creada_por'] : null;
         $comp->estado = $row['estado'] ?? 'pendiente';
         $comp->created_at = $row['created_at'];
@@ -48,6 +50,8 @@ class Competition
             'fecha_inicio' => $this->fecha_inicio,
             'fecha_fin' => $this->fecha_fin,
             'lugar_evento' => $this->lugar_evento,
+            'logo_path' => $this->logo_path,
+            'logo_url' => $this->logo_path,
             'creada_por' => $this->creada_por,
             'estado' => $this->estado,
             'created_at' => $this->created_at,

@@ -5,6 +5,7 @@ class User
 {
     public int $id;
     public string $name;
+    public ?string $lastName;
     public string $email;
     public string $passwordHash;
     public string $createdAt;
@@ -13,12 +14,15 @@ class User
     public ?string $verificationExpiresAt;
     public ?string $role;
     public ?bool $isAdmin;
+    public ?int $athleteId;
+    public ?string $avatarPath;
 
     public static function fromArray(array $row): self
     {
         $user = new self();
         $user->id = (int) $row['id'];
         $user->name = $row['name'];
+        $user->lastName = $row['last_name'] ?? null;
         $user->email = $row['email'];
         $user->passwordHash = $row['password'];
         $user->createdAt = $row['created_at'];
@@ -27,6 +31,8 @@ class User
         $user->verificationExpiresAt = $row['verification_expires_at'] ?? null;
         $user->role = $row['role'] ?? 'user';
         $user->isAdmin = (bool) ($row['is_admin'] ?? false);
+        $user->athleteId = isset($row['athlete_id']) ? (int) $row['athlete_id'] : null;
+        $user->avatarPath = $row['avatar_path'] ?? null;
         return $user;
     }
 }

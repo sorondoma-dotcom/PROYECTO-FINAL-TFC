@@ -102,6 +102,44 @@ class AuthController
         }
     }
 
+    public function currentUser(): void
+    {
+        try {
+            $user = $this->service->getAuthenticatedUser();
+            jsonResponse(['user' => $user]);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => $e->getMessage()], 401);
+        }
+    }
+
+    public function updateProfile(): void
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        $payload = [];
+
+        if (is_string($contentType) && str_contains($contentType, 'multipart/form-data')) {
+            $payload = $_POST;
+        } else {
+            $payload = $this->getJsonInput();
+        }
+
+        $avatarFile = $_FILES['avatar'] ?? null;
+        if (!is_array($payload)) {
+            $payload = [];
+        }
+
+        try {
+            $user = $this->service->updateProfile($payload, is_array($avatarFile) ? $avatarFile : null);
+            jsonResponse(['message' => 'Perfil actualizado correctamente', 'user' => $user]);
+        } catch (\InvalidArgumentException $e) {
+            jsonResponse(['error' => $e->getMessage()], 422);
+        } catch (\RuntimeException $e) {
+            jsonResponse(['error' => $e->getMessage()], 403);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => $e->getMessage()], 400);
+        }
+    }
+
     private function getJsonInput(): array
     {
         $raw = file_get_contents('php://input');

@@ -18,10 +18,13 @@ foreach ($atletas as $atleta) {
     $exists->execute([$email]);
     if ($exists->fetch()) {
         $skipped++;
+        $update = $pdo->prepare('UPDATE users SET athlete_id = ? WHERE email = ? AND athlete_id IS NULL');
+        $update->execute([$atleta['athlete_id'], $email]);
         continue;
     }
-    $stmt = $pdo->prepare('INSERT INTO users (name, email, password, email_verified_at, role) VALUES (?, ?, ?, NOW(), ?)');
-    $stmt->execute([$name, $email, $hash, 'nadador']);
+
+    $stmt = $pdo->prepare('INSERT INTO users (name, email, password, email_verified_at, role, athlete_id) VALUES (?, ?, ?, NOW(), ?, ?)');
+    $stmt->execute([$name, $email, $hash, 'nadador', $atleta['athlete_id']]);
     $inserted++;
 }
 
@@ -32,7 +35,7 @@ $adminRole = 'admin';
 $adminExists = $pdo->prepare('SELECT id FROM users WHERE email = ?');
 $adminExists->execute([$adminEmail]);
 if (!$adminExists->fetch()) {
-    $stmt = $pdo->prepare('INSERT INTO users (name, email, password, email_verified_at, role) VALUES (?, ?, ?, NOW(), ?)');
+    $stmt = $pdo->prepare('INSERT INTO users (name, email, password, email_verified_at, role, is_admin) VALUES (?, ?, ?, NOW(), ?, TRUE)');
     $stmt->execute([$adminName, $adminEmail, $hash, $adminRole]);
     echo "Usuario admin creado: $adminEmail\n";
 } else {

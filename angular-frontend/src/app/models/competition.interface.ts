@@ -13,6 +13,8 @@ export interface Competition {
   month: string | null;
   year: string | null;
   monthNumber: number | null;
+  status?: string | null;
+  competitionId?: number | null;
 }
 
 export interface CompetitionGroup {

@@ -9,7 +9,8 @@ class CompetitionService
 {
     public function __construct(
         private CompetitionRepository $competitions,
-        private InscriptionRepository $inscriptions
+        private InscriptionRepository $inscriptions,
+        private ?NotificationService $notifications = null
     ) {}
 
     public function createCompetition(
@@ -21,6 +22,7 @@ class CompetitionService
         string $fecha_inicio,
         ?string $fecha_fin,
         ?string $lugar_evento,
+        string $logo_path,
         ?int $creada_por
     ): array {
         // Validar nombre único
@@ -36,10 +38,9 @@ class CompetitionService
                 throw new \InvalidArgumentException('La fecha de fin no puede ser anterior a la de inicio');
             }
         }
-
         $competition = $this->competitions->create(
             $nombre, $descripcion, $pais, $ciudad, $tipo_piscina,
-            $fecha_inicio, $fecha_fin, $lugar_evento, $creada_por
+            $fecha_inicio, $fecha_fin, $lugar_evento, $logo_path, $creada_por
         );
 
         return [
@@ -88,6 +89,8 @@ class CompetitionService
             throw new \RuntimeException('Competición no encontrada');
         }
 
+        $logoPath = $competition->logo_path ?? null;
+
         // Eliminar todas las inscripciones primero (en cascada)
         $this->inscriptions->deleteByCompetition($id);
 
@@ -96,7 +99,8 @@ class CompetitionService
 
         return [
             'success' => true,
-            'message' => 'Competición eliminada exitosamente'
+            'message' => 'Competición eliminada exitosamente',
+            'removed_logo' => $logoPath
         ];
     }
 
@@ -156,10 +160,14 @@ class CompetitionService
 
         $inscription = $this->inscriptions->create($competicion_id, $athlete_id, $numero_dorsal, $notas);
 
+        if ($this->notifications) {
+            $this->notifications->createInscriptionConfirmation($competition, $inscription);
+        }
+
         return [
             'success' => true,
             'inscription' => $inscription->toArray(),
-            'message' => 'Atleta inscrito exitosamente'
+            'message' => 'Atleta inscrito exitosamente. Se envió una solicitud de confirmación.'
         ];
     }
 
@@ -171,6 +179,10 @@ class CompetitionService
         }
 
         $this->inscriptions->delete($inscripcion_id);
+
+        if ($this->notifications) {
+            $this->notifications->deleteByInscription($inscripcion_id);
+        }
 
         return [
             'success' => true,
@@ -186,6 +198,10 @@ class CompetitionService
         }
 
         $updated = $this->inscriptions->update($inscripcion_id, $data);
+
+        if ($updated && $this->notifications) {
+            $this->notifications->syncWithInscription($updated);
+        }
 
         return [
             'success' => true,

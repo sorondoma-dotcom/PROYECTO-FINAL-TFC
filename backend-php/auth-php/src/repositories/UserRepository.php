@@ -19,12 +19,18 @@ class UserRepository
         $sql = 'CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
+            last_name VARCHAR(255) NULL DEFAULT NULL,
             email VARCHAR(255) NOT NULL UNIQUE,
             password VARCHAR(255) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             email_verified_at DATETIME NULL DEFAULT NULL,
             verification_code_hash VARCHAR(255) NULL DEFAULT NULL,
-            verification_expires_at DATETIME NULL DEFAULT NULL
+            verification_expires_at DATETIME NULL DEFAULT NULL,
+            role VARCHAR(50) DEFAULT "user",
+            is_admin BOOLEAN DEFAULT FALSE,
+            athlete_id INT UNSIGNED NULL,
+            avatar_path VARCHAR(255) NULL DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
         
         $this->db->exec($sql);
@@ -32,6 +38,13 @@ class UserRepository
         $this->addColumnIfMissing('email_verified_at', 'DATETIME NULL DEFAULT NULL');
         $this->addColumnIfMissing('verification_code_hash', 'VARCHAR(255) NULL DEFAULT NULL');
         $this->addColumnIfMissing('verification_expires_at', 'DATETIME NULL DEFAULT NULL');
+        $this->addColumnIfMissing('role', "VARCHAR(50) DEFAULT 'user'");
+        $this->addColumnIfMissing('is_admin', 'BOOLEAN DEFAULT FALSE');
+        $this->addColumnIfMissing('athlete_id', 'INT UNSIGNED NULL');
+        $this->addColumnIfMissing('last_name', 'VARCHAR(255) NULL DEFAULT NULL');
+        $this->addColumnIfMissing('avatar_path', 'VARCHAR(255) NULL DEFAULT NULL');
+        $this->addColumnIfMissing('updated_at', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
+        $this->addIndexIfMissing('idx_users_athlete_id', 'athlete_id');
     }
 
     private function addColumnIfMissing(string $column, string $definition): void
@@ -46,6 +59,17 @@ class UserRepository
         }
     }
 
+    private function addIndexIfMissing(string $indexName, string $column): void
+    {
+        $stmt = $this->db->prepare('SHOW INDEX FROM users WHERE Key_name = :index');
+        $stmt->execute(['index' => $indexName]);
+        $exists = $stmt->fetch();
+
+        if (!$exists) {
+            $this->db->exec(sprintf('ALTER TABLE users ADD INDEX %s (%s)', $indexName, $column));
+        }
+    }
+
     public function findByEmail(string $email): ?User
     {
         $stmt = $this->db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
@@ -54,11 +78,11 @@ class UserRepository
         return $row ? User::fromArray($row) : null;
     }
 
-    public function create(string $name, string $email, string $passwordHash, ?string $verificationCodeHash, ?\DateTimeInterface $expiresAt): User
+    public function create(string $name, string $email, string $passwordHash, ?string $verificationCodeHash, ?\DateTimeInterface $expiresAt, ?int $athleteId = null): User
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO users (name, email, password, email_verified_at, verification_code_hash, verification_expires_at)
-             VALUES (:name, :email, :password, NULL, :verification_code_hash, :verification_expires_at)'
+            'INSERT INTO users (name, email, password, email_verified_at, verification_code_hash, verification_expires_at, athlete_id)
+             VALUES (:name, :email, :password, NULL, :verification_code_hash, :verification_expires_at, :athlete_id)'
         );
         $stmt->execute([
             'name' => $name,
@@ -66,13 +90,14 @@ class UserRepository
             'password' => $passwordHash,
             'verification_code_hash' => $verificationCodeHash,
             'verification_expires_at' => $expiresAt ? $expiresAt->format('Y-m-d H:i:s') : null,
+            'athlete_id' => $athleteId,
         ]);
 
         $id = (int) $this->db->lastInsertId();
         return $this->findById($id);
     }
 
-    private function findById(int $id): ?User
+    public function findById(int $id): ?User
     {
         $stmt = $this->db->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');
         $stmt->execute(['id' => $id]);
@@ -109,6 +134,38 @@ class UserRepository
         );
 
         return $stmt->execute(['id' => $userId]);
+    }
+
+    public function updateProfile(int $userId, array $data): ?User
+    {
+        $fields = [];
+        $params = ['id' => $userId];
+
+        if (array_key_exists('name', $data)) {
+            $fields[] = 'name = :name';
+            $params['name'] = $data['name'];
+        }
+
+        if (array_key_exists('last_name', $data)) {
+            $fields[] = 'last_name = :last_name';
+            $params['last_name'] = $data['last_name'];
+        }
+
+        if (array_key_exists('avatar_path', $data)) {
+            $fields[] = 'avatar_path = :avatar_path';
+            $params['avatar_path'] = $data['avatar_path'];
+        }
+
+        if (!$fields) {
+            return $this->findById($userId);
+        }
+
+        $fields[] = 'updated_at = NOW()';
+        $sql = sprintf('UPDATE users SET %s WHERE id = :id', implode(', ', $fields));
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $this->findById($userId);
     }
 
     public function markVerified(int $userId): ?User

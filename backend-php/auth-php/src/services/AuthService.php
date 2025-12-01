@@ -243,6 +243,94 @@ class AuthService
         ];
     }
 
+    public function getAuthenticatedUser(): array
+    {
+        $this->ensureSession();
+        $userId = $_SESSION['user_id'] ?? null;
+
+        if (!$userId) {
+            throw new \RuntimeException('No hay una sesion activa.');
+        }
+
+        $user = $this->users->findById((int) $userId);
+        if (!$user) {
+            throw new \RuntimeException('Usuario no encontrado.');
+        }
+
+        return $this->formatUser($user);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function updateProfile(array $payload, ?array $avatarFile): array
+    {
+        $this->ensureSession();
+        $userId = $_SESSION['user_id'] ?? null;
+
+        if (!$userId) {
+            throw new \RuntimeException('No hay una sesion activa.');
+        }
+
+        $user = $this->users->findById((int) $userId);
+        if (!$user) {
+            throw new \RuntimeException('Usuario no encontrado.');
+        }
+
+        $role = strtolower((string) ($user->role ?? ''));
+        $allowedRoles = ['usuario', 'user', 'nadador'];
+        if ($role !== '' && !in_array($role, $allowedRoles, true)) {
+            throw new \RuntimeException('No tienes permisos para actualizar el perfil.');
+        }
+
+        $updates = [];
+
+        if (array_key_exists('name', $payload)) {
+            $updates['name'] = $this->validateName((string) $payload['name']);
+        }
+
+        $rawLastName = $payload['lastName'] ?? $payload['last_name'] ?? null;
+        if ($rawLastName !== null) {
+            $updates['last_name'] = $this->validateLastName($rawLastName);
+        }
+
+        $avatarPath = null;
+        $shouldProcessAvatar = $avatarFile && is_array($avatarFile) && isset($avatarFile['error']) && $avatarFile['error'] !== UPLOAD_ERR_NO_FILE;
+
+        if ($shouldProcessAvatar) {
+            if (!empty($user->avatarPath)) {
+                throw new \RuntimeException('Ya tienes una foto de perfil asignada.');
+            }
+
+            $avatarPath = $this->storeAvatarFile($avatarFile);
+            $updates['avatar_path'] = $avatarPath;
+        }
+
+        if (!$updates) {
+            return $this->formatUser($user);
+        }
+
+        try {
+            $updatedUser = $this->users->updateProfile((int) $userId, $updates);
+        } catch (\Throwable $e) {
+            if ($avatarPath) {
+                $this->deleteAvatarFile($avatarPath);
+            }
+            throw $e;
+        }
+
+        if (!$updatedUser) {
+            if ($avatarPath) {
+                $this->deleteAvatarFile($avatarPath);
+            }
+            throw new \RuntimeException('No pudimos actualizar tus datos.');
+        }
+
+        $this->persistUserSession($updatedUser);
+
+        return $this->formatUser($updatedUser);
+    }
+
     private function normalizeEmail(string $email): string
     {
         $normalized = strtolower(trim($email));
@@ -273,6 +361,28 @@ class AuthService
         return $clean;
     }
 
+    private function validateLastName(?string $lastName): ?string
+    {
+        if ($lastName === null) {
+            return null;
+        }
+
+        $clean = trim(preg_replace('/\s+/', ' ', (string) $lastName) ?? '');
+        if ($clean === '') {
+            return null;
+        }
+
+        if (strlen($clean) < 2 || strlen($clean) > 80) {
+            throw new \InvalidArgumentException('El apellido debe tener entre 2 y 80 caracteres.');
+        }
+
+        if (!preg_match(self::NAME_PATTERN, $clean)) {
+            throw new \InvalidArgumentException('El apellido solo puede incluir letras y espacios.');
+        }
+
+        return $clean;
+    }
+
     private function ensureSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -287,6 +397,10 @@ class AuthService
         $_SESSION['user_id'] = $user->id;
         $_SESSION['user_name'] = $user->name;
         $_SESSION['user_email'] = $user->email;
+        $_SESSION['athlete_id'] = $user->athleteId;
+        $_SESSION['user_last_name'] = $user->lastName ?? null;
+        $_SESSION['user_role'] = $user->role ?? 'user';
+        $_SESSION['user_avatar'] = $user->avatarPath ?? null;
     }
 
     private function formatUser(User $user): array
@@ -294,12 +408,15 @@ class AuthService
         return [
             'id' => $user->id,
             'name' => $user->name,
+            'lastName' => $user->lastName,
             'email' => $user->email,
             'createdAt' => $user->createdAt,
             'emailVerifiedAt' => $user->emailVerifiedAt,
             'isVerified' => !empty($user->emailVerifiedAt),
             'role' => $user->role ?? 'user',
             'isAdmin' => (bool) ($user->isAdmin ?? false),
+            'athleteId' => $user->athleteId,
+            'avatarUrl' => $this->buildAvatarUrl($user->avatarPath),
         ];
     }
 
@@ -313,5 +430,108 @@ class AuthService
             'hash' => password_hash($code, PASSWORD_DEFAULT),
             'expiresAt' => $expiresAt,
         ];
+    }
+
+    private function buildAvatarUrl(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+
+        $relativePath = '/' . ltrim($relativePath, '/');
+
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $basePath = rtrim($this->getPublicBasePath(), '/');
+
+        if ($host === '') {
+            return ($basePath !== '' ? $basePath : '') . $relativePath;
+        }
+
+        return sprintf('%s://%s%s%s', $scheme, $host, $basePath, $relativePath);
+    }
+
+    private function storeAvatarFile(array $avatar): string
+    {
+        $error = $avatar['error'] ?? UPLOAD_ERR_NO_FILE;
+        if ($error !== UPLOAD_ERR_OK) {
+            throw new \RuntimeException('No se pudo subir la imagen de perfil.');
+        }
+
+        $tmpPath = (string) ($avatar['tmp_name'] ?? '');
+        if ($tmpPath === '' || !is_file($tmpPath)) {
+            throw new \RuntimeException('Archivo temporal de avatar inválido.');
+        }
+
+        if (PHP_SAPI !== 'cli' && !is_uploaded_file($tmpPath)) {
+            throw new \RuntimeException('Solicitud de subida de avatar no válida.');
+        }
+
+        $size = (int) ($avatar['size'] ?? 0);
+        $maxSize = 2 * 1024 * 1024; // 2 MB
+        if ($size <= 0 || $size > $maxSize) {
+            throw new \RuntimeException('La imagen de perfil no puede superar los 2 MB.');
+        }
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if (!$finfo) {
+            throw new \RuntimeException('No se pudo validar el tipo de archivo del avatar.');
+        }
+
+        $mime = finfo_file($finfo, $tmpPath) ?: '';
+        finfo_close($finfo);
+
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+
+        if (!isset($allowed[$mime])) {
+            throw new \RuntimeException('Formato de imagen no permitido. Usa JPG, PNG o WebP.');
+        }
+
+        $uploadDir = dirname(__DIR__, 2) . '/public/uploads/avatars';
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+            throw new \RuntimeException('No se pudo preparar el directorio de avatares.');
+        }
+
+        $unique = str_replace('.', '', uniqid('avatar_', true));
+        $filename = $unique . '.' . $allowed[$mime];
+        $destination = $uploadDir . '/' . $filename;
+
+        $moved = move_uploaded_file($tmpPath, $destination);
+        if (!$moved && PHP_SAPI === 'cli') {
+            $moved = rename($tmpPath, $destination);
+        }
+
+        if (!$moved) {
+            throw new \RuntimeException('Error al guardar la imagen de perfil.');
+        }
+
+        return '/uploads/avatars/' . $filename;
+    }
+
+    private function deleteAvatarFile(string $relativePath): void
+    {
+        if (!$relativePath || !str_contains($relativePath, '/uploads/avatars/')) {
+            return;
+        }
+
+        $fullPath = dirname(__DIR__, 2) . '/public/' . ltrim($relativePath, '/');
+        if (is_file($fullPath)) {
+            @unlink($fullPath);
+        }
+    }
+
+    private function getPublicBasePath(): string
+    {
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $position = strrpos($scriptName, '/');
+        if ($position === false) {
+            return '/';
+        }
+
+        return substr($scriptName, 0, $position + 1);
     }
 }

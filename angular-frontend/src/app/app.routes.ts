@@ -11,6 +11,7 @@ import { EstadisticasComponent } from './estadisticas/estadisticas.component';
 import { AdminCompeticionesComponent } from './admin/admin-competiciones/admin-competiciones.component';
 import { authGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
+import { athleteGuard } from './guards/athlete.guard';
 
 export const routes: Routes = [
   { path: 'auth', component: AuthComponent },
@@ -18,6 +19,7 @@ export const routes: Routes = [
    { path: 'verify-email', component: VerifyEmailComponent },
   { path: '', component: DashBoardComponent, canActivate: [authGuard] },
   { path: 'competiciones', component: CompeticionComponent, canActivate: [authGuard] },
+  { path: 'mi-perfil', component: PerfilNadadorComponent, canActivate: [authGuard, athleteGuard] },
   { path: 'nadadores/perfil/:name', component: PerfilNadadorComponent, canActivate: [authGuard] },
   { path: 'nadadores', component: RankingNadadoresComponent, canActivate: [authGuard], pathMatch: 'full' },
   { path: 'estadisticas', component: EstadisticasComponent, canActivate: [authGuard] },

@@ -1,11 +1,11 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
+
 --
--- Servidor: 127.0.0.1
--- Tiempo de generación: 30-11-2025 a las 14:32:57
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.0.30
+
+DROP DATABASE if EXISTS liveswim;
+
+create database liveswim;
+
+use liveswim; 
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -20,6 +20,35 @@ SET time_zone = "+00:00";
 --
 -- Base de datos: `liveswim`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `athlete_notifications`
+--
+
+CREATE TABLE `athlete_notifications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `athlete_id` int(10) UNSIGNED NOT NULL,
+  `competicion_id` int(10) UNSIGNED NOT NULL,
+  `inscripcion_id` int(10) UNSIGNED NOT NULL,
+  `notification_type` enum('confirmacion_inscripcion') DEFAULT 'confirmacion_inscripcion',
+  `status` enum('pendiente','aceptada','rechazada','leida') DEFAULT 'pendiente',
+  `titulo` varchar(255) NOT NULL,
+  `mensaje` text DEFAULT NULL,
+  `read_at` datetime DEFAULT NULL,
+  `responded_at` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `athlete_notifications`
+--
+
+INSERT INTO `athlete_notifications` (`id`, `athlete_id`, `competicion_id`, `inscripcion_id`, `notification_type`, `status`, `titulo`, `mensaje`, `read_at`, `responded_at`, `created_at`, `updated_at`) VALUES
+(3, 1000482, 16, 203, 'confirmacion_inscripcion', 'aceptada', 'Confirmar participación', 'Has sido inscrito en la competición \"Copa íberica\". Confirma si deseas participar.', '2025-12-01 10:41:23', '2025-12-01 10:41:23', '2025-12-01 09:41:14', '2025-12-01 09:41:23'),
+(5, 1000482, 15, 205, 'confirmacion_inscripcion', 'rechazada', 'Confirmar participación', 'Has sido inscrito en la competición \"Monasterio\". Confirma si deseas participar.', '2025-12-01 10:51:52', '2025-12-01 10:51:52', '2025-12-01 09:51:34', '2025-12-01 09:51:52');
 
 -- --------------------------------------------------------
 
@@ -285,6 +314,7 @@ CREATE TABLE `competiciones_agendadas` (
   `fecha_inicio` datetime NOT NULL,
   `fecha_fin` datetime DEFAULT NULL,
   `lugar_evento` varchar(255) DEFAULT NULL,
+  `logo_path` varchar(255) DEFAULT NULL,
   `creada_por` int(11) DEFAULT NULL,
   `estado` enum('pendiente','en_curso','finalizada','cancelada') DEFAULT 'pendiente',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -295,9 +325,9 @@ CREATE TABLE `competiciones_agendadas` (
 -- Volcado de datos para la tabla `competiciones_agendadas`
 --
 
-INSERT INTO `competiciones_agendadas` (`id`, `nombre`, `descripcion`, `pais`, `ciudad`, `tipo_piscina`, `fecha_inicio`, `fecha_fin`, `lugar_evento`, `creada_por`, `estado`, `created_at`, `updated_at`) VALUES
-(7, 'Titulo', 'HOla que tal', 'España', 'Madrid', '50m', '2025-11-29 23:00:00', '2025-11-29 23:00:00', 'Piscina olimpica de barcelona', 1, 'pendiente', '2025-11-29 16:11:35', '2025-11-29 16:11:35'),
-(8, 'España ', 'España', 'España', 'Valladolid', '50m', '2025-11-29 23:00:00', '2025-11-29 23:00:00', 'Piscina olimpica monyuic', 1, 'pendiente', '2025-11-29 16:20:10', '2025-11-29 16:20:10');
+INSERT INTO `competiciones_agendadas` (`id`, `nombre`, `descripcion`, `pais`, `ciudad`, `tipo_piscina`, `fecha_inicio`, `fecha_fin`, `lugar_evento`, `logo_path`, `creada_por`, `estado`, `created_at`, `updated_at`) VALUES
+(15, 'Monasterio', 'Monasterio', NULL, NULL, '50m', '2025-12-02 09:00:00', '2025-12-03 13:00:00', 'Piscina', '/uploads/competitions/competition_692d5397eb9246.75520531.png', 1, 'pendiente', '2025-12-01 08:36:39', '2025-12-01 08:36:39'),
+(16, 'Copa íberica', 'Copa hiberica de natacion', 'España', 'Madrid', '50m', '2025-12-03 09:00:00', '2025-12-05 19:25:00', NULL, '/uploads/competitions/competition_692d53e8bb2ff0.57292850.png', 1, 'pendiente', '2025-12-01 08:38:00', '2025-12-01 09:26:08');
 
 -- --------------------------------------------------------
 
@@ -331,6 +361,14 @@ CREATE TABLE `inscripciones_atleticas` (
   `inscrito_en` datetime DEFAULT current_timestamp(),
   `confirmado_en` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `inscripciones_atleticas`
+--
+
+INSERT INTO `inscripciones_atleticas` (`id`, `competicion_id`, `athlete_id`, `numero_dorsal`, `estado_inscripcion`, `notas`, `inscrito_en`, `confirmado_en`) VALUES
+(203, 16, 1000482, NULL, 'confirmado', NULL, '2025-12-01 10:41:14', '2025-12-01 10:41:23'),
+(205, 15, 1000482, NULL, 'retirado', NULL, '2025-12-01 10:51:34', NULL);
 
 -- --------------------------------------------------------
 
@@ -7168,247 +7206,267 @@ CREATE TABLE `users` (
   `role` varchar(50) DEFAULT 'user',
   `is_admin` tinyint(1) DEFAULT 0,
   `verification_code_hash` varchar(255) DEFAULT NULL,
-  `verification_expires_at` datetime DEFAULT NULL
+  `verification_expires_at` datetime DEFAULT NULL,
+  `athlete_id` int(10) UNSIGNED DEFAULT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
+  `avatar_path` varchar(255) DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `users`
 --
 
-INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `email_verified_at`, `role`, `is_admin`, `verification_code_hash`, `verification_expires_at`) VALUES
-(1, 'Admin', 'swimlive669@gmail.com', '$2y$10$Y4GFs7QEk3oACFTL6artF.TjJvb.gnErHOS.hMhXpNpyzPLBzqbau', '2025-11-28 09:20:39', '2025-11-28 10:22:41', 'admin', 1, NULL, NULL),
-(3, 'Miguel', 'sorondoma@gmail.com', '$2y$10$yZfoGFJzhKrcJxkUwiZ1F.3w4M3EVLxH4t7RWDFgivXG9fFLHnuIG', '2025-11-28 10:37:32', '2025-11-28 11:37:51', 'user', 0, NULL, NULL),
-(4, 'Zige LIU', 'athlete_1000002@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(5, 'Joao GOMES JUNIOR', 'athlete_1000030@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(6, 'Elizabeth BEISEL', 'athlete_1000038@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(7, 'Mitchell LARKIN', 'athlete_1000085@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(8, 'Henrik CHRISTIANSEN', 'athlete_1000122@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(9, 'Masato SAKAI', 'athlete_1000129@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(10, 'Danila IZOTOV', 'athlete_1000134@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(11, 'Paul BIEDERMANN', 'athlete_1000174@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(12, 'Gabriele DETTI', 'athlete_1000442@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(13, 'Oussama MELLOULI', 'athlete_1000445@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(14, 'Pernille BLUME', 'athlete_1000477@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(15, 'Therese ALSHAMMAR', 'athlete_1000482@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(16, 'Yufei ZHANG', 'athlete_1000490@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(17, 'Sarah SJOESTROEM', 'athlete_1000553@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(18, 'Cameron MCEVOY', 'athlete_1000604@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(19, 'Tatjana SMITH', 'athlete_1000622@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(20, 'Ruta MEILUTYTE', 'athlete_1000661@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(21, 'Ryosuke IRIE', 'athlete_1000672@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(22, 'Danas RAPSYS', 'athlete_1000679@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(23, 'Ranomi KROMOWIDJOJO', 'athlete_1000685@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(24, 'Hannah MILEY', 'athlete_1000688@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(25, 'David VERRASZTO', 'athlete_1000713@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(26, 'Yasuhiro KOSEKI', 'athlete_1000717@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(27, 'Daiya SETO', 'athlete_1000725@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(28, 'Kosuke HAGINO', 'athlete_1000731@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(29, 'Henrique MARTINS', 'athlete_1000741@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(30, 'Gregorio PALTRINIERI', 'athlete_1000746@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(31, 'Xiang LIU', 'athlete_1000760@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(32, 'Adam PEATY', 'athlete_1000785@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(33, 'Pawel KORZENIOWSKI', 'athlete_1000798@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(34, 'Siobhan O\'CONNOR', 'athlete_1000812@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(35, 'Ryan COCHRANE', 'athlete_1000824@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(36, 'Franziska HENTKE', 'athlete_1000837@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(37, 'Benjamin PROUD', 'athlete_1000849@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(38, 'Katinka HOSSZU', 'athlete_1000855@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(39, 'Federica PELLEGRINI', 'athlete_1000901@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(40, 'Chad LE CLOS', 'athlete_1000903@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(41, 'Bronte CAMPBELL', 'athlete_1000938@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(42, 'Etiene MEDEIROS', 'athlete_1000951@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(43, 'Daniel GYURTA', 'athlete_1000959@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(44, 'Mireia BELMONTE GARCIA', 'athlete_1001117@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(45, 'Siobhan HAUGHEY', 'athlete_1001344@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(46, 'Michael PHELPS', 'athlete_1001621@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(47, 'Nic FINK', 'athlete_1001632@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(48, 'Allison SCHMITT', 'athlete_1001828@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(49, 'Tyler CLARY', 'athlete_1002005@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(50, 'Connor JAEGER', 'athlete_1002019@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(51, 'Simone MANUEL', 'athlete_1002059@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(52, 'Josh PRENOT', 'athlete_1002073@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(53, 'Ryan MURPHY', 'athlete_1002167@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(54, 'Chase KALISZ', 'athlete_1002190@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(55, 'Michael ANDREW', 'athlete_1002301@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(56, 'Katie LEDECKY', 'athlete_1002483@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(57, 'Molly HANNIS', 'athlete_1002586@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(58, 'Ryan LOCHTE', 'athlete_1002615@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(59, 'Jessica HARDY', 'athlete_1002697@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(60, 'Katie MEILI', 'athlete_1002815@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(61, 'Oleg KOSTIN', 'athlete_1003739@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(62, 'Lilly KING', 'athlete_1003868@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(63, 'Georgia DAVIES', 'athlete_1003891@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(64, 'Emma MCKEON', 'athlete_1003916@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(65, 'Dana VOLLMER', 'athlete_1004157@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(66, 'James MAGNUSSEN', 'athlete_1005527@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(67, 'Ellen GANDY', 'athlete_1005616@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(68, 'Takeshi MATSUDA', 'athlete_1005638@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(69, 'Sydney PICKREM', 'athlete_1005898@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(70, 'Shun WANG', 'athlete_1005934@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(71, 'Felipe LIMA', 'athlete_1005939@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(72, 'Aliaksandra HERASIMENIA', 'athlete_1006055@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(73, 'Cate CAMPBELL', 'athlete_1006057@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(74, 'Yui OHASHI', 'athlete_1006109@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(75, 'Reona AOKI', 'athlete_1006110@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(76, 'Katsuhiro MATSUMOTO', 'athlete_1006176@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(77, 'Andrii GOVOROV', 'athlete_1007282@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(78, 'Laszlo CSEH', 'athlete_1007320@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(79, 'Frederick BOUSQUET', 'athlete_1007347@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(80, 'Anton CHUPKOV', 'athlete_1007762@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(81, 'Matthew TARGETT', 'athlete_1007814@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(82, 'Britta STEFFEN', 'athlete_1007869@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(83, 'Mack HORTON', 'athlete_1007971@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(84, 'Kira TOUSSAINT', 'athlete_1008104@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(85, 'Rebecca SONI', 'athlete_1009076@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(86, 'Eric SHANTEAU', 'athlete_1009399@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(87, 'Missy FRANKLIN', 'athlete_1009660@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(88, 'Katie HOFF', 'athlete_1009974@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(89, 'Eamon SULLIVAN', 'athlete_1010574@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(90, 'Milorad CAVIC', 'athlete_1010627@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(91, 'Yuliya EFIMOVA', 'athlete_1010658@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(92, 'Anastasia ZUEVA', 'athlete_1010666@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(93, 'Jess SCHIPPER', 'athlete_1010806@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(94, 'Ian THORPE', 'athlete_1010811@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(95, 'Joseph SCHOOLING', 'athlete_1010827@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(96, 'Aurore MONGEL', 'athlete_1011197@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(97, 'Alain BERNARD', 'athlete_1011351@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL),
-(98, 'Daniela SAMULSKI', 'athlete_1011443@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(99, 'Ariana KUKORS', 'athlete_1011497@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(100, 'Thiago PEREIRA', 'athlete_1012576@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(101, 'Leisel JONES', 'athlete_1012663@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(102, 'Nicholas SANTOS', 'athlete_1013877@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(103, 'Stephanie RICE', 'athlete_1016318@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(104, 'Rafael MUNOZ', 'athlete_1016643@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(105, 'Natsumi HOSHI', 'athlete_1017513@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(106, 'Jing ZHAO', 'athlete_1017530@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(107, 'Yang SUN', 'athlete_1017653@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(108, 'Liuyang JIAO', 'athlete_1017661@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(109, 'Cesar CIELO FILHO', 'athlete_1017742@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(110, 'Lin ZHANG', 'athlete_1017803@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(111, 'Taehwan PARK', 'athlete_1017810@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(112, 'Jiayu XU', 'athlete_1019626@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(113, 'Margherita PANZIERA', 'athlete_1019653@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(114, 'Mykhailo ROMANCHUK', 'athlete_1019681@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(115, 'Kyle CHALMERS', 'athlete_1019701@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(116, 'Marrit STEENBERGEN', 'athlete_1019816@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(117, 'Yuanhui FU', 'athlete_1019881@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(118, 'Wojciech WOJDAK', 'athlete_1019923@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(119, 'Maya DI RADO', 'athlete_1019930@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(120, 'Grant HACKETT', 'athlete_1019971@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(121, 'Shiwen YE', 'athlete_1019978@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(122, 'Madeline GROVES', 'athlete_1020014@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(123, 'Duncan SCOTT', 'athlete_1020040@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(124, 'Matti MATTSSON', 'athlete_1020096@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(125, 'Anastasiia FESIKOVA', 'athlete_1020106@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(126, 'Katarzyna WASICK', 'athlete_1020107@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(127, 'Ilya SHYMANOVICH', 'athlete_1020123@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(128, 'Kirsty COVENTRY', 'athlete_1020160@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(129, 'Bingjie LI', 'athlete_1020316@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(130, 'Nicolo MARTINENGHI', 'athlete_1020424@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(131, 'Matthew WILSON', 'athlete_1020475@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(132, 'Ariarne TITMUS', 'athlete_1020594@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(133, 'Taylor RUCK', 'athlete_1020725@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(134, 'Shayna JACK', 'athlete_1020778@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(135, 'Delfina PIGNATIELLO', 'athlete_1020798@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(136, 'Margaret MACNEIL', 'athlete_1020804@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(137, 'Simona QUADARELLA', 'athlete_1020846@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(138, 'Florian WELLBROCK', 'athlete_1021468@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(139, 'Ippei WATANABE', 'athlete_1022231@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(140, 'Akihiro YAMAGUCHI', 'athlete_1022249@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(141, 'Junxuan YANG', 'athlete_1023487@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(142, 'Aaron PEIRSOL', 'athlete_1026270@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(143, 'Mary DESCENZA', 'athlete_1026519@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(144, 'Yannick AGNEL', 'athlete_1031583@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(145, 'Kristof MILAK', 'athlete_1035878@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(146, 'Nyls KORSTANJE', 'athlete_1035963@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(147, 'Caeleb DRESSEL', 'athlete_1036454@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(148, 'Kylie MASSE', 'athlete_1043468@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(149, 'Kliment KOLESNIKOV', 'athlete_1045759@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(150, 'Qianting TANG', 'athlete_1046710@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(151, 'Regan SMITH', 'athlete_1048421@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(152, 'Arno KAMMINGA', 'athlete_1048597@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(153, 'Yu HANAGURUMA', 'athlete_1050687@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(154, 'Fernando SCHEFFER', 'athlete_1051335@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(155, 'Kathleen DAWSON', 'athlete_1051347@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(156, 'Kaylee MCKEOWN', 'athlete_1051356@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(157, 'Bobby FINKE', 'athlete_1056309@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(158, 'Haiyang QIN', 'athlete_1056542@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(159, 'Carson FOSTER', 'athlete_1057054@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(160, 'Elijah WINNINGTON', 'athlete_1057100@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(161, 'Lani PALLISTER', 'athlete_1057125@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(162, 'Maxime GROUSSET', 'athlete_1057193@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(163, 'Zac STUBBLETY-COOK', 'athlete_1057224@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(164, 'Alex WALSH', 'athlete_1057263@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(165, 'Kate DOUGLASS', 'athlete_1057344@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(166, 'Thomas CECCON', 'athlete_1057454@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(167, 'Tomoru HONDA', 'athlete_1062094@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(168, 'Sam WILLIAMSON', 'athlete_1102976@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(169, 'Matthew TEMPLE', 'athlete_1132797@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(170, 'Yiting YU', 'athlete_1133442@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(171, 'Muhan TANG', 'athlete_1133580@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(172, 'Sven SCHWARZ', 'athlete_1134535@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(173, 'Tom DEAN', 'athlete_1134714@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(174, 'Anna ELENDT', 'athlete_1134854@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(175, 'Yohann NDOYE-BROUARD', 'athlete_1134908@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(176, 'Lauren COX', 'athlete_1134973@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(177, 'Woomin KIM', 'athlete_1135699@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(178, 'Lara VAN NIEKERK', 'athlete_1136196@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(179, 'Phoebe BACON', 'athlete_1136702@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(180, 'Rhyan WHITE', 'athlete_1137154@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(181, 'Katharine BERKOFF', 'athlete_1137368@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(182, 'Shaine CASAS', 'athlete_1137414@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(183, 'Luca URLANDO', 'athlete_1137509@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(184, 'Gretchen WALSH', 'athlete_1137575@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(185, 'Noe PONTI', 'athlete_1138017@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(186, 'Sunwoo HWANG', 'athlete_1140557@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(187, 'Josh LIENDO', 'athlete_1159165@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(188, 'Ahmed HAFNAOUI', 'athlete_1161559@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(189, 'Hubert KOS', 'athlete_1166150@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(190, 'Erika FAIRWEATHER', 'athlete_1168311@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(191, 'Leon MARCHAND', 'athlete_1188005@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(192, 'Lukas MAERTENS', 'athlete_1188009@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(193, 'Mollie O\'CALLAGHAN', 'athlete_1188018@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(194, 'Samuel SHORT', 'athlete_1188192@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(195, 'Elizabeth DEKKERS', 'athlete_1188574@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(196, 'Shoma SATO', 'athlete_1189357@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(197, 'Benedetta PILATO', 'athlete_1189393@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(198, 'Ivan KOZHAKIN', 'athlete_1189999@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(199, 'Claire CURZAN', 'athlete_1190176@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(200, 'Lydia JACOBY', 'athlete_1190208@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(201, 'Torri HUSKE', 'athlete_1190607@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(202, 'Matt FALLON', 'athlete_1190809@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(203, 'Evgeniia CHIKUNOVA', 'athlete_1190858@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(204, 'Jack ALEXY', 'athlete_1190943@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(205, 'Tomoyuki MATSUSHITA', 'athlete_1193489@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(206, 'Matthew RICHARDS', 'athlete_1195211@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(207, 'Daniel WIFFEN', 'athlete_1198105@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(208, 'Diogo MATOS RIBEIRO', 'athlete_1200925@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(209, 'Gabriel JETT', 'athlete_1204542@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(210, 'Ludovico VIBERTI', 'athlete_1226713@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(211, 'Simone CERASUOLO', 'athlete_1226990@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(212, 'Hunter ARMSTRONG', 'athlete_1231918@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(213, 'Tatsuya MURASA', 'athlete_1233475@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(214, 'Krzysztof CHMIELEWSKI', 'athlete_1245330@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(215, 'David POPOVICI', 'athlete_1248035@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(216, 'Summer MCINTOSH', 'athlete_1252422@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(217, 'Oliver KLEMET', 'athlete_1255327@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(218, 'Guilherme SANTOS', 'athlete_1282241@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(219, 'Pieter COETZE', 'athlete_1286863@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(220, 'Roos VANOTTERDIJK', 'athlete_1290629@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(221, 'Zhanle PAN', 'athlete_1313859@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(222, 'Tess HOWLEY', 'athlete_1325047@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(223, 'Luke HOBSON', 'athlete_1331970@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(224, 'Katie GRIMES', 'athlete_1415844@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(225, 'Chris GUILIANO', 'athlete_1532544@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(226, 'Ahmed JAOUADI', 'athlete_1544338@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(227, 'Ilya KHARUN', 'athlete_1633425@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(228, 'Molly CARSON', 'athlete_1663568@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(229, 'Shin OHASHI', 'athlete_1673325@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL),
-(230, 'Admin', 'swimilive669@gmail.com', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'admin', 0, NULL, NULL);
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `email_verified_at`, `role`, `is_admin`, `verification_code_hash`, `verification_expires_at`, `athlete_id`, `last_name`, `avatar_path`, `updated_at`) VALUES
+(1, 'Admin', 'swimlive669@gmail.com', '$2y$10$Y4GFs7QEk3oACFTL6artF.TjJvb.gnErHOS.hMhXpNpyzPLBzqbau', '2025-11-28 09:20:39', '2025-11-28 10:22:41', 'admin', 1, NULL, NULL, NULL, NULL, NULL, '2025-12-01 10:34:06'),
+(3, 'Miguel', 'sorondoma@gmail.com', '$2y$10$yZfoGFJzhKrcJxkUwiZ1F.3w4M3EVLxH4t7RWDFgivXG9fFLHnuIG', '2025-11-28 10:37:32', '2025-11-28 11:37:51', 'user', 0, NULL, NULL, NULL, NULL, NULL, '2025-12-01 10:34:06'),
+(4, 'Zige LIU', 'athlete_1000002@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000002, NULL, NULL, '2025-12-01 10:34:06'),
+(5, 'Joao GOMES JUNIOR', 'athlete_1000030@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000030, NULL, NULL, '2025-12-01 10:34:06'),
+(6, 'Elizabeth BEISEL', 'athlete_1000038@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000038, NULL, NULL, '2025-12-01 10:34:06'),
+(7, 'Mitchell LARKIN', 'athlete_1000085@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000085, NULL, '/uploads/avatars/avatar_692d80a2dbe33612119520.png', '2025-12-01 12:04:10'),
+(8, 'Henrik CHRISTIANSEN', 'athlete_1000122@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000122, NULL, NULL, '2025-12-01 10:34:06'),
+(9, 'Masato SAKAI', 'athlete_1000129@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000129, NULL, NULL, '2025-12-01 10:34:06'),
+(10, 'Danila IZOTOV', 'athlete_1000134@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000134, NULL, NULL, '2025-12-01 10:34:06'),
+(11, 'Paul BIEDERMANN', 'athlete_1000174@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000174, NULL, NULL, '2025-12-01 10:34:06'),
+(12, 'Gabriele DETTI', 'athlete_1000442@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000442, NULL, NULL, '2025-12-01 10:34:06'),
+(13, 'Oussama MELLOULI', 'athlete_1000445@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000445, NULL, NULL, '2025-12-01 10:34:06'),
+(14, 'Pernille BLUME', 'athlete_1000477@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000477, NULL, NULL, '2025-12-01 10:34:06'),
+(15, 'Therese ALSHAMMAR', 'athlete_1000482@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000482, NULL, NULL, '2025-12-01 10:34:06'),
+(16, 'Yufei ZHANG', 'athlete_1000490@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000490, NULL, NULL, '2025-12-01 10:34:06'),
+(17, 'Sarah SJOESTROEM', 'athlete_1000553@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000553, NULL, NULL, '2025-12-01 10:34:06'),
+(18, 'Cameron MCEVOY', 'athlete_1000604@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000604, NULL, NULL, '2025-12-01 10:34:06'),
+(19, 'Tatjana SMITH', 'athlete_1000622@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000622, NULL, NULL, '2025-12-01 10:34:06'),
+(20, 'Ruta MEILUTYTE', 'athlete_1000661@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000661, NULL, NULL, '2025-12-01 10:34:06'),
+(21, 'Ryosuke IRIE', 'athlete_1000672@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000672, NULL, NULL, '2025-12-01 10:34:06'),
+(22, 'Danas RAPSYS', 'athlete_1000679@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000679, NULL, NULL, '2025-12-01 10:34:06'),
+(23, 'Ranomi KROMOWIDJOJO', 'athlete_1000685@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000685, NULL, NULL, '2025-12-01 10:34:06'),
+(24, 'Hannah MILEY', 'athlete_1000688@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000688, NULL, NULL, '2025-12-01 10:34:06'),
+(25, 'David VERRASZTO', 'athlete_1000713@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000713, NULL, NULL, '2025-12-01 10:34:06'),
+(26, 'Yasuhiro KOSEKI', 'athlete_1000717@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000717, NULL, NULL, '2025-12-01 10:34:06'),
+(27, 'Daiya SETO', 'athlete_1000725@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000725, NULL, NULL, '2025-12-01 10:34:06'),
+(28, 'Kosuke HAGINO', 'athlete_1000731@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000731, NULL, NULL, '2025-12-01 10:34:06'),
+(29, 'Henrique MARTINS', 'athlete_1000741@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000741, NULL, NULL, '2025-12-01 10:34:06'),
+(30, 'Gregorio PALTRINIERI', 'athlete_1000746@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000746, NULL, NULL, '2025-12-01 10:34:06'),
+(31, 'Xiang LIU', 'athlete_1000760@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000760, NULL, NULL, '2025-12-01 10:34:06'),
+(32, 'Adam PEATY', 'athlete_1000785@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000785, NULL, NULL, '2025-12-01 10:34:06'),
+(33, 'Pawel KORZENIOWSKI', 'athlete_1000798@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000798, NULL, NULL, '2025-12-01 10:34:06'),
+(34, 'Siobhan O\'CONNOR', 'athlete_1000812@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000812, NULL, NULL, '2025-12-01 10:34:06'),
+(35, 'Ryan COCHRANE', 'athlete_1000824@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000824, NULL, NULL, '2025-12-01 10:34:06'),
+(36, 'Franziska HENTKE', 'athlete_1000837@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000837, NULL, NULL, '2025-12-01 10:34:06'),
+(37, 'Benjamin PROUD', 'athlete_1000849@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000849, NULL, NULL, '2025-12-01 10:34:06'),
+(38, 'Katinka HOSSZU', 'athlete_1000855@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000855, NULL, NULL, '2025-12-01 10:34:06'),
+(39, 'Federica PELLEGRINI', 'athlete_1000901@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000901, NULL, NULL, '2025-12-01 10:34:06'),
+(40, 'Chad LE CLOS', 'athlete_1000903@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000903, NULL, NULL, '2025-12-01 10:34:06'),
+(41, 'Bronte CAMPBELL', 'athlete_1000938@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000938, NULL, NULL, '2025-12-01 10:34:06'),
+(42, 'Etiene MEDEIROS', 'athlete_1000951@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000951, NULL, NULL, '2025-12-01 10:34:06'),
+(43, 'Daniel GYURTA', 'athlete_1000959@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1000959, NULL, NULL, '2025-12-01 10:34:06'),
+(44, 'Mireia BELMONTE GARCIA', 'athlete_1001117@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1001117, NULL, NULL, '2025-12-01 10:34:06'),
+(45, 'Siobhan HAUGHEY', 'athlete_1001344@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1001344, NULL, NULL, '2025-12-01 10:34:06'),
+(46, 'Michael PHELPS', 'athlete_1001621@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1001621, NULL, NULL, '2025-12-01 10:34:06'),
+(47, 'Nic FINK', 'athlete_1001632@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1001632, NULL, NULL, '2025-12-01 10:34:06'),
+(48, 'Allison SCHMITT', 'athlete_1001828@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1001828, NULL, NULL, '2025-12-01 10:34:06'),
+(49, 'Tyler CLARY', 'athlete_1002005@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002005, NULL, NULL, '2025-12-01 10:34:06'),
+(50, 'Connor JAEGER', 'athlete_1002019@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002019, NULL, NULL, '2025-12-01 10:34:06'),
+(51, 'Simone MANUEL', 'athlete_1002059@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002059, NULL, NULL, '2025-12-01 10:34:06'),
+(52, 'Josh PRENOT', 'athlete_1002073@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002073, NULL, NULL, '2025-12-01 10:34:06'),
+(53, 'Ryan MURPHY', 'athlete_1002167@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002167, NULL, NULL, '2025-12-01 10:34:06'),
+(54, 'Chase KALISZ', 'athlete_1002190@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002190, NULL, NULL, '2025-12-01 10:34:06'),
+(55, 'Michael ANDREW', 'athlete_1002301@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002301, NULL, NULL, '2025-12-01 10:34:06'),
+(56, 'Katie LEDECKY', 'athlete_1002483@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002483, NULL, NULL, '2025-12-01 10:34:06'),
+(57, 'Molly HANNIS', 'athlete_1002586@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002586, NULL, NULL, '2025-12-01 10:34:06'),
+(58, 'Ryan LOCHTE', 'athlete_1002615@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002615, NULL, NULL, '2025-12-01 10:34:06'),
+(59, 'Jessica HARDY', 'athlete_1002697@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002697, NULL, NULL, '2025-12-01 10:34:06'),
+(60, 'Katie MEILI', 'athlete_1002815@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1002815, NULL, NULL, '2025-12-01 10:34:06'),
+(61, 'Oleg KOSTIN', 'athlete_1003739@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1003739, NULL, NULL, '2025-12-01 10:34:06'),
+(62, 'Lilly KING', 'athlete_1003868@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1003868, NULL, NULL, '2025-12-01 10:34:06'),
+(63, 'Georgia DAVIES', 'athlete_1003891@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1003891, NULL, NULL, '2025-12-01 10:34:06'),
+(64, 'Emma MCKEON', 'athlete_1003916@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1003916, NULL, NULL, '2025-12-01 10:34:06'),
+(65, 'Dana VOLLMER', 'athlete_1004157@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1004157, NULL, NULL, '2025-12-01 10:34:06'),
+(66, 'James MAGNUSSEN', 'athlete_1005527@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1005527, NULL, NULL, '2025-12-01 10:34:06'),
+(67, 'Ellen GANDY', 'athlete_1005616@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1005616, NULL, NULL, '2025-12-01 10:34:06'),
+(68, 'Takeshi MATSUDA', 'athlete_1005638@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1005638, NULL, NULL, '2025-12-01 10:34:06'),
+(69, 'Sydney PICKREM', 'athlete_1005898@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1005898, NULL, NULL, '2025-12-01 10:34:06'),
+(70, 'Shun WANG', 'athlete_1005934@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1005934, NULL, NULL, '2025-12-01 10:34:06'),
+(71, 'Felipe LIMA', 'athlete_1005939@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1005939, NULL, NULL, '2025-12-01 10:34:06'),
+(72, 'Aliaksandra HERASIMENIA', 'athlete_1006055@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1006055, NULL, NULL, '2025-12-01 10:34:06'),
+(73, 'Cate CAMPBELL', 'athlete_1006057@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1006057, NULL, NULL, '2025-12-01 10:34:06'),
+(74, 'Yui OHASHI', 'athlete_1006109@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1006109, NULL, NULL, '2025-12-01 10:34:06'),
+(75, 'Reona AOKI', 'athlete_1006110@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1006110, NULL, NULL, '2025-12-01 10:34:06'),
+(76, 'Katsuhiro MATSUMOTO', 'athlete_1006176@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1006176, NULL, NULL, '2025-12-01 10:34:06'),
+(77, 'Andrii GOVOROV', 'athlete_1007282@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007282, NULL, NULL, '2025-12-01 10:34:06'),
+(78, 'Laszlo CSEH', 'athlete_1007320@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007320, NULL, NULL, '2025-12-01 10:34:06'),
+(79, 'Frederick BOUSQUET', 'athlete_1007347@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007347, NULL, NULL, '2025-12-01 10:34:06'),
+(80, 'Anton CHUPKOV', 'athlete_1007762@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007762, NULL, NULL, '2025-12-01 10:34:06'),
+(81, 'Matthew TARGETT', 'athlete_1007814@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007814, NULL, NULL, '2025-12-01 10:34:06'),
+(82, 'Britta STEFFEN', 'athlete_1007869@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007869, NULL, NULL, '2025-12-01 10:34:06'),
+(83, 'Mack HORTON', 'athlete_1007971@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1007971, NULL, NULL, '2025-12-01 10:34:06'),
+(84, 'Kira TOUSSAINT', 'athlete_1008104@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1008104, NULL, NULL, '2025-12-01 10:34:06'),
+(85, 'Rebecca SONI', 'athlete_1009076@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1009076, NULL, NULL, '2025-12-01 10:34:06'),
+(86, 'Eric SHANTEAU', 'athlete_1009399@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1009399, NULL, NULL, '2025-12-01 10:34:06'),
+(87, 'Missy FRANKLIN', 'athlete_1009660@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1009660, NULL, NULL, '2025-12-01 10:34:06'),
+(88, 'Katie HOFF', 'athlete_1009974@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1009974, NULL, NULL, '2025-12-01 10:34:06'),
+(89, 'Eamon SULLIVAN', 'athlete_1010574@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010574, NULL, NULL, '2025-12-01 10:34:06'),
+(90, 'Milorad CAVIC', 'athlete_1010627@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010627, NULL, NULL, '2025-12-01 10:34:06'),
+(91, 'Yuliya EFIMOVA', 'athlete_1010658@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010658, NULL, NULL, '2025-12-01 10:34:06'),
+(92, 'Anastasia ZUEVA', 'athlete_1010666@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010666, NULL, NULL, '2025-12-01 10:34:06'),
+(93, 'Jess SCHIPPER', 'athlete_1010806@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010806, NULL, NULL, '2025-12-01 10:34:06'),
+(94, 'Ian THORPE', 'athlete_1010811@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010811, NULL, NULL, '2025-12-01 10:34:06'),
+(95, 'Joseph SCHOOLING', 'athlete_1010827@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1010827, NULL, NULL, '2025-12-01 10:34:06'),
+(96, 'Aurore MONGEL', 'athlete_1011197@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1011197, NULL, NULL, '2025-12-01 10:34:06'),
+(97, 'Alain BERNARD', 'athlete_1011351@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:41', '2025-11-29 16:50:41', 'nadador', 0, NULL, NULL, 1011351, NULL, NULL, '2025-12-01 10:34:06'),
+(98, 'Daniela SAMULSKI', 'athlete_1011443@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1011443, NULL, NULL, '2025-12-01 10:34:06'),
+(99, 'Ariana KUKORS', 'athlete_1011497@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1011497, NULL, NULL, '2025-12-01 10:34:06'),
+(100, 'Thiago PEREIRA', 'athlete_1012576@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1012576, NULL, NULL, '2025-12-01 10:34:06'),
+(101, 'Leisel JONES', 'athlete_1012663@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1012663, NULL, NULL, '2025-12-01 10:34:06'),
+(102, 'Nicholas SANTOS', 'athlete_1013877@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1013877, NULL, NULL, '2025-12-01 10:34:06'),
+(103, 'Stephanie RICE', 'athlete_1016318@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1016318, NULL, NULL, '2025-12-01 10:34:06'),
+(104, 'Rafael MUNOZ', 'athlete_1016643@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1016643, NULL, NULL, '2025-12-01 10:34:06'),
+(105, 'Natsumi HOSHI', 'athlete_1017513@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017513, NULL, NULL, '2025-12-01 10:34:06'),
+(106, 'Jing ZHAO', 'athlete_1017530@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017530, NULL, NULL, '2025-12-01 10:34:06'),
+(107, 'Yang SUN', 'athlete_1017653@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017653, NULL, NULL, '2025-12-01 10:34:06'),
+(108, 'Liuyang JIAO', 'athlete_1017661@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017661, NULL, NULL, '2025-12-01 10:34:06'),
+(109, 'Cesar CIELO FILHO', 'athlete_1017742@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017742, NULL, NULL, '2025-12-01 10:34:06'),
+(110, 'Lin ZHANG', 'athlete_1017803@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017803, NULL, NULL, '2025-12-01 10:34:06'),
+(111, 'Taehwan PARK', 'athlete_1017810@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1017810, NULL, NULL, '2025-12-01 10:34:06'),
+(112, 'Jiayu XU', 'athlete_1019626@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019626, NULL, NULL, '2025-12-01 10:34:06'),
+(113, 'Margherita PANZIERA', 'athlete_1019653@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019653, NULL, NULL, '2025-12-01 10:34:06'),
+(114, 'Mykhailo ROMANCHUK', 'athlete_1019681@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019681, NULL, NULL, '2025-12-01 10:34:06'),
+(115, 'Kyle CHALMERS', 'athlete_1019701@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019701, NULL, NULL, '2025-12-01 10:34:06'),
+(116, 'Marrit STEENBERGEN', 'athlete_1019816@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019816, NULL, NULL, '2025-12-01 10:34:06'),
+(117, 'Yuanhui FU', 'athlete_1019881@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019881, NULL, NULL, '2025-12-01 10:34:06'),
+(118, 'Wojciech WOJDAK', 'athlete_1019923@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019923, NULL, NULL, '2025-12-01 10:34:06'),
+(119, 'Maya DI RADO', 'athlete_1019930@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019930, NULL, NULL, '2025-12-01 10:34:06'),
+(120, 'Grant HACKETT', 'athlete_1019971@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019971, NULL, NULL, '2025-12-01 10:34:06'),
+(121, 'Shiwen YE', 'athlete_1019978@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1019978, NULL, NULL, '2025-12-01 10:34:06'),
+(122, 'Madeline GROVES', 'athlete_1020014@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020014, NULL, NULL, '2025-12-01 10:34:06'),
+(123, 'Duncan SCOTT', 'athlete_1020040@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020040, NULL, NULL, '2025-12-01 10:34:06'),
+(124, 'Matti MATTSSON', 'athlete_1020096@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020096, NULL, NULL, '2025-12-01 10:34:06'),
+(125, 'Anastasiia FESIKOVA', 'athlete_1020106@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020106, NULL, NULL, '2025-12-01 10:34:06'),
+(126, 'Katarzyna WASICK', 'athlete_1020107@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020107, NULL, NULL, '2025-12-01 10:34:06'),
+(127, 'Ilya SHYMANOVICH', 'athlete_1020123@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020123, NULL, NULL, '2025-12-01 10:34:06'),
+(128, 'Kirsty COVENTRY', 'athlete_1020160@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020160, NULL, NULL, '2025-12-01 10:34:06'),
+(129, 'Bingjie LI', 'athlete_1020316@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020316, NULL, NULL, '2025-12-01 10:34:06'),
+(130, 'Nicolo MARTINENGHI', 'athlete_1020424@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020424, NULL, NULL, '2025-12-01 10:34:06'),
+(131, 'Matthew WILSON', 'athlete_1020475@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020475, NULL, NULL, '2025-12-01 10:34:06'),
+(132, 'Ariarne TITMUS', 'athlete_1020594@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020594, NULL, NULL, '2025-12-01 10:34:06'),
+(133, 'Taylor RUCK', 'athlete_1020725@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020725, NULL, NULL, '2025-12-01 10:34:06'),
+(134, 'Shayna JACK', 'athlete_1020778@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020778, NULL, NULL, '2025-12-01 10:34:06'),
+(135, 'Delfina PIGNATIELLO', 'athlete_1020798@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020798, NULL, NULL, '2025-12-01 10:34:06'),
+(136, 'Margaret MACNEIL', 'athlete_1020804@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020804, NULL, NULL, '2025-12-01 10:34:06'),
+(137, 'Simona QUADARELLA', 'athlete_1020846@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1020846, NULL, NULL, '2025-12-01 10:34:06'),
+(138, 'Florian WELLBROCK', 'athlete_1021468@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1021468, NULL, NULL, '2025-12-01 10:34:06'),
+(139, 'Ippei WATANABE', 'athlete_1022231@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1022231, NULL, NULL, '2025-12-01 10:34:06'),
+(140, 'Akihiro YAMAGUCHI', 'athlete_1022249@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1022249, NULL, NULL, '2025-12-01 10:34:06'),
+(141, 'Junxuan YANG', 'athlete_1023487@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1023487, NULL, NULL, '2025-12-01 10:34:06'),
+(142, 'Aaron PEIRSOL', 'athlete_1026270@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1026270, NULL, NULL, '2025-12-01 10:34:06'),
+(143, 'Mary DESCENZA', 'athlete_1026519@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1026519, NULL, NULL, '2025-12-01 10:34:06'),
+(144, 'Yannick AGNEL', 'athlete_1031583@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1031583, NULL, NULL, '2025-12-01 10:34:06'),
+(145, 'Kristof MILAK', 'athlete_1035878@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1035878, NULL, NULL, '2025-12-01 10:34:06'),
+(146, 'Nyls KORSTANJE', 'athlete_1035963@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1035963, NULL, NULL, '2025-12-01 10:34:06'),
+(147, 'Caeleb DRESSEL', 'athlete_1036454@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1036454, NULL, NULL, '2025-12-01 10:34:06'),
+(148, 'Kylie MASSE', 'athlete_1043468@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1043468, NULL, NULL, '2025-12-01 10:34:06'),
+(149, 'Kliment KOLESNIKOV', 'athlete_1045759@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1045759, NULL, NULL, '2025-12-01 10:34:06'),
+(150, 'Qianting TANG', 'athlete_1046710@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1046710, NULL, NULL, '2025-12-01 10:34:06'),
+(151, 'Regan SMITH', 'athlete_1048421@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1048421, NULL, NULL, '2025-12-01 10:34:06'),
+(152, 'Arno KAMMINGA', 'athlete_1048597@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1048597, NULL, NULL, '2025-12-01 10:34:06'),
+(153, 'Yu HANAGURUMA', 'athlete_1050687@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1050687, NULL, NULL, '2025-12-01 10:34:06'),
+(154, 'Fernando SCHEFFER', 'athlete_1051335@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1051335, NULL, NULL, '2025-12-01 10:34:06'),
+(155, 'Kathleen DAWSON', 'athlete_1051347@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1051347, NULL, NULL, '2025-12-01 10:34:06'),
+(156, 'Kaylee MCKEOWN', 'athlete_1051356@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1051356, NULL, NULL, '2025-12-01 10:34:06'),
+(157, 'Bobby FINKE', 'athlete_1056309@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1056309, NULL, NULL, '2025-12-01 10:34:06'),
+(158, 'Haiyang QIN', 'athlete_1056542@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1056542, NULL, NULL, '2025-12-01 10:34:06'),
+(159, 'Carson FOSTER', 'athlete_1057054@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057054, NULL, NULL, '2025-12-01 10:34:06'),
+(160, 'Elijah WINNINGTON', 'athlete_1057100@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057100, NULL, NULL, '2025-12-01 10:34:06'),
+(161, 'Lani PALLISTER', 'athlete_1057125@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057125, NULL, NULL, '2025-12-01 10:34:06'),
+(162, 'Maxime GROUSSET', 'athlete_1057193@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057193, NULL, NULL, '2025-12-01 10:34:06'),
+(163, 'Zac STUBBLETY-COOK', 'athlete_1057224@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057224, NULL, NULL, '2025-12-01 10:34:06'),
+(164, 'Alex WALSH', 'athlete_1057263@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057263, NULL, NULL, '2025-12-01 10:34:06'),
+(165, 'Kate DOUGLASS', 'athlete_1057344@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057344, NULL, NULL, '2025-12-01 10:34:06'),
+(166, 'Thomas CECCON', 'athlete_1057454@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1057454, NULL, NULL, '2025-12-01 10:34:06'),
+(167, 'Tomoru HONDA', 'athlete_1062094@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1062094, NULL, NULL, '2025-12-01 10:34:06'),
+(168, 'Sam WILLIAMSON', 'athlete_1102976@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1102976, NULL, NULL, '2025-12-01 10:34:06'),
+(169, 'Matthew TEMPLE', 'athlete_1132797@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1132797, NULL, NULL, '2025-12-01 10:34:06'),
+(170, 'Yiting YU', 'athlete_1133442@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1133442, NULL, NULL, '2025-12-01 10:34:06'),
+(171, 'Muhan TANG', 'athlete_1133580@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1133580, NULL, NULL, '2025-12-01 10:34:06'),
+(172, 'Sven SCHWARZ', 'athlete_1134535@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1134535, NULL, NULL, '2025-12-01 10:34:06'),
+(173, 'Tom DEAN', 'athlete_1134714@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1134714, NULL, NULL, '2025-12-01 10:34:06'),
+(174, 'Anna ELENDT', 'athlete_1134854@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1134854, NULL, NULL, '2025-12-01 10:34:06'),
+(175, 'Yohann NDOYE-BROUARD', 'athlete_1134908@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1134908, NULL, NULL, '2025-12-01 10:34:06'),
+(176, 'Lauren COX', 'athlete_1134973@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1134973, NULL, NULL, '2025-12-01 10:34:06'),
+(177, 'Woomin KIM', 'athlete_1135699@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1135699, NULL, NULL, '2025-12-01 10:34:06'),
+(178, 'Lara VAN NIEKERK', 'athlete_1136196@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1136196, NULL, NULL, '2025-12-01 10:34:06'),
+(179, 'Phoebe BACON', 'athlete_1136702@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1136702, NULL, NULL, '2025-12-01 10:34:06'),
+(180, 'Rhyan WHITE', 'athlete_1137154@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1137154, NULL, NULL, '2025-12-01 10:34:06'),
+(181, 'Katharine BERKOFF', 'athlete_1137368@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1137368, NULL, NULL, '2025-12-01 10:34:06'),
+(182, 'Shaine CASAS', 'athlete_1137414@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1137414, NULL, NULL, '2025-12-01 10:34:06'),
+(183, 'Luca URLANDO', 'athlete_1137509@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1137509, NULL, NULL, '2025-12-01 10:34:06'),
+(184, 'Gretchen WALSH', 'athlete_1137575@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1137575, NULL, NULL, '2025-12-01 10:34:06'),
+(185, 'Noe PONTI', 'athlete_1138017@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1138017, NULL, NULL, '2025-12-01 10:34:06'),
+(186, 'Sunwoo HWANG', 'athlete_1140557@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1140557, NULL, NULL, '2025-12-01 10:34:06'),
+(187, 'Josh LIENDO', 'athlete_1159165@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1159165, NULL, NULL, '2025-12-01 10:34:06'),
+(188, 'Ahmed HAFNAOUI', 'athlete_1161559@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1161559, NULL, NULL, '2025-12-01 10:34:06'),
+(189, 'Hubert KOS', 'athlete_1166150@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1166150, NULL, NULL, '2025-12-01 10:34:06'),
+(190, 'Erika FAIRWEATHER', 'athlete_1168311@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1168311, NULL, NULL, '2025-12-01 10:34:06'),
+(191, 'Leon MARCHAND', 'athlete_1188005@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1188005, NULL, NULL, '2025-12-01 10:34:06'),
+(192, 'Lukas MAERTENS', 'athlete_1188009@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1188009, NULL, NULL, '2025-12-01 10:34:06'),
+(193, 'Mollie O\'CALLAGHAN', 'athlete_1188018@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1188018, NULL, NULL, '2025-12-01 10:34:06'),
+(194, 'Samuel SHORT', 'athlete_1188192@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1188192, NULL, NULL, '2025-12-01 10:34:06'),
+(195, 'Elizabeth DEKKERS', 'athlete_1188574@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1188574, NULL, NULL, '2025-12-01 10:34:06'),
+(196, 'Shoma SATO', 'athlete_1189357@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1189357, NULL, NULL, '2025-12-01 10:34:06'),
+(197, 'Benedetta PILATO', 'athlete_1189393@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1189393, NULL, NULL, '2025-12-01 10:34:06'),
+(198, 'Ivan KOZHAKIN', 'athlete_1189999@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1189999, NULL, NULL, '2025-12-01 10:34:06'),
+(199, 'Claire CURZAN', 'athlete_1190176@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1190176, NULL, NULL, '2025-12-01 10:34:06'),
+(200, 'Lydia JACOBY', 'athlete_1190208@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1190208, NULL, NULL, '2025-12-01 10:34:06'),
+(201, 'Torri HUSKE', 'athlete_1190607@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1190607, NULL, NULL, '2025-12-01 10:34:06'),
+(202, 'Matt FALLON', 'athlete_1190809@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1190809, NULL, NULL, '2025-12-01 10:34:06'),
+(203, 'Evgeniia CHIKUNOVA', 'athlete_1190858@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1190858, NULL, NULL, '2025-12-01 10:34:06'),
+(204, 'Jack ALEXY', 'athlete_1190943@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1190943, NULL, NULL, '2025-12-01 10:34:06'),
+(205, 'Tomoyuki MATSUSHITA', 'athlete_1193489@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1193489, NULL, NULL, '2025-12-01 10:34:06'),
+(206, 'Matthew RICHARDS', 'athlete_1195211@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1195211, NULL, NULL, '2025-12-01 10:34:06'),
+(207, 'Daniel WIFFEN', 'athlete_1198105@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1198105, NULL, NULL, '2025-12-01 10:34:06'),
+(208, 'Diogo MATOS RIBEIRO', 'athlete_1200925@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1200925, NULL, NULL, '2025-12-01 10:34:06'),
+(209, 'Gabriel JETT', 'athlete_1204542@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1204542, NULL, NULL, '2025-12-01 10:34:06'),
+(210, 'Ludovico VIBERTI', 'athlete_1226713@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1226713, NULL, NULL, '2025-12-01 10:34:06'),
+(211, 'Simone CERASUOLO', 'athlete_1226990@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1226990, NULL, NULL, '2025-12-01 10:34:06');
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `created_at`, `email_verified_at`, `role`, `is_admin`, `verification_code_hash`, `verification_expires_at`, `athlete_id`, `last_name`, `avatar_path`, `updated_at`) VALUES
+(212, 'Hunter ARMSTRONG', 'athlete_1231918@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1231918, NULL, NULL, '2025-12-01 10:34:06'),
+(213, 'Tatsuya MURASA', 'athlete_1233475@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1233475, NULL, NULL, '2025-12-01 10:34:06'),
+(214, 'Krzysztof CHMIELEWSKI', 'athlete_1245330@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1245330, NULL, NULL, '2025-12-01 10:34:06'),
+(215, 'David POPOVICI', 'athlete_1248035@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1248035, NULL, NULL, '2025-12-01 10:34:06'),
+(216, 'Summer MCINTOSH', 'athlete_1252422@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1252422, NULL, NULL, '2025-12-01 10:34:06'),
+(217, 'Oliver KLEMET', 'athlete_1255327@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1255327, NULL, NULL, '2025-12-01 10:34:06'),
+(218, 'Guilherme SANTOS', 'athlete_1282241@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1282241, NULL, NULL, '2025-12-01 10:34:06'),
+(219, 'Pieter COETZE', 'athlete_1286863@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1286863, NULL, NULL, '2025-12-01 10:34:06'),
+(220, 'Roos VANOTTERDIJK', 'athlete_1290629@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1290629, NULL, NULL, '2025-12-01 10:34:06'),
+(221, 'Zhanle PAN', 'athlete_1313859@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1313859, NULL, NULL, '2025-12-01 10:34:06'),
+(222, 'Tess HOWLEY', 'athlete_1325047@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1325047, NULL, NULL, '2025-12-01 10:34:06'),
+(223, 'Luke HOBSON', 'athlete_1331970@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1331970, NULL, NULL, '2025-12-01 10:34:06'),
+(224, 'Katie GRIMES', 'athlete_1415844@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1415844, NULL, NULL, '2025-12-01 10:34:06'),
+(225, 'Chris GUILIANO', 'athlete_1532544@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1532544, NULL, NULL, '2025-12-01 10:34:06'),
+(226, 'Ahmed JAOUADI', 'athlete_1544338@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1544338, NULL, NULL, '2025-12-01 10:34:06'),
+(227, 'Ilya KHARUN', 'athlete_1633425@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1633425, NULL, NULL, '2025-12-01 10:34:06'),
+(228, 'Molly CARSON', 'athlete_1663568@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1663568, NULL, NULL, '2025-12-01 10:34:06'),
+(229, 'Shin OHASHI', 'athlete_1673325@swimlive.local', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'nadador', 0, NULL, NULL, 1673325, NULL, NULL, '2025-12-01 10:34:06'),
+(230, 'Admin', 'swimilive669@gmail.com', '$2y$10$B41d3YrJi0z.dJkn.olnMOAboJyPnt/F3Ak8vKAmP3jfr9er/ZjoC', '2025-11-29 15:50:42', '2025-11-29 16:50:42', 'admin', 0, NULL, NULL, NULL, NULL, NULL, '2025-12-01 10:34:06');
 
 --
 -- Índices para tablas volcadas
 --
+
+--
+-- Indices de la tabla `athlete_notifications`
+--
+ALTER TABLE `athlete_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_notification_inscripcion` (`inscripcion_id`),
+  ADD KEY `idx_notification_athlete` (`athlete_id`),
+  ADD KEY `idx_notification_competicion` (`competicion_id`);
+
+--
+-- Indices de la tabla `atletas`
+--
+ALTER TABLE `atletas`
+  ADD PRIMARY KEY (`athlete_id`);
 
 --
 -- Indices de la tabla `competiciones_agendadas`
@@ -7451,35 +7509,42 @@ ALTER TABLE `inscripciones_pruebas`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_users_athlete_id` (`athlete_id`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
 --
+-- AUTO_INCREMENT de la tabla `athlete_notifications`
+--
+ALTER TABLE `athlete_notifications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT de la tabla `competiciones_agendadas`
 --
 ALTER TABLE `competiciones_agendadas`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT de la tabla `competiciones_pruebas`
 --
 ALTER TABLE `competiciones_pruebas`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `inscripciones_atleticas`
 --
 ALTER TABLE `inscripciones_atleticas`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=168;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=206;
 
 --
 -- AUTO_INCREMENT de la tabla `inscripciones_pruebas`
 --
 ALTER TABLE `inscripciones_pruebas`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=118;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=130;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
@@ -7490,6 +7555,14 @@ ALTER TABLE `users`
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `athlete_notifications`
+--
+ALTER TABLE `athlete_notifications`
+  ADD CONSTRAINT `fk_notification_athlete` FOREIGN KEY (`athlete_id`) REFERENCES `atletas` (`athlete_id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_notification_competicion` FOREIGN KEY (`competicion_id`) REFERENCES `competiciones_agendadas` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_notification_inscripcion` FOREIGN KEY (`inscripcion_id`) REFERENCES `inscripciones_atleticas` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `competiciones_agendadas`
@@ -7515,6 +7588,12 @@ ALTER TABLE `inscripciones_atleticas`
 ALTER TABLE `inscripciones_pruebas`
   ADD CONSTRAINT `inscripciones_pruebas_ibfk_1` FOREIGN KEY (`inscripcion_atletica_id`) REFERENCES `inscripciones_atleticas` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `inscripciones_pruebas_ibfk_2` FOREIGN KEY (`prueba_id`) REFERENCES `competiciones_pruebas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `fk_users_athletes` FOREIGN KEY (`athlete_id`) REFERENCES `atletas` (`athlete_id`) ON DELETE SET NULL ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

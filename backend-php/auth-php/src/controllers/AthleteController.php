@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Services\AthleteProfileService;
 use App\Services\AthleteResultService;
 
 /**
@@ -10,10 +11,12 @@ use App\Services\AthleteResultService;
 class AthleteController
 {
     private AthleteResultService $athleteResultService;
+    private AthleteProfileService $athleteProfileService;
 
-    public function __construct(AthleteResultService $athleteResultService)
+    public function __construct(AthleteResultService $athleteResultService, AthleteProfileService $athleteProfileService)
     {
         $this->athleteResultService = $athleteResultService;
+        $this->athleteProfileService = $athleteProfileService;
     }
 
     /**
@@ -108,6 +111,36 @@ class AthleteController
             jsonResponse([
                 'error' => 'Error al obtener los resultados',
                 'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getSelfProfile(): void
+    {
+        $athleteId = $_SESSION['athlete_id'] ?? null;
+        if (!$athleteId) {
+            jsonResponse([
+                'error' => 'Solo los nadadores pueden acceder a su perfil personal'
+            ], 403);
+        }
+
+        try {
+            $profile = $this->athleteProfileService->getAthleteProfile((int) $athleteId);
+            if (!$profile) {
+                jsonResponse([
+                    'error' => 'No encontramos la ficha del nadador en la base de datos'
+                ], 404);
+            }
+
+            jsonResponse([
+                'success' => true,
+                'athlete' => $profile['athlete'],
+                'upcomingCompetitions' => $profile['upcomingCompetitions']
+            ]);
+        } catch (\Throwable $e) {
+            error_log('AthleteController::getSelfProfile error: ' . $e->getMessage());
+            jsonResponse([
+                'error' => 'No pudimos cargar tu perfil en este momento'
             ], 500);
         }
     }

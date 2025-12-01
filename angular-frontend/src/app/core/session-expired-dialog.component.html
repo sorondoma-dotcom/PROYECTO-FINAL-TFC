@@ -1,0 +1,13 @@
+<h2 mat-dialog-title>Sesión caducada</h2>
+<mat-dialog-content>
+  @if (message) {
+    <p>{{ message }}</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  @for (action of actions; track action.label) {
+    <button mat-raised-button [color]="action.color" (click)="action.handler()">
+      {{ action.label }}
+    </button>
+  }
+</mat-dialog-actions>

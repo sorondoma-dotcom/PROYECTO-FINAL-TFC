@@ -57,6 +57,34 @@ class InscriptionRepository
         return $row ? Inscription::fromArray($row) : null;
     }
 
+    public function findUpcomingByAthlete(int $athlete_id): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT ia.id,
+                    ia.competicion_id,
+                    ia.estado_inscripcion,
+                    ia.inscrito_en,
+                    ia.confirmado_en,
+                    c.nombre,
+                    c.descripcion,
+                    c.pais,
+                    c.ciudad,
+                    c.tipo_piscina,
+                    c.fecha_inicio,
+                    c.fecha_fin,
+                    c.lugar_evento,
+                    c.logo_path,
+                    c.estado
+             FROM inscripciones_atleticas ia
+             INNER JOIN competiciones_agendadas c ON c.id = ia.competicion_id
+                         WHERE ia.athlete_id = ?
+                             AND (c.fecha_inicio IS NULL OR c.fecha_inicio >= NOW())
+                         ORDER BY (c.fecha_inicio IS NULL) ASC, c.fecha_inicio ASC, ia.inscrito_en DESC'
+        );
+        $stmt->execute([$athlete_id]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function update(int $id, array $data): ?Inscription
     {
         $fields = [];

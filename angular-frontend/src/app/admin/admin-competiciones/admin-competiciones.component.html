@@ -8,11 +8,10 @@
     </mat-card-header>
   </mat-card>
 
-  <mat-tab-group>
-    <!-- Pestaña: Crear/Listar Competiciones -->
-    <mat-tab label="Competiciones">
+  <mat-tab-group [(selectedIndex)]="selectedTabIndex">
+    <!-- Pestaña: Agendar competición -->
+    <mat-tab label="Agendar competición">
       <div class="tab-content">
-        <!-- Formulario de creación -->
         <mat-card class="form-card">
           <mat-card-header>
             <mat-card-title>Agendar Nueva Competición</mat-card-title>
@@ -30,12 +29,59 @@
                 </mat-form-field>
               </div>
 
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
+              <div class="form-row form-row--logo">
+                <mat-form-field appearance="outline" class="description-field">
                   <mat-label>Descripción</mat-label>
-                  <textarea matInput formControlName="descripcion" rows="3"></textarea>
+                  <textarea matInput formControlName="descripcion" rows="6"></textarea>
+                  @if (competicionForm.get('descripcion')?.invalid && competicionForm.get('descripcion')?.touched) {
+                    <mat-error>{{ getErrorMessage('descripcion') }}</mat-error>
+                  }
                 </mat-form-field>
+
+                <div
+                  class="logo-dropzone"
+                  [class.logo-dropzone--active]="logoDragActive"
+                  [class.logo-dropzone--error]="(competicionForm.get('logo')?.invalid && (competicionForm.get('logo')?.touched || !!logoError)) || !!logoError"
+                  (click)="triggerLogoBrowser()"
+                  (dragover)="onLogoDragOver($event)"
+                  (dragleave)="onLogoDragLeave($event)"
+                  (drop)="onLogoDrop($event)"
+                >
+                  <div class="logo-dropzone__inner">
+                    @if (logoPreviewUrl) {
+                      <img [src]="logoPreviewUrl" alt="Logo de la competición" class="logo-dropzone__image" />
+                      <p class="logo-dropzone__filename">{{ logoFile?.name }}</p>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        class="logo-dropzone__remove"
+                        (click)="removeLogo($event)"
+                        aria-label="Quitar logo"
+                      >
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    } @else {
+                      <mat-icon>cloud_upload</mat-icon>
+                      <p class="logo-dropzone__title">Arrastra el logo aquí</p>
+                      <p class="logo-dropzone__subtitle">o haz clic para seleccionar</p>
+                      <small class="logo-dropzone__hint">PNG, JPG, WebP o SVG · Máx 5 MB</small>
+                    }
+                  </div>
+                  <input
+                    #logoInput
+                    type="file"
+                    accept="image/*"
+                    (change)="onLogoSelected($event)"
+                    hidden
+                  />
+                </div>
               </div>
+
+              @if (logoError) {
+                <p class="logo-error">{{ logoError }}</p>
+              } @else if (competicionForm.get('logo')?.invalid && competicionForm.get('logo')?.touched) {
+                <p class="logo-error">Debes seleccionar un logo para la competición.</p>
+              }
 
               <div class="form-row">
                 <mat-form-field appearance="outline" class="half-width">
@@ -87,7 +133,9 @@
                 <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Hora de fin</mat-label>
                   <input matInput formControlName="fecha_fin_hora" type="time" />
-                  @if ((competicionForm.get('fecha_fin')?.touched || competicionForm.get('fecha_fin_hora')?.touched || competicionForm.get('fecha_inicio')?.touched || competicionForm.get('fecha_inicio_hora')?.touched) && competicionForm.hasError('fechaFinPosterior')) {
+                  @if (competicionForm.get('fecha_fin_hora')?.hasError('required') && competicionForm.get('fecha_fin_hora')?.touched) {
+                    <mat-error>Hora requerida</mat-error>
+                  } @else if ((competicionForm.get('fecha_fin')?.touched || competicionForm.get('fecha_fin_hora')?.touched || competicionForm.get('fecha_inicio')?.touched || competicionForm.get('fecha_inicio_hora')?.touched) && (competicionForm.hasError('fechaFinAntesInicio') || competicionForm.hasError('fechaFinFueraDeRango'))) {
                     <mat-error>{{ getErrorMessage('fecha_fin_hora') }}</mat-error>
                   }
                 </mat-form-field>
@@ -96,11 +144,13 @@
               <div class="form-row">
                 <mat-form-field appearance="outline" class="half-width">
                   <mat-label>Fecha de finalización</mat-label>
-                  <input matInput [matDatepicker]="pickerFin" formControlName="fecha_fin" [min]="tomorrow" [max]="competicionForm.get('fecha_inicio')?.value" />
+                  <input matInput [matDatepicker]="pickerFin" formControlName="fecha_fin" [min]="competicionForm.get('fecha_inicio')?.value || tomorrow" [max]="maxFechaFin" />
                   <mat-datepicker-toggle matSuffix [for]="pickerFin"></mat-datepicker-toggle>
                   <mat-datepicker #pickerFin [startView]="'month'"></mat-datepicker>
                   <mat-icon matPrefix>calendar_today</mat-icon>
-                  @if ((competicionForm.get('fecha_fin')?.touched || competicionForm.get('fecha_inicio')?.touched) && competicionForm.hasError('fechaFinPosterior')) {
+                  @if (competicionForm.get('fecha_fin')?.hasError('required') && competicionForm.get('fecha_fin')?.touched) {
+                    <mat-error>{{ getErrorMessage('fecha_fin') }}</mat-error>
+                  } @else if ((competicionForm.get('fecha_fin')?.touched || competicionForm.get('fecha_inicio')?.touched || competicionForm.get('fecha_fin_hora')?.touched || competicionForm.get('fecha_inicio_hora')?.touched) && (competicionForm.hasError('fechaFinAntesInicio') || competicionForm.hasError('fechaFinFueraDeRango'))) {
                     <mat-error>{{ getErrorMessage('fecha_fin') }}</mat-error>
                   }
                 </mat-form-field>
@@ -125,8 +175,12 @@
             </form>
           </mat-card-content>
         </mat-card>
+      </div>
+    </mat-tab>
 
-        <!-- Lista de competiciones -->
+    <!-- Pestaña: Competiciones agendadas -->
+    <mat-tab label="Competiciones agendadas">
+      <div class="tab-content">
         <mat-card class="table-card">
           <mat-card-header>
             <mat-card-title>Competiciones Agendadas</mat-card-title>
@@ -141,6 +195,18 @@
             } @else {
               <div class="table-container">
                 <table mat-table [dataSource]="competiciones" class="competiciones-table">
+                  <!-- Columna Logo -->
+                  <ng-container matColumnDef="logo">
+                    <th mat-header-cell *matHeaderCellDef>Logo</th>
+                    <td mat-cell *matCellDef="let element">
+                      @if (getCompetitionLogoUrl(element); as logoUrl) {
+                        <img class="competition-logo" [src]="logoUrl" [alt]="element.nombre" />
+                      } @else {
+                        <mat-icon class="logo-placeholder">image_not_supported</mat-icon>
+                      }
+                    </td>
+                  </ng-container>
+
                   <!-- Columna ID -->
                   <ng-container matColumnDef="id">
                     <th mat-header-cell *matHeaderCellDef>#</th>
@@ -207,15 +273,42 @@
                     <th mat-header-cell *matHeaderCellDef>Acciones</th>
                     <td mat-cell *matCellDef="let element">
                       <div class="actions">
-                        <button mat-icon-button [matTooltip]="'Ver y gestionar'" (click)="selectCompetition(element)">
-                          <mat-icon>info</mat-icon>
+                        <button
+                          mat-icon-button
+                          matTooltip="Gestionar atletas"
+                          aria-label="Gestionar atletas"
+                          (click)="irAGestionAtletas(element, $event)"
+                        >
+                          <mat-icon>group</mat-icon>
+                        </button>
+                        <button
+                          mat-icon-button
+                          matTooltip="Editar"
+                          aria-label="Editar competición"
+                          (click)="editarCompeticion(element, $event)"
+                        >
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button
+                          mat-icon-button
+                          color="warn"
+                          matTooltip="Eliminar"
+                          aria-label="Eliminar competición"
+                          (click)="eliminarCompeticion(element, $event)"
+                        >
+                          <mat-icon>delete</mat-icon>
                         </button>
                       </div>
                     </td>
                   </ng-container>
 
                   <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  <tr
+                    mat-row
+                    *matRowDef="let row; columns: displayedColumns;"
+                    (click)="selectCompetition(row)"
+                    [class.selected-row]="selectedCompetition?.id === row.id"
+                  ></tr>
                 </table>
               </div>
             }
@@ -225,7 +318,7 @@
     </mat-tab>
 
     <!-- Pestaña: Gestionar Atletas -->
-    <mat-tab label="Gestionar Atletas" [disabled]="!selectedCompetition">
+    <mat-tab label="Gestionar Atletas" [disabled]="competiciones.length === 0">
       @if (selectedCompetition) {
         <div class="tab-content">
           <mat-card class="detail-card">
@@ -266,10 +359,6 @@
               <button mat-raised-button color="accent" (click)="editarCompeticion()">
                 <mat-icon>edit</mat-icon>
                 Editar
-              </button>
-              <button mat-raised-button color="warn" (click)="eliminarCompeticion()">
-                <mat-icon>delete</mat-icon>
-                Eliminar
               </button>
             </div>
 
@@ -358,6 +447,10 @@
             </div>
             </mat-card-content>
           </mat-card>
+        </div>
+      } @else {
+        <div class="tab-content">
+          <p class="no-data">Selecciona una competición desde la pestaña "Competiciones agendadas" para gestionar atletas.</p>
         </div>
       }
     </mat-tab>

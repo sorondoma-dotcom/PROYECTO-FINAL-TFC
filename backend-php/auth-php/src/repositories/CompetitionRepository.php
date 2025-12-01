@@ -17,17 +17,18 @@ class CompetitionRepository
         string $fecha_inicio,
         ?string $fecha_fin,
         ?string $lugar_evento,
+        string $logo_path,
         ?int $creada_por
     ): Competition {
         $stmt = $this->pdo->prepare(
             'INSERT INTO competiciones_agendadas 
-            (nombre, descripcion, pais, ciudad, tipo_piscina, fecha_inicio, fecha_fin, lugar_evento, creada_por)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            (nombre, descripcion, pais, ciudad, tipo_piscina, fecha_inicio, fecha_fin, lugar_evento, logo_path, creada_por)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
 
         $stmt->execute([
             $nombre, $descripcion, $pais, $ciudad, $tipo_piscina,
-            $fecha_inicio, $fecha_fin, $lugar_evento, $creada_por
+            $fecha_inicio, $fecha_fin, $lugar_evento, $logo_path, $creada_por
         ]);
 
         $id = (int) $this->pdo->lastInsertId();
@@ -69,7 +70,7 @@ class CompetitionRepository
         $values = [];
 
         foreach ($data as $key => $value) {
-            if (in_array($key, ['nombre', 'descripcion', 'pais', 'ciudad', 'tipo_piscina', 'fecha_inicio', 'fecha_fin', 'lugar_evento', 'estado'])) {
+            if (in_array($key, ['nombre', 'descripcion', 'pais', 'ciudad', 'tipo_piscina', 'fecha_inicio', 'fecha_fin', 'lugar_evento', 'logo_path', 'estado'])) {
                 $fields[] = "{$key} = ?";
                 $values[] = $value;
             }
