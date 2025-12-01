@@ -77,6 +77,24 @@ export class ProofService {
     );
   }
 
+  unregisterAthleteFromProofByProofAndInscription(proofId: number, inscripcionAtleticaId: number): Observable<any> {
+    return this.http.delete<any>(
+      `${this.baseUrl}/proofs/${proofId}/athletes/${inscripcionAtleticaId}`,
+      this.httpOptions
+    );
+  }
+
+  registerAthleteToMultipleProofs(proofIds: number[], inscripcionAtleticaId: number): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/proofs/athletes/bulk`,
+      {
+        proof_ids: proofIds,
+        inscripcion_atletica_id: inscripcionAtleticaId
+      },
+      this.httpOptions
+    );
+  }
+
   /**
    * Obtener series generadas automáticamente (máx 8 personas por serie)
    */

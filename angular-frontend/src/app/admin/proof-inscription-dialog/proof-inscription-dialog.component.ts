@@ -46,7 +46,12 @@ export class ProofInscriptionDialogComponent implements OnInit {
   availableAthletes: Inscription[] = [];
   registeredAthletes: ProofInscription[] = [];
   selectedAthletes: Inscription[] = [];
-  seriesInfo: any[] = [];
+  seriesInfo: Array<{ number: number; athletes: ProofInscription[]; count: number }> = [];
+
+  proofs: Proof[] = [];
+  proofsLoading = false;
+  selectedProofId: number | null = null;
+  targetProofIds: number[] = [];
 
   loadingAthletes = false;
   registering = false;
@@ -77,28 +82,54 @@ export class ProofInscriptionDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAthletes();
+    this.loadProofsList();
   }
 
-  private loadAthletes(): void {
-    this.loadingAthletes = true;
+  private loadProofsList(): void {
+    this.proofsLoading = true;
 
-    // Get proof with inscriptions
-    this.proofService.getProof(this.proof.id!).subscribe({
+    this.proofService.getProofsByCompetition(this.competicion_id).subscribe({
+      next: (response: any) => {
+        this.proofs = response.proofs || [];
+        const initialProofId = this.data.proof?.id ?? this.proofs[0]?.id ?? null;
+
+        if (initialProofId) {
+          this.selectedProofId = initialProofId;
+          this.targetProofIds = [initialProofId];
+          this.loadProofData(initialProofId);
+        } else {
+          this.targetProofIds = [];
+        }
+
+        this.proofsLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading proofs list:', error);
+        this.proofsLoading = false;
+        const fallbackProofId = this.data.proof?.id ?? null;
+
+        if (fallbackProofId) {
+          this.selectedProofId = fallbackProofId;
+          this.targetProofIds = [fallbackProofId];
+          this.loadProofData(fallbackProofId);
+        }
+      }
+    });
+  }
+
+  private loadProofData(proofId?: number): void {
+    const targetProofId = proofId ?? this.selectedProofId ?? this.proof?.id;
+    if (!targetProofId) return;
+
+    this.loadingAthletes = true;
+    this.proofService.getProof(targetProofId).subscribe({
       next: (response: any) => {
         const proof = response.proof as Proof;
         this.proof = { ...this.proof, ...proof };
         this.registeredAthletes = [...(proof.inscripciones || [])];
         this.proof.total_inscripciones = this.registeredAthletes.length;
         this.updateSeriesInfo();
-
-        // Filter available athletes - those inscribed in competition but not in this proof
-        this.availableAthletes = this.data.competicionAthletes.filter(athlete =>
-          !this.registeredAthletes.some(
-            reg => reg.athlete_id === athlete.athlete_id || reg.athlete_id == athlete.athlete_id
-          )
-        );
-
+        this.updateAvailableAthletes();
         this.loadingAthletes = false;
       },
       error: (error) => {
@@ -108,12 +139,65 @@ export class ProofInscriptionDialogComponent implements OnInit {
     });
   }
 
+  onActiveProofChange(proofId: number): void {
+    if (!proofId) return;
+    this.selectedProofId = proofId;
+    this.targetProofIds = Array.from(new Set([proofId, ...this.targetProofIds]));
+    this.loadProofData(proofId);
+  }
+
+  private updateAvailableAthletes(): void {
+    this.availableAthletes = this.data.competicionAthletes.filter(athlete => {
+      // Verificar que no esté ya inscrito
+      const isAlreadyRegistered = this.registeredAthletes.some(
+        reg => reg.athlete_id === athlete.athlete_id
+      );
+
+      if (isAlreadyRegistered) {
+        return false;
+      }
+
+      // Filtrar por género según el tipo de prueba
+      const proofGender = this.proof.genero;
+
+      // Si la prueba es Mixta, permitir ambos géneros
+      if (proofGender === 'Mixto') {
+        return true;
+      }
+
+      // Si la prueba es Masculina (M), solo permitir hombres
+      if (proofGender === 'M') {
+        return athlete.gender === 'M';
+      }
+
+      // Si la prueba es Femenina (F), solo permitir mujeres
+      if (proofGender === 'F') {
+        return athlete.gender === 'F';
+      }
+
+      // Por defecto, no mostrar
+      return false;
+    });
+  }
+
   private updateSeriesInfo(): void {
-    const proofSnapshot: Proof = {
-      ...this.proof,
-      inscripciones: this.registeredAthletes
-    };
-    this.seriesInfo = this.proofService.getSeriesInfo(proofSnapshot);
+    const seriesByNumber: { [serie: number]: ProofInscription[] } = {};
+
+    this.registeredAthletes.forEach((athlete, index) => {
+      const serieNumber = Math.floor(index / 8) + 1;
+      if (!seriesByNumber[serieNumber]) {
+        seriesByNumber[serieNumber] = [];
+      }
+      seriesByNumber[serieNumber].push(athlete);
+    });
+
+    this.seriesInfo = Object.entries(seriesByNumber)
+      .map(([serieNumber, athletes]) => ({
+        number: Number(serieNumber),
+        athletes,
+        count: athletes.length
+      }))
+      .sort((a, b) => a.number - b.number);
   }
 
   predictSerieForNewAthlete(athlete: Inscription): number {
@@ -150,37 +234,65 @@ export class ProofInscriptionDialogComponent implements OnInit {
   }
 
   registerSelectedAthletes(): void {
-    if (this.selectedAthletes.length === 0) return;
+    if (this.selectedAthletes.length === 0 || this.targetProofIds.length === 0) return;
 
-    this.registering = true;
-    let registered = 0;
+    const athleteCount = this.selectedAthletes.length;
+    const proofCount = this.targetProofIds.length;
 
-    this.selectedAthletes.forEach(athlete => {
-      // Find the inscription record in competition
-      const inscription = this.data.competicionAthletes.find(
-        a => a.athlete_id === athlete.athlete_id
-      );
+    this.confirmation.confirm({
+      title: 'Confirmar inscripción',
+      message: `¿Deseas inscribir ${athleteCount} atleta(s) en ${proofCount} prueba(s)?`,
+      confirmText: 'Inscribir',
+      confirmColor: 'primary'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
 
-      if (!inscription || !inscription.id) {
-        registered++;
-        if (registered === this.selectedAthletes.length) this.onRegistrationComplete();
+      this.registering = true;
+      let processed = 0;
+      const proofIds = Array.from(new Set(
+        this.targetProofIds
+          .map(id => Number(id))
+          .filter(id => !Number.isNaN(id) && id > 0)
+      ));
+
+      if (proofIds.length === 0) {
+        this.registering = false;
         return;
       }
 
-      this.proofService.registerAthleteToProof(this.proof.id!, inscription.id).subscribe({
-        next: () => {
-          registered++;
-          if (registered === this.selectedAthletes.length) {
-            this.onRegistrationComplete();
-          }
-        },
-        error: (error) => {
-          console.error('Error registering athlete:', error);
-          registered++;
-          if (registered === this.selectedAthletes.length) {
-            this.onRegistrationComplete();
-          }
+      this.selectedAthletes.forEach(athlete => {
+        const inscription = this.data.competicionAthletes.find(
+          a => a.athlete_id === athlete.athlete_id
+        );
+
+        if (!inscription || !inscription.id) {
+          processed++;
+          if (processed === this.selectedAthletes.length) this.onRegistrationComplete();
+          return;
         }
+
+        this.proofService.registerAthleteToMultipleProofs(proofIds, inscription.id).subscribe({
+          next: (response: any) => {
+            const results = response?.results || [];
+            const errors = results
+              .filter((result: any) => !result.success)
+              .map((result: any) => result.error ?? 'Error desconocido');
+            if (errors.length) {
+              console.warn(`No se pudieron inscribir todas las pruebas para ${athlete.athlete_name}:`, errors);
+            }
+            processed++;
+            if (processed === this.selectedAthletes.length) {
+              this.onRegistrationComplete();
+            }
+          },
+          error: (error) => {
+            console.error('Error registering athlete:', error);
+            processed++;
+            if (processed === this.selectedAthletes.length) {
+              this.onRegistrationComplete();
+            }
+          }
+        });
       });
     });
   }
@@ -188,25 +300,92 @@ export class ProofInscriptionDialogComponent implements OnInit {
   private onRegistrationComplete(): void {
     this.registering = false;
     this.selectedAthletes = [];
-    this.loadAthletes();
+
+    // Recargar todas las pruebas para actualizar contadores
+    this.loadProofsList();
+
+    // Recargar la prueba actual para actualizar la lista de inscritos
+    if (this.selectedProofId) {
+      this.loadProofData(this.selectedProofId);
+    }
+
+    // Notificar al componente padre que hubo cambios
+    this.dialogRef.close({ updated: true });
   }
 
   removeAthleteFromProof(athlete: ProofInscription): void {
-    if (!athlete.id) return;
+    console.log('Atleta recibido en removeAthleteFromProof:', athlete);
+
+    let inscripcionPruebaId = athlete.id;
+    if (!inscripcionPruebaId || inscripcionPruebaId <= 0) {
+      const registered = this.registeredAthletes.find(reg => reg.athlete_id === athlete.athlete_id);
+      if (registered && registered.id > 0) {
+        inscripcionPruebaId = registered.id;
+        console.log('ID encontrado en registeredAthletes:', inscripcionPruebaId);
+      }
+    }
+
+    const inscripcionAtleticaId = athlete.inscripcion_atletica_id;
+    const proofIdForRemoval = this.selectedProofId ?? this.proof?.id;
+
+    if ((!inscripcionPruebaId || inscripcionPruebaId <= 0) && (!proofIdForRemoval || !inscripcionAtleticaId)) {
+      console.error('No se puede eliminar: faltan identificadores v?lidos para', athlete.athlete_name);
+      return;
+    }
+
+    console.log(
+      'Intentando eliminar atleta:',
+      athlete.athlete_name,
+      'inscripcion_prueba_id:',
+      inscripcionPruebaId,
+      'inscripcion_atletica_id:',
+      inscripcionAtleticaId
+    );
 
     this.confirmation.confirm({
-      title: 'Confirmar eliminación',
-      message: `¿Deseas quitar a ${athlete.athlete_name} de esta prueba?`,
+      title: 'Confirmar eliminaci?n',
+      message: `?Deseas quitar a ${athlete.athlete_name} de esta prueba?`,
       confirmText: 'Quitar',
       confirmColor: 'warn'
     }).subscribe(confirmed => {
+      console.log('Respuesta del di?logo de confirmaci?n:', confirmed);
+
       if (!confirmed) return;
 
-      this.removingAthleteId = athlete.id;
-      this.proofService.unregisterAthleteFromProof(athlete.id).subscribe({
+      this.removingAthleteId = inscripcionAtleticaId;
+
+      let removal$ = null;
+      if (inscripcionPruebaId && inscripcionPruebaId > 0) {
+        console.log('Llamando al servicio para eliminar inscripci?n ID:', inscripcionPruebaId);
+        removal$ = this.proofService.unregisterAthleteFromProof(inscripcionPruebaId);
+      } else if (proofIdForRemoval && inscripcionAtleticaId) {
+        console.log('Llamando al servicio para eliminar con prueba e inscripci?n atl?tica:', proofIdForRemoval, inscripcionAtleticaId);
+        removal$ = this.proofService.unregisterAthleteFromProofByProofAndInscription(
+          proofIdForRemoval,
+          inscripcionAtleticaId
+        );
+      }
+
+      if (!removal$) {
+        console.error('No se puede eliminar: no se pudo determinar el endpoint para', athlete.athlete_name);
+        this.removingAthleteId = null;
+        return;
+      }
+
+      removal$.subscribe({
         next: () => {
+          console.log('Atleta eliminado correctamente');
           this.removingAthleteId = null;
-          this.loadAthletes();
+
+          // Recargar la lista de pruebas para actualizar contadores
+          this.loadProofsList();
+
+          // Recargar la prueba actual para actualizar la lista de inscritos
+          const proofToReload = this.selectedProofId ?? this.proof?.id;
+          if (proofToReload) {
+            console.log('Recargando prueba ID:', proofToReload);
+            this.loadProofData(proofToReload);
+          }
         },
         error: (error) => {
           console.error('Error removing athlete:', error);

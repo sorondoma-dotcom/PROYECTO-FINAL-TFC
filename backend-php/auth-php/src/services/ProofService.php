@@ -203,16 +203,46 @@ class ProofService
      */
     public function unregisterAthleteFromProof(int $proofProofId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM inscripciones_pruebas WHERE id = ?');
+        $stmt = $this->pdo->prepare(
+            'SELECT prueba_id, inscripcion_atletica_id FROM inscripciones_pruebas WHERE id = ? LIMIT 1'
+        );
         $stmt->execute([$proofProofId]);
-        if (!$stmt->fetch()) {
-            throw new \RuntimeException('Inscripción a prueba no encontrada');
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!$row) {
+            throw new \RuntimeException('Inscripci?n a prueba no encontrada');
         }
 
-        $stmt = $this->pdo->prepare('DELETE FROM inscripciones_pruebas WHERE id = ?');
-        $stmt->execute([$proofProofId]);
+        $deleteStmt = $this->pdo->prepare('DELETE FROM inscripciones_pruebas WHERE id = ? LIMIT 1');
+        $deleteStmt->execute([$proofProofId]);
+        if ($deleteStmt->rowCount() === 0) {
+            throw new \RuntimeException('No se pudo eliminar la inscripci?n a la prueba');
+        }
 
-        return ['success' => true, 'message' => 'Atleta desinscrito de la prueba'];
+        return [
+            'success' => true,
+            'message' => 'Atleta desinscrito de la prueba',
+            'removed_proof_id' => (int) $row['prueba_id'],
+            'removed_inscripcion_atletica_id' => (int) $row['inscripcion_atletica_id']
+        ];
+    }
+
+    public function unregisterAthleteFromProofByProofAndInscription(int $proofId, int $inscriptionAtleticaId): array
+    {
+        $deleteStmt = $this->pdo->prepare(
+            'DELETE FROM inscripciones_pruebas WHERE prueba_id = ? AND inscripcion_atletica_id = ? LIMIT 1'
+        );
+        $deleteStmt->execute([$proofId, $inscriptionAtleticaId]);
+
+        if ($deleteStmt->rowCount() === 0) {
+            throw new \RuntimeException('Inscripci?n a prueba no encontrada');
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Atleta desinscrito de la prueba',
+            'removed_proof_id' => $proofId,
+            'removed_inscripcion_atletica_id' => $inscriptionAtleticaId
+        ];
     }
 
     /**
@@ -259,7 +289,7 @@ class ProofService
 
         return $series;
     }
-
+    
     /**
      * Calcular próxima serie disponible
      */

@@ -9,7 +9,6 @@ app.listen(port, () => {
   logger.info({
     endpoints: [
       'GET /api/world-aquatics/rankings',
-      'GET /api/world-aquatics/athletes',
       'GET /api/scrape?url=...'
     ]
   }, 'Endpoints disponibles');

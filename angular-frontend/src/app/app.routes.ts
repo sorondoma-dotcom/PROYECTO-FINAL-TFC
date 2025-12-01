@@ -10,6 +10,7 @@ import { PerfilNadadorComponent } from './perfil-nadador/perfil-nadador.componen
 import { PerfilUsuarioComponent } from './perfil-usuario/perfil-usuario.component';
 import { EstadisticasComponent } from './estadisticas/estadisticas.component';
 import { AdminCompeticionesComponent } from './admin/admin-competiciones/admin-competiciones.component';
+import { ScheduledCompetitionDetailComponent } from './competicion/scheduled-competition-detail/scheduled-competition-detail.component';
 import { authGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { athleteGuard } from './guards/athlete.guard';
@@ -20,6 +21,7 @@ export const routes: Routes = [
    { path: 'verify-email', component: VerifyEmailComponent },
   { path: '', component: DashBoardComponent, canActivate: [authGuard] },
   { path: 'competiciones', component: CompeticionComponent, canActivate: [authGuard] },
+  { path: 'competiciones/:id/detalle', component: ScheduledCompetitionDetailComponent, canActivate: [authGuard] },
   { path: 'mi-perfil', component: PerfilUsuarioComponent, canActivate: [authGuard] },
   { path: 'mi-perfil/nadador', component: PerfilNadadorComponent, canActivate: [authGuard, athleteGuard] },
   { path: 'nadadores/perfil/:name', component: PerfilNadadorComponent, canActivate: [authGuard] },

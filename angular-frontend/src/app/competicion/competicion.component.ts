@@ -428,4 +428,14 @@ export class CompeticionComponent implements OnInit {
       }
     });
   }
+
+  viewScheduledCompetition(competition: ScheduledCompetition): void {
+    if (!competition.id) {
+      return;
+    }
+
+    this.router.navigate(['/competiciones', competition.id, 'detalle'], {
+      state: { competition }
+    });
+  }
 }

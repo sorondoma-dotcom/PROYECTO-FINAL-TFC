@@ -105,10 +105,72 @@ class ProofController
         }
     }
 
+    public function registerAthleteToMultipleProofs(): void
+    {
+        $input = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        try {
+            $inscriptionAtleticaId = (int) ($input['inscripcion_atletica_id'] ?? 0);
+            $proofIds = $input['proof_ids'] ?? [];
+
+            if (!$inscriptionAtleticaId || !is_array($proofIds) || empty($proofIds)) {
+                jsonResponse(['error' => 'inscripcion_atletica_id y proof_ids son requeridos'], 400);
+                return;
+            }
+
+            $results = [];
+            $uniqueProofIds = array_unique($proofIds);
+
+            foreach ($uniqueProofIds as $rawProofId) {
+                $proofId = (int) $rawProofId;
+                if (!$proofId) {
+                    continue;
+                }
+
+                try {
+                    $result = $this->proofService->registerAthleteToProof($proofId, $inscriptionAtleticaId);
+                    $results[] = [
+                        'proof_id' => $proofId,
+                        'success' => true,
+                        'message' => $result['message'] ?? '',
+                        'serie' => $result['serie'] ?? null
+                    ];
+                } catch (\RuntimeException $e) {
+                    $results[] = [
+                        'proof_id' => $proofId,
+                        'success' => false,
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+
+            if (empty($results)) {
+                jsonResponse(['error' => 'No se recibieron identificadores de prueba válidos'], 400);
+                return;
+            }
+
+            jsonResponse(['success' => true, 'results' => $results]);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => 'Error al inscribir atleta en múltiples pruebas'], 500);
+        }
+    }
+
     public function unregisterAthleteFromProof(int $proofProofId): void
     {
         try {
             $result = $this->proofService->unregisterAthleteFromProof($proofProofId);
+            jsonResponse($result);
+        } catch (\RuntimeException $e) {
+            jsonResponse(['error' => $e->getMessage()], 404);
+        } catch (\Throwable $e) {
+            jsonResponse(['error' => 'Error al desinscribir atleta'], 500);
+        }
+    }
+
+    public function unregisterAthleteFromProofByProofAndInscription(int $proofId, int $inscripcionAtleticaId): void
+    {
+        try {
+            $result = $this->proofService->unregisterAthleteFromProofByProofAndInscription($proofId, $inscripcionAtleticaId);
             jsonResponse($result);
         } catch (\RuntimeException $e) {
             jsonResponse(['error' => $e->getMessage()], 404);

@@ -1,0 +1,257 @@
+<div class="detail-page">
+  <div class="detail-page__toolbar">
+    <button mat-stroked-button color="primary" type="button" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a competiciones
+    </button>
+  </div>
+
+  @if (competitionError) {
+    <mat-card class="state-card state-card--error">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ competitionError }}</p>
+    </mat-card>
+  }
+
+  @if (competitionLoading && !competition) {
+    <div class="state-block">
+      <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
+      <p>Cargando información de la competición...</p>
+    </div>
+  }
+
+  @if (competition) {
+    <mat-card class="hero-card">
+      <div class="hero-card__head">
+        <div>
+          <p class="hero-card__eyebrow">Competición agendada</p>
+          <h1>{{ competition.nombre }}</h1>
+          @if (competition.descripcion) {
+            <p class="hero-card__description">{{ competition.descripcion }}</p>
+          }
+        </div>
+        @if (competitionLogoUrl) {
+          <img
+            class="hero-card__logo"
+            [src]="competitionLogoUrl"
+            [alt]="competition.nombre"
+            loading="lazy"
+          />
+        }
+      </div>
+      <mat-divider></mat-divider>
+      <div class="hero-card__meta">
+        <div class="meta-item">
+          <mat-icon>event</mat-icon>
+          <div>
+            <span>Inicio</span>
+            <strong>{{ competition.fecha_inicio | date:'dd MMM y · HH:mm' }}</strong>
+          </div>
+        </div>
+        @if (competition.fecha_fin) {
+          <div class="meta-item">
+            <mat-icon>schedule</mat-icon>
+            <div>
+              <span>Fin</span>
+              <strong>{{ competition.fecha_fin | date:'dd MMM y · HH:mm' }}</strong>
+            </div>
+          </div>
+        }
+        <div class="meta-item">
+          <mat-icon>place</mat-icon>
+          <div>
+            <span>Ubicación</span>
+            <strong>
+              {{ competition.ciudad || 'Ciudad por confirmar' }}
+              <span class="separator">·</span>
+              {{ competition.pais || 'País por confirmar' }}
+            </strong>
+          </div>
+        </div>
+        <div class="meta-item">
+          <mat-icon>water</mat-icon>
+          <div>
+            <span>Piscina</span>
+            <strong>{{ competition.tipo_piscina }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="hero-card__chips">
+        <mat-chip-set>
+          <mat-chip [color]="getScheduledStatusChipColor(competition.estado)" selected>
+            {{ (competition.estado || 'Pendiente') | titlecase }}
+          </mat-chip>
+          <mat-chip selected>{{ totalAthletes }} atletas inscritos</mat-chip>
+        </mat-chip-set>
+      </div>
+    </mat-card>
+  }
+
+  <section class="athletes-section">
+    <header>
+      <div>
+        <p class="section-eyebrow">Participantes</p>
+        <h2>Nadadores inscritos</h2>
+        <p class="section-caption">Listado actualizado automáticamente desde la agenda interna.</p>
+      </div>
+      <mat-chip-set>
+        <mat-chip selected>{{ totalAthletes }} atletas</mat-chip>
+      </mat-chip-set>
+    </header>
+
+    @if (competitionLoading && competition) {
+      <div class="section-state">
+        <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+        <p>Actualizando atletas...</p>
+      </div>
+    } @else if (inscriptions.length === 0) {
+      <div class="section-state">
+        <mat-icon>groups</mat-icon>
+        <p>No hay atletas inscritos todavía.</p>
+      </div>
+    } @else {
+      <div class="athletes-grid">
+        @for (athlete of displayedAthletes; track athlete.id || athlete.athlete_id || athlete.athlete_name) {
+          <mat-card class="athlete-card">
+            <div class="athlete-card__avatar">
+              @if (athlete.image_url) {
+                <img [src]="athlete.image_url" [alt]="athlete.athlete_name" loading="lazy" />
+              } @else {
+                <div class="athlete-card__avatar-placeholder">
+                  {{ athlete.athlete_name?.charAt(0) || '?' }}
+                </div>
+              }
+            </div>
+            <div class="athlete-card__info">
+              <p class="athlete-card__name">{{ athlete.athlete_name }}</p>
+              <p class="athlete-card__meta">
+                {{ athlete.country_code || 'N/A' }}
+                <span class="separator">·</span>
+                {{ athlete.gender || 'Sin género' }}
+              </p>
+            </div>
+            <div class="athlete-card__chips">
+              @if (athlete.numero_dorsal) {
+                <mat-chip selected>Dorsal {{ athlete.numero_dorsal }}</mat-chip>
+              }
+              <mat-chip>
+                {{ athlete.estado_inscripcion | titlecase }}
+              </mat-chip>
+            </div>
+          </mat-card>
+        }
+      </div>
+
+      @if (hasMoreAthletes) {
+        <div class="toggle-athletes-container">
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            (click)="toggleShowAthletes()"
+            class="toggle-athletes-button">
+            <mat-icon>{{ showAllAthletes ? 'expand_less' : 'expand_more' }}</mat-icon>
+            {{ showAllAthletes ? 'Ver menos atletas' : 'Ver todos los atletas (' + inscriptions.length + ')' }}
+          </button>
+        </div>
+      }
+    }
+  </section>
+
+  <section class="proofs-section">
+    <header>
+      <div>
+        <p class="section-eyebrow">Programa deportivo</p>
+        <h2>Pruebas y series</h2>
+        <p class="section-caption">Visualiza la composición de cada prueba y sus series.</p>
+      </div>
+      <mat-chip-set>
+        <mat-chip selected>{{ proofs.length }} pruebas</mat-chip>
+      </mat-chip-set>
+    </header>
+
+    @if (proofsError) {
+      <div class="section-state section-state--error">
+        <mat-icon color="warn">error</mat-icon>
+        <p>{{ proofsError }}</p>
+      </div>
+    } @else if (proofsLoading) {
+      <div class="section-state">
+        <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
+        <p>Cargando pruebas y series...</p>
+      </div>
+    } @else if (!hasProofs) {
+      <div class="section-state">
+        <mat-icon>water</mat-icon>
+        <p>No se han definido pruebas para esta competición.</p>
+      </div>
+    } @else {
+      <div class="proofs-list">
+        @for (proof of proofs; track proof.id || proof.nombre_prueba) {
+          <mat-card class="proof-card">
+            <div class="proof-card__header">
+              <div>
+                <p class="proof-card__eyebrow">Prueba</p>
+                <h3>{{ proof.nombre_prueba }}</h3>
+              </div>
+              <mat-chip-set>
+                <mat-chip selected>{{ proof.distancia }}m</mat-chip>
+                <mat-chip selected>{{ proof.estilo }}</mat-chip>
+                <mat-chip selected>{{ proof.genero }}</mat-chip>
+                <mat-chip>{{ proof.total_inscripciones || 0 }} inscritos</mat-chip>
+              </mat-chip-set>
+            </div>
+            <mat-divider></mat-divider>
+            <div class="proof-card__body">
+              @if (getSerieInfo(proof).length === 0) {
+                <div class="section-state">
+                  <mat-icon>view_list</mat-icon>
+                  <p>Sin series ni inscripciones en esta prueba.</p>
+                </div>
+              } @else {
+                <div class="series-grid">
+                  @for (serie of getSerieInfo(proof); track serie.number) {
+                    <div class="serie-card">
+                      <div class="serie-card__header">
+                        <strong>Serie {{ serie.number }}</strong>
+                        <span>{{ serie.count }} atletas</span>
+                      </div>
+                      <ul class="serie-list">
+                        @for (athlete of serie.athletes; track athlete.id || athlete.inscripcion_atletica_id) {
+                          <li class="serie-list__item">
+                            <div class="serie-list__athlete">
+                              <div class="serie-list__avatar">
+                                @if (athlete.image_url) {
+                                  <img [src]="athlete.image_url" [alt]="athlete.athlete_name" loading="lazy" />
+                                } @else {
+                                  <div class="serie-list__avatar-placeholder">
+                                    {{ athlete.athlete_name.charAt(0) || '?' }}
+                                  </div>
+                                }
+                              </div>
+                              <div>
+                                <p class="serie-list__name">{{ athlete.athlete_name }}</p>
+                                <p class="serie-list__meta">
+                                  {{ athlete.country_code || 'N/A' }}
+                                  <span class="separator">·</span>
+                                  {{ athlete.gender || 'Sin género' }}
+                                </p>
+                              </div>
+                            </div>
+                            @if (athlete.numero_dorsal) {
+                              <span class="serie-list__badge">Dorsal {{ athlete.numero_dorsal }}</span>
+                            }
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </mat-card>
+        }
+      </div>
+    }
+  </section>
+</div>

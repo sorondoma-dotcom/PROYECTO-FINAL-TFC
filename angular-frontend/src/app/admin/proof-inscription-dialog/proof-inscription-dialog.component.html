@@ -2,6 +2,38 @@
   <h2 mat-dialog-title>Inscribir Atletas a Prueba</h2>
 
   <mat-dialog-content>
+    @if (proofsLoading) {
+      <div class="proof-selector proof-selector--loading">
+        <mat-spinner diameter="30"></mat-spinner>
+        <span>Cargando pruebas...</span>
+      </div>
+    } @else if (!proofsLoading && proofs.length === 0) {
+      <div class="proof-selector proof-selector--empty">
+        <p>No hay pruebas disponibles para esta competición.</p>
+      </div>
+    } @else {
+      <div class="proof-selector">
+        <mat-form-field appearance="outline" class="proof-selector__field">
+          <mat-label>Prueba activa</mat-label>
+          <mat-select [value]="selectedProofId" (selectionChange)="onActiveProofChange($event.value)">
+            <mat-option *ngFor="let proofOption of proofs" [value]="proofOption.id">
+              {{ proofOption.nombre_prueba }} · {{ proofOption.distancia }}m · {{ proofOption.estilo }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="proof-selector__field">
+          <mat-label>Pruebas destino</mat-label>
+          <mat-select multiple [(ngModel)]="targetProofIds">
+            <mat-option *ngFor="let proofOption of proofs" [value]="proofOption.id">
+              {{ proofOption.nombre_prueba }} · {{ proofOption.distancia }}m · {{ proofOption.estilo }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>El atleta se inscribe en cada prueba seleccionada.</mat-hint>
+        </mat-form-field>
+      </div>
+    }
+
     <mat-tab-group>
       <!-- TAB 1: Información de la Prueba -->
       <mat-tab label="Prueba">
@@ -55,10 +87,23 @@
             </div>
           } @else if (!loadingAthletes && availableAthletes.length === 0) {
             <div class="no-data">
-              Todos los atletas confirmados ya están inscritos en esta prueba.
+              @if (proof.genero !== 'Mixto') {
+                <mat-icon>info</mat-icon>
+                <p>No hay atletas de género {{ getGenderLabel(proof.genero) }} disponibles para esta prueba.</p>
+                <small>Esta prueba solo permite inscribir atletas {{ proof.genero === 'M' ? 'masculinos' : 'femeninos' }}.</small>
+              } @else {
+                <p>Todos los atletas confirmados ya están inscritos en esta prueba.</p>
+              }
             </div>
           } @else if (!loadingAthletes && availableAthletes.length > 0) {
             <div class="athletes-table">
+              @if (proof.genero !== 'Mixto') {
+                <div class="gender-filter-info">
+                  <mat-icon>filter_alt</mat-icon>
+                  <span>Mostrando solo atletas de género {{ getGenderLabel(proof.genero) }} ({{ availableAthletes.length }} disponibles)</span>
+                </div>
+              }
+
               <div class="search-box">
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Buscar atleta</mat-label>
@@ -154,7 +199,7 @@
                           mat-icon-button
                           matTooltip="Quitar"
                           (click)="removeAthleteFromProof(athlete)"
-                          [disabled]="removingAthleteId === athlete.id">
+                          [disabled]="removingAthleteId === athlete.inscripcion_atletica_id">
                           <mat-icon>close</mat-icon>
                         </button>
                       </div>

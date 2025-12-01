@@ -203,6 +203,20 @@ $transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       }
     }
   }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+
+    button {
+      border-radius: 14px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      text-transform: none;
+      border-color: rgba(26, 115, 232, 0.45);
+      transition: $transition;
+    }
+  }
 }
 
 .meta-item {

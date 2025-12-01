@@ -227,6 +227,10 @@ if ($method === 'POST' && $uri === '/api/register') {
     $proofController->deleteProof((int) $matches[1]);
 } elseif ($method === 'POST' && preg_match('/^\/api\/proofs\/(\d+)\/athletes$/', $uri, $matches)) {
     $proofController->registerAthleteToProof((int) $matches[1]);
+} elseif ($method === 'POST' && $uri === '/api/proofs/athletes/bulk') {
+    $proofController->registerAthleteToMultipleProofs();
+} elseif ($method === 'DELETE' && preg_match('/^\/api\/proofs\/(\d+)\/athletes\/(\d+)$/', $uri, $matches)) {
+    $proofController->unregisterAthleteFromProofByProofAndInscription((int) $matches[1], (int) $matches[2]);
 } elseif ($method === 'DELETE' && preg_match('/^\/api\/proofs\/athletes\/(\d+)$/', $uri, $matches)) {
     $proofController->unregisterAthleteFromProof((int) $matches[1]);
 } elseif ($method === 'GET' && $uri === '/api/notifications') {
