@@ -234,6 +234,63 @@
     </mat-card>
   </div>
 
+  <div class="panel-grid">
+    <mat-card class="panel scheduled-panel">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Competiciones agendadas</p>
+          <h2>Agenda local</h2>
+        </div>
+        <span class="pill muted">{{ scheduledCompetitions.length }} registradas</span>
+      </div>
+
+      @if (scheduledCompetitions.length === 0) {
+        <div class="empty-state">
+          <mat-icon>event_busy</mat-icon>
+          <p>Todavia no hay competiciones programadas.</p>
+        </div>
+      } @else {
+        <div class="scheduled-metrics">
+          @for (metric of scheduledStatusMetrics; track metric.status) {
+            <div class="scheduled-metric" [ngClass]="metric.accent">
+              <div class="metric-icon">
+                <mat-icon>{{ metric.icon }}</mat-icon>
+              </div>
+              <div>
+                <p class="label">{{ metric.label }}</p>
+                <p class="value">{{ metric.value }}</p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="scheduled-list">
+          @for (comp of scheduledHighlights; track comp.id ?? comp.nombre) {
+            <div class="scheduled-item">
+              <div class="scheduled-item__body">
+                <strong>{{ comp.nombre }}</strong>
+                <p class="meta">
+                  @if (comp.pais) {
+                    <span>{{ comp.pais }}</span>
+                  }
+                  @if (comp.ciudad) {
+                    <span>{{ comp.ciudad }}</span>
+                  }
+                  @if (comp.fecha_inicio) {
+                    <span>{{ formatScheduledDate(comp.fecha_inicio) }}</span>
+                  }
+                </p>
+              </div>
+              <span class="pill estado-chip" [ngClass]="'estado-' + (comp.estado || 'pendiente')">
+                {{ getEstadoLabel(comp.estado) }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </mat-card>
+  </div>
+
   @if (error) {
     <div class="inline-warning">
       <mat-icon>info</mat-icon>

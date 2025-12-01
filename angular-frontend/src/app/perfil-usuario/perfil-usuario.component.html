@@ -1,0 +1,168 @@
+<div class="user-profile">
+  @if (loadingUser) {
+    <div class="center">
+      <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
+    </div>
+  } @else {
+    <mat-card class="hero-card mat-elevation-z6">
+      <div class="hero-layout">
+        <div class="hero-avatar">
+          <div class="avatar-frame" [class.avatar-frame--image]="avatarPreview">
+            @if (avatarPreview) {
+              <img [src]="avatarPreview" [alt]="userDisplayName" loading="lazy">
+            } @else {
+              <mat-icon>account_circle</mat-icon>
+            }
+          </div>
+          <div class="avatar-actions">
+            @if (roleMeta.allowProfileEditing) {
+              <button mat-stroked-button color="primary" type="button" (click)="fileInput.click()">
+                <mat-icon>photo_camera</mat-icon>
+                Cambiar foto
+              </button>
+              <input #fileInput type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarSelected($event)" hidden>
+              @if (selectedAvatar) {
+                <button mat-button type="button" (click)="clearSelectedAvatar()">
+                  <mat-icon>close</mat-icon>
+                  Cancelar
+                </button>
+              }
+            } @else {
+              <p class="muted small">Este rol no permite actualizar el avatar.</p>
+            }
+          </div>
+        </div>
+
+        <div class="hero-details">
+          <p class="eyebrow">Panel personal</p>
+          <h1>{{ userDisplayName }}</h1>
+          <p class="hero-description">{{ roleMeta.description }}</p>
+          <div class="chip-row">
+            <mat-chip [color]="roleMeta.color" selected>
+              <mat-icon>{{ roleMeta.icon }}</mat-icon>
+              {{ roleMeta.label }}
+            </mat-chip>
+            <mat-chip>{{ verificationLabel }}</mat-chip>
+            <mat-chip>{{ userEmail }}</mat-chip>
+          </div>
+          <div class="hero-actions">
+            @for (shortcut of shortcuts; track shortcut.label) {
+              <button
+                mat-stroked-button
+                type="button"
+                [color]="shortcut.color"
+                (click)="triggerShortcut(shortcut)">
+                <mat-icon>{{ shortcut.icon }}</mat-icon>
+                {{ shortcut.label }}
+              </button>
+            }
+          </div>
+        </div>
+
+        <div class="hero-highlight">
+          @for (highlight of roleMeta.highlights; track highlight.title) {
+            <div class="highlight-card">
+              <p class="highlight-title">{{ highlight.title }}</p>
+              <small>{{ highlight.subtitle }}</small>
+            </div>
+          }
+        </div>
+      </div>
+    </mat-card>
+
+    <div class="grid">
+      <mat-card class="panel profile-panel mat-elevation-z3">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Identidad en SwimLive</p>
+            <h3>Actualiza tus datos</h3>
+            <p class="muted">Los cambios se guardan en la API PHP y se muestran en el resto del panel.</p>
+          </div>
+          @if (savingProfile) {
+            <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner>
+          }
+        </div>
+
+        <form class="profile-form" [formGroup]="profileForm" (ngSubmit)="submitProfile()">
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="name" autocomplete="off" [disabled]="!roleMeta.allowProfileEditing">
+              @if (profileForm.get('name')?.hasError('required')) {
+                <mat-error>El nombre es obligatorio.</mat-error>
+              } @else if (profileForm.get('name')?.hasError('minlength')) {
+                <mat-error>M\u00ednimo 3 caracteres.</mat-error>
+              } @else if (profileForm.get('name')?.hasError('maxlength')) {
+                <mat-error>M\u00e1ximo 80 caracteres.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Apellido</mat-label>
+              <input matInput formControlName="lastName" autocomplete="off" [disabled]="!roleMeta.allowProfileEditing">
+              @if (profileForm.get('lastName')?.hasError('minlength')) {
+                <mat-error>Debe tener al menos 2 caracteres.</mat-error>
+              } @else if (profileForm.get('lastName')?.hasError('maxlength')) {
+                <mat-error>M\u00e1ximo 80 caracteres.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          @if (!roleMeta.allowProfileEditing) {
+            <div class="info-banner warn">
+              <mat-icon>lock</mat-icon>
+              <div>
+                <strong>Perfil bloqueado</strong>
+                <p>El rol detectado no permite modificaciones. Solicita acceso a un administrador.</p>
+              </div>
+            </div>
+          }
+
+          @if (profileError) {
+            <div class="info-banner error">
+              <mat-icon>warning</mat-icon>
+              <span>{{ profileError }}</span>
+            </div>
+          }
+
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="resetProfileForm()" [disabled]="savingProfile || !isProfileDirty">
+              Restablecer
+            </button>
+            <button mat-raised-button color="accent" type="submit" [disabled]="!canSubmitProfile">
+              Guardar cambios
+            </button>
+          </div>
+        </form>
+      </mat-card>
+
+
+
+
+      <mat-card class="panel timeline-panel mat-elevation-z3">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Actividad reciente</p>
+            <h3>Seguimiento de eventos</h3>
+          </div>
+        </div>
+        @if (timeline.length) {
+          <mat-list>
+            @for (item of timeline; track item.label) {
+              <mat-list-item>
+                <mat-icon matListItemIcon [class.pending]="item.status === 'pending'">{{ item.icon }}</mat-icon>
+                <div matListItemTitle>{{ item.label }}</div>
+                <div matListItemLine>{{ item.date }}</div>
+                @if (item.description) {
+                  <p matListItemLine class="muted">{{ item.description }}</p>
+                }
+              </mat-list-item>
+            }
+          </mat-list>
+        } @else {
+          <div class="empty">A\u00fan no registramos eventos para esta cuenta.</div>
+        }
+      </mat-card>
+    </div>
+  }
+</div>

@@ -10,6 +10,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
@@ -58,6 +59,25 @@ interface AverageInfo {
   diff: number | null;
 }
 
+interface ChartEventResult {
+  raw: any;
+  event: string;
+  distance?: string | null;
+  stroke?: string | null;
+  pool?: 'LCM' | 'SCM' | null;
+  timeValue: number;
+  timeText: string;
+  competition: string;
+  date: string;
+  country?: string;
+}
+
+interface ChartEventOption {
+  key: string;
+  label: string;
+  entries: ChartEventResult[];
+}
+
 @Component({
   selector: 'app-perfil-nadador',
   standalone: true,
@@ -73,9 +93,9 @@ interface AverageInfo {
     MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
     MatSnackBarModule,
     ReactiveFormsModule,
-    BaseChartDirective
   ],
   providers: [provideCharts(withDefaultRegisterables())],
   templateUrl: './perfil-nadador.component.html',
@@ -124,6 +144,8 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   records: PersonalRecord[] = [];
   averages: AverageInfo = { athleteBest: null, categoryAverage: null, diff: null };
   profileRecords: PersonalRecord[] = [];
+  eventOptions: ChartEventOption[] = [];
+  selectedEventKey: string | null = null;
   private rankingKeyLoaded: string | null = null;
   private rankingInFlight = false;
 
@@ -215,7 +237,8 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.viewingSelf = this.route.snapshot.routeConfig?.path === 'mi-perfil';
+    const currentPath = this.route.snapshot.routeConfig?.path ?? '';
+    this.viewingSelf = currentPath === 'mi-perfil/nadador';
     this.setupAccountContext();
 
     if (this.viewingSelf) {
@@ -578,7 +601,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   populateFromRoute(): void {
     // Intentar obtener datos de getCurrentNavigation primero (para navegaciones recientes)
     let navState = this.router.getCurrentNavigation()?.extras.state as any;
-    
+
     // Si no hay nav state, intentar obtener del navegador history
     if (!navState) {
       navState = (window.history.state) || {};
@@ -701,17 +724,13 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     this.loadingBio = true;
     const previousRankingKey = this.buildRankingKey();
 
-    const profileCall = this.athlete.profileUrl
-      ? this.datosService.getAthleteProfile({ url: this.athlete.profileUrl })
-      : null;
-
     const listCall = this.datosService.getAthletes({
       name: this.athlete.name,
       gender: this.athlete.gender || undefined,
       discipline: 'SW'
     });
 
-    (profileCall || listCall).subscribe({
+    listCall.subscribe({
       next: (res) => {
         let rankingKeyChanged = false;
 
@@ -951,8 +970,19 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   }
 
   updateChart(): void {
-    const hasPerformances = Array.isArray(this.performances) && this.performances.length > 0;
-    const source = hasPerformances ? this.performances : this.profileRecords;
+    let sourceType: 'database' | 'performances' | 'records' = 'records';
+    let source: any[] = [];
+
+    const selectedGroup = this.getSelectedEventGroup();
+    if (selectedGroup && selectedGroup.entries.length) {
+      sourceType = 'database';
+      source = selectedGroup.entries;
+    } else if (Array.isArray(this.performances) && this.performances.length > 0) {
+      sourceType = 'performances';
+      source = this.performances;
+    } else {
+      source = this.profileRecords;
+    }
 
     if (!source || source.length === 0) {
       this.lineChartData = { labels: [], datasets: [{ ...this.lineChartData.datasets[0], data: [] }] };
@@ -961,17 +991,32 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
     const sorted = [...source]
       .map((entry) => {
-        const timeValue = this.parseTimeToSeconds(
-          hasPerformances ? (entry as any).time : (entry as PersonalRecord).bestTime
-        );
-        const rawDate = hasPerformances ? (entry as any).date : (entry as PersonalRecord).date;
+        if (sourceType === 'database') {
+          const dbEntry = entry as ChartEventResult;
+          const label = `${dbEntry.competition || 'Competencia'} - ${this.formatDateLabel(dbEntry.date || '')}`;
+          return {
+            timeValue: dbEntry.timeValue,
+            date: this.toDate(dbEntry.date),
+            label
+          };
+        }
+
+        if (sourceType === 'performances') {
+          const timeValue = this.parseTimeToSeconds((entry as any).time);
+          const rawDate = (entry as any).date;
+          return {
+            timeValue,
+            date: this.toDate(rawDate),
+            label: this.buildLabel(entry)
+          };
+        }
+
+        const record = entry as PersonalRecord;
+        const timeValue = this.parseTimeToSeconds(record.bestTime);
+        const rawDate = record.date;
         const date = this.toDate(rawDate);
-        const competition = hasPerformances
-          ? (entry as any).competition || (entry as any).tag || 'Marca registrada'
-          : (entry as PersonalRecord).competition || (entry as PersonalRecord).label;
-        const label = hasPerformances
-          ? this.buildLabel(entry)
-          : `${competition} - ${this.formatDateLabel(rawDate || '')}`;
+        const competition = record.competition || record.label;
+        const label = `${competition} - ${this.formatDateLabel(rawDate || '')}`;
         return { timeValue, date, label };
       })
       .filter((item) => Number.isFinite(item.timeValue))
@@ -992,6 +1037,11 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
         }
       ]
     };
+  }
+
+  onEventSelected(optionKey: string | null): void {
+    this.selectedEventKey = optionKey;
+    this.updateChart();
   }
 
   private selectBestResult(records: any[]): any | null {
@@ -1091,13 +1141,13 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
   private processDatabaseResults(results: any[]): void {
     if (!Array.isArray(results) || results.length === 0) {
-      if (!this.performances.length) {
-        this.updateChart();
-      }
+      this.eventOptions = [];
+      this.selectedEventKey = null;
+      this.updateChart();
       return;
     }
 
-    const enriched = results
+    const enriched: ChartEventResult[] = results
       .map((raw) => {
         const timeText = raw?.timeText ?? raw?.time_text ?? '';
         const timeValue = this.parseTimeToSeconds(timeText);
@@ -1117,13 +1167,19 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
           competition: raw?.competition ?? '',
           date: raw?.raceDate ?? raw?.race_date ?? '',
           country: raw?.compCountryCode ?? raw?.comp_country_code ?? ''
-        };
+        } as ChartEventResult;
       })
       .filter((entry) => Number.isFinite(entry.timeValue));
 
     if (!enriched.length) {
+      this.eventOptions = [];
+      this.selectedEventKey = null;
+      this.updateChart();
       return;
     }
+
+    this.eventOptions = this.buildEventOptions(enriched);
+    this.ensureSelectedEventSelection();
 
     const bestEntry = [...enriched].sort((a, b) => (a.timeValue ?? Infinity) - (b.timeValue ?? Infinity))[0];
     const changed = this.applyEventFromSource({
@@ -1147,24 +1203,82 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     this.updateChart();
   }
 
+  private buildEventOptions(entries: ChartEventResult[]): ChartEventOption[] {
+    if (!entries.length) {
+      return [];
+    }
+
+    const groups = new Map<string, ChartEventOption>();
+
+    entries.forEach((entry) => {
+      const key = this.buildEventGroupKey(entry);
+      const label = this.buildEventLabel(entry);
+      const current = groups.get(key);
+      if (current) {
+        current.entries.push(entry);
+      } else {
+        groups.set(key, { key, label, entries: [entry] });
+      }
+    });
+
+    return Array.from(groups.values()).sort((a, b) => {
+      if (b.entries.length !== a.entries.length) {
+        return b.entries.length - a.entries.length;
+      }
+      return a.label.localeCompare(b.label);
+    });
+  }
+
+  private buildEventGroupKey(entry: ChartEventResult): string {
+    const distance = entry.distance || '';
+    const stroke = entry.stroke || '';
+    const pool = entry.pool || '';
+    return [distance, stroke, pool].join('|').toUpperCase();
+  }
+
+  private buildEventLabel(entry: ChartEventResult): string {
+    const parts: string[] = [];
+    if (entry.distance) {
+      parts.push(`${entry.distance}m`);
+    }
+    if (entry.stroke) {
+      parts.push(this.getStrokeLabel(entry.stroke));
+    }
+    if (entry.pool) {
+      parts.push(entry.pool);
+    }
+    if (!parts.length) {
+      return entry.event || 'Prueba';
+    }
+    return parts.join(' · ');
+  }
+
+  private getSelectedEventGroup(): ChartEventOption | null {
+    if (!this.selectedEventKey) {
+      return null;
+    }
+    return this.eventOptions.find((option) => option.key === this.selectedEventKey) ?? null;
+  }
+
+  private ensureSelectedEventSelection(): void {
+    if (!this.eventOptions.length) {
+      this.selectedEventKey = null;
+      return;
+    }
+    if (this.selectedEventKey && this.eventOptions.some((option) => option.key === this.selectedEventKey)) {
+      return;
+    }
+    const preferred = this.eventOptions.find((option) => option.entries.length > 1) ?? this.eventOptions[0];
+    this.selectedEventKey = preferred?.key ?? null;
+  }
+
   private buildFallbackEventLabel(distance?: string | null, stroke?: string | null): string {
     const distanceLabel = distance ? `${distance}m` : '';
     const strokeLabel = stroke ? this.getStrokeLabel(stroke) : '';
     return [distanceLabel, strokeLabel].filter(Boolean).join(' ').trim() || 'Mejor marca';
   }
 
-  private pickHighlightRecord(entries: Array<{
-    raw: any;
-    timeValue: number;
-    timeText: string;
-    event: string;
-    distance?: string | null;
-    stroke?: string | null;
-    pool?: 'LCM' | 'SCM' | null;
-    competition: string;
-    date: string;
-    country: string;
-  }>): PersonalRecord | null {
+  private pickHighlightRecord(entries: ChartEventResult[]): PersonalRecord | null {
     if (!entries.length) {
       return null;
     }
@@ -1208,7 +1322,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       bestTime: best.timeText || this.formatSeconds(best.timeValue),
       competition: best.competition,
       date: best.date,
-      location: best.country,
+      location: best.country || '',
       points: null,
       stroke: best.stroke,
       course: best.pool,

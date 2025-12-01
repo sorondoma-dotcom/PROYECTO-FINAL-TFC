@@ -51,14 +51,21 @@ export class NavComponent implements OnDestroy, DoCheck {
     { label: 'Competiciones', icon: 'pool', route: '/competiciones' },
     { label: 'Nadadores', icon: 'person', route: '/nadadores' },
     { label: 'Estadisticas', icon: 'analytics', route: '/estadisticas' },
-    { label: 'Contacto', icon: 'email', route: '/contacto' }
   ];
 
   adminMenuItems = [
     { label: 'Administración', icon: 'admin_panel_settings', route: '/admin/competiciones' }
   ];
 
-  athleteMenuItem = { label: 'Mi perfil', icon: 'person_pin', route: '/mi-perfil' };
+  get profileMenuItem() {
+    const user = this.authService.currentUser();
+    const hasAthleteProfile = !!user?.athleteId;
+    return {
+      label: 'Mi perfil',
+      icon: hasAthleteProfile ? 'person_pin' : 'person',
+      route: hasAthleteProfile ? '/mi-perfil/nadador' : '/mi-perfil'
+    };
+  }
 
 
   constructor(
@@ -175,12 +182,13 @@ export class NavComponent implements OnDestroy, DoCheck {
     let items = [...this.menuItems];
 
     if (this.isAthleteUser()) {
-      const alreadyIncluded = items.some((item) => item.route === this.athleteMenuItem.route);
+      const profileItem = this.profileMenuItem;
+      const alreadyIncluded = items.some((item) => item.route === profileItem.route);
       if (!alreadyIncluded) {
         items = [
           items[0],
           items[1],
-          this.athleteMenuItem,
+          profileItem,
           ...items.slice(2)
         ];
       }

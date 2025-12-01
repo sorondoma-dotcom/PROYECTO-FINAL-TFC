@@ -11,9 +11,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormsModule } from '@angular/forms';
 import { ProofService, Proof, ProofInscription } from '../../services/proof.service';
 import { CompetitionService, Inscription } from '../../services/competition.service';
+import { ConfirmationService } from '../../shared/services/confirmation.service';
 
   @Component({
   selector: 'app-proof-inscription-dialog',
@@ -31,7 +33,8 @@ import { CompetitionService, Inscription } from '../../services/competition.serv
     MatChipsModule,
     MatCheckboxModule,
     MatProgressSpinnerModule,
-    MatTabsModule
+    MatTabsModule,
+    MatTooltipModule
   ],
   templateUrl: './proof-inscription-dialog.component.html',
   styleUrls: ['./proof-inscription-dialog.component.scss']
@@ -39,22 +42,22 @@ import { CompetitionService, Inscription } from '../../services/competition.serv
 export class ProofInscriptionDialogComponent implements OnInit {
   proof!: Proof;
   competicion_id!: number;
-  
+
   availableAthletes: Inscription[] = [];
   registeredAthletes: ProofInscription[] = [];
   selectedAthletes: Inscription[] = [];
   seriesInfo: any[] = [];
-  
+
   loadingAthletes = false;
   registering = false;
   removingAthleteId: number | null = null;
-  
+
   displayedColumns: string[] = ['select', 'name', 'gender', 'country', 'age', 'serie'];
   searchText = '';
 
   get filteredAthletes(): Inscription[] {
     if (!this.searchText) return this.availableAthletes;
-    
+
     const search = this.searchText.toLowerCase();
     return this.availableAthletes.filter(a =>
       (a.athlete_name?.toLowerCase().includes(search) ?? false) ||
@@ -66,7 +69,8 @@ export class ProofInscriptionDialogComponent implements OnInit {
     public dialogRef: MatDialogRef<ProofInscriptionDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { proof: Proof; competicion_id: number; competicionAthletes: Inscription[] },
     private proofService: ProofService,
-    private competitionService: CompetitionService
+    private competitionService: CompetitionService,
+    private confirmation: ConfirmationService
   ) {
     this.proof = data.proof;
     this.competicion_id = data.competicion_id;
@@ -82,8 +86,10 @@ export class ProofInscriptionDialogComponent implements OnInit {
     // Get proof with inscriptions
     this.proofService.getProof(this.proof.id!).subscribe({
       next: (response: any) => {
-        const proof = response.proof;
-        this.registeredAthletes = proof.inscripciones || [];
+        const proof = response.proof as Proof;
+        this.proof = { ...this.proof, ...proof };
+        this.registeredAthletes = [...(proof.inscripciones || [])];
+        this.proof.total_inscripciones = this.registeredAthletes.length;
         this.updateSeriesInfo();
 
         // Filter available athletes - those inscribed in competition but not in this proof
@@ -103,13 +109,18 @@ export class ProofInscriptionDialogComponent implements OnInit {
   }
 
   private updateSeriesInfo(): void {
-    this.seriesInfo = this.proofService.getSeriesInfo(this.proof);
+    const proofSnapshot: Proof = {
+      ...this.proof,
+      inscripciones: this.registeredAthletes
+    };
+    this.seriesInfo = this.proofService.getSeriesInfo(proofSnapshot);
   }
 
   predictSerieForNewAthlete(athlete: Inscription): number {
-    const currentTotal = (this.proof.total_inscripciones || 0) + 
-                         this.selectedAthletes.filter(a => a.athlete_id === athlete.athlete_id).length;
-    return Math.floor(currentTotal / 8) + 1;
+    const registeredCount = this.registeredAthletes.length;
+    const selectionIndex = this.selectedAthletes.findIndex(a => a.athlete_id === athlete.athlete_id);
+    const projectedPosition = registeredCount + (selectionIndex >= 0 ? selectionIndex + 1 : 1);
+    return Math.floor((projectedPosition - 1) / 8) + 1;
   }
 
   isAthleteSelected(athlete: Inscription): boolean {
@@ -134,7 +145,7 @@ export class ProofInscriptionDialogComponent implements OnInit {
   }
 
   isAllSelected(): boolean {
-    return this.selectedAthletes.length === this.filteredAthletes.length && 
+    return this.selectedAthletes.length === this.filteredAthletes.length &&
            this.filteredAthletes.length > 0;
   }
 
@@ -183,16 +194,25 @@ export class ProofInscriptionDialogComponent implements OnInit {
   removeAthleteFromProof(athlete: ProofInscription): void {
     if (!athlete.id) return;
 
-    this.removingAthleteId = athlete.id;
-    this.proofService.unregisterAthleteFromProof(athlete.id).subscribe({
-      next: () => {
-        this.removingAthleteId = null;
-        this.loadAthletes();
-      },
-      error: (error) => {
-        console.error('Error removing athlete:', error);
-        this.removingAthleteId = null;
-      }
+    this.confirmation.confirm({
+      title: 'Confirmar eliminación',
+      message: `¿Deseas quitar a ${athlete.athlete_name} de esta prueba?`,
+      confirmText: 'Quitar',
+      confirmColor: 'warn'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+
+      this.removingAthleteId = athlete.id;
+      this.proofService.unregisterAthleteFromProof(athlete.id).subscribe({
+        next: () => {
+          this.removingAthleteId = null;
+          this.loadAthletes();
+        },
+        error: (error) => {
+          console.error('Error removing athlete:', error);
+          this.removingAthleteId = null;
+        }
+      });
     });
   }
 

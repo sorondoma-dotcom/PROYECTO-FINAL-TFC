@@ -13,6 +13,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { CityNamePipe } from '../pipes/city-name.pipe';
+import { CompetitionService, Competition } from '../services/competition.service';
 
 type PulseStatus = 'live' | 'upcoming' | 'recent' | 'past';
 
@@ -80,6 +81,14 @@ interface NormalizedCompetition {
   endDate?: string;
 }
 
+interface ScheduledStatusMetric {
+  status: NonNullable<Competition['estado']>;
+  label: string;
+  value: number;
+  icon: string;
+  accent: 'primary' | 'accent' | 'success' | 'muted' | 'warn';
+}
+
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
@@ -102,6 +111,12 @@ interface NormalizedCompetition {
 export class EstadisticasComponent implements OnInit {
   loading = true;
   error: string | null = null;
+  scheduledCompetitions: Competition[] = [];
+  scheduledStatusMetrics: ScheduledStatusMetric[] = [];
+  scheduledHighlights: Competition[] = [];
+
+  private remoteStats = { total: 0, live: 0, coverage: 0 };
+  private localStats = { total: 0, live: 0, upcoming: 0 };
 
   summaryCards: SummaryCard[] = [
     {
@@ -167,7 +182,7 @@ export class EstadisticasComponent implements OnInit {
     { title: 'Perfiles enriquecidos', progress: 61, hint: 'Fotos, puntos y bio curada', icon: 'badge', accent: 'muted' }
   ];
 
-  constructor(private datosService: DatosService) {}
+  constructor(private datosService: DatosService, private competitionService: CompetitionService) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -250,8 +265,20 @@ export class EstadisticasComponent implements OnInit {
             console.error('Fallo al cargar rankings', err);
             return of(null);
           })
+        ),
+      scheduled: this.competitionService
+        .getAllCompetitions()
+        .pipe(
+          catchError((err) => {
+            console.error('Fallo al cargar competiciones agendadas', err);
+            return of(null);
+          })
         )
-    }).subscribe(({ competitions, sprint }) => {
+    }).subscribe(({ competitions, sprint, scheduled }) => {
+      if (scheduled) {
+        this.applyScheduledCompetitions(scheduled);
+      }
+
       if (competitions) {
         this.applyCompetitionData(competitions);
       }
@@ -264,6 +291,27 @@ export class EstadisticasComponent implements OnInit {
     });
   }
 
+  formatScheduledDate(value?: string | null): string {
+    if (!value) {
+      return 'Sin fecha';
+    }
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    }
+    return value;
+  }
+
+  getEstadoLabel(estado?: Competition['estado']): string {
+    const map: Record<string, string> = {
+      pendiente: 'Pendiente',
+      en_curso: 'En curso',
+      finalizada: 'Finalizada',
+      cancelada: 'Cancelada'
+    };
+    return map[estado ?? 'pendiente'] ?? 'Pendiente';
+  }
+
   private applyCompetitionData(raw: any): void {
     const comps = this.normalizeCompetitions(raw);
     if (!comps.length) {
@@ -273,19 +321,13 @@ export class EstadisticasComponent implements OnInit {
     const live = comps.filter((c) => this.resolveStatus(c) === 'live').length;
     const upcoming = comps.filter((c) => this.resolveStatus(c) === 'upcoming').length;
 
-    this.summaryCards = this.summaryCards.map((card) => {
-      if (card.key === 'volume') {
-        return { ...card, value: `${comps.length}`, helper: 'Fuente World Aquatics' };
-      }
-      if (card.key === 'live') {
-        return { ...card, value: `${live}`, trend: live > 0 ? Math.min(40, live * 4 + 6) : card.trend };
-      }
-      if (card.key === 'coverage') {
-        const coverage = Math.min(96, Math.round((comps.length / 80) * 100));
-        return { ...card, value: `${coverage}%`, helper: 'Cobertura anual estimada' };
-      }
-      return card;
-    });
+    this.remoteStats = {
+      total: comps.length,
+      live,
+      coverage: Math.min(96, Math.round((comps.length / 80) * 100))
+    };
+
+    this.updateSummaryCards();
 
     this.competitionPulse = comps
       .map((c) => ({
@@ -301,6 +343,48 @@ export class EstadisticasComponent implements OnInit {
           : goal
       );
     }
+  }
+
+  private applyScheduledCompetitions(payload: any): void {
+    const scheduled = Array.isArray(payload?.competitions) ? payload.competitions : [];
+    this.scheduledCompetitions = scheduled;
+
+    if (!scheduled.length) {
+      this.scheduledStatusMetrics = [];
+      this.scheduledHighlights = [];
+      this.localStats = { total: 0, live: 0, upcoming: 0 };
+      this.updateSummaryCards();
+      return;
+    }
+
+    const statusTemplate: Array<Omit<ScheduledStatusMetric, 'value'>> = [
+      { status: 'pendiente', label: 'Pendientes', icon: 'schedule', accent: 'muted' },
+      { status: 'en_curso', label: 'En curso', icon: 'sensors', accent: 'primary' },
+      { status: 'finalizada', label: 'Finalizadas', icon: 'flag', accent: 'success' },
+      { status: 'cancelada', label: 'Canceladas', icon: 'block', accent: 'warn' }
+    ];
+
+    this.scheduledStatusMetrics = statusTemplate
+      .map((metric) => ({
+        ...metric,
+        value: scheduled.filter((comp:any) => (comp.estado ?? 'pendiente') === metric.status).length
+      }))
+      .filter((metric) => metric.value > 0 || metric.status !== 'cancelada');
+
+    const now = new Date();
+    this.localStats = {
+      total: scheduled.length,
+      live: scheduled.filter((comp:any) => (comp.estado ?? 'pendiente') === 'en_curso').length,
+      upcoming: scheduled.filter((comp:any) => this.isUpcomingCompetition(comp, now)).length
+    };
+
+    const sorted = [...scheduled].sort(
+      (a, b) => this.getDateValue(a.fecha_inicio) - this.getDateValue(b.fecha_inicio)
+    );
+    const upcoming = sorted.filter((comp) => this.isUpcomingCompetition(comp, now));
+    this.scheduledHighlights = (upcoming.length ? upcoming : sorted).slice(0, 4);
+
+    this.updateSummaryCards();
   }
 
   private applyAthleteData(raw: any): void {
@@ -328,6 +412,67 @@ export class EstadisticasComponent implements OnInit {
         card.key === 'records' ? { ...card, value: `${topPoints}+`, helper: 'Refrescado con ranking' } : card
       );
     }
+  }
+
+  private updateSummaryCards(): void {
+    this.summaryCards = this.summaryCards.map((card) => {
+      if (card.key === 'volume') {
+        const total = this.remoteStats.total + this.localStats.total;
+        if (!total) {
+          return { ...card, value: '0', helper: 'Sin datos sincronizados' };
+        }
+        const helper = this.localStats.total
+          ? `World Aquatics + ${this.localStats.total} agendadas`
+          : 'Fuente World Aquatics';
+        return { ...card, value: `${total}`, helper };
+      }
+      if (card.key === 'live') {
+        const live = this.remoteStats.live + this.localStats.live;
+        const helper = this.localStats.live
+          ? `${this.remoteStats.live} WA + ${this.localStats.live} locales`
+          : 'Ultimas 24h';
+        const trend = live > 0 ? Math.min(40, live * 5 + 4) : 0;
+        return { ...card, value: `${live}`, trend, helper };
+      }
+      if (card.key === 'coverage' && this.remoteStats.coverage > 0) {
+        const helper = this.localStats.total
+          ? 'Cobertura WA + agenda local'
+          : 'Cobertura anual estimada';
+        return { ...card, value: `${this.remoteStats.coverage}%`, helper };
+      }
+      return card;
+    });
+  }
+
+  private isUpcomingCompetition(comp: Competition, now = new Date()): boolean {
+    const status = comp.estado ?? 'pendiente';
+    if (status === 'pendiente') {
+      return true;
+    }
+    if (status === 'en_curso') {
+      return false;
+    }
+    const start = this.parseDate(comp.fecha_inicio);
+    return start ? start >= now : false;
+  }
+
+  private getDateValue(value?: string | null): number {
+    const parsed = this.parseDate(value);
+    if (!parsed) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+    return parsed.getTime();
+  }
+
+  private parseDate(value?: string | null): Date | null {
+    if (!value) {
+      return null;
+    }
+    const parsed = new Date(value);
+    if (isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed;
   }
 
   private resolveStatus(comp: NormalizedCompetition): PulseStatus {

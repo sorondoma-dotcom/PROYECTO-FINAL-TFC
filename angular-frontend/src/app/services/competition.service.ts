@@ -16,6 +16,8 @@ export interface Competition {
   total_inscritos?: number;
   logo_path?: string | null;
   logo_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Inscription {

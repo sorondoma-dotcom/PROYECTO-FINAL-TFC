@@ -14,7 +14,6 @@ export class DatosService {
   private competitionsUrl = "http://localhost:3000/api/world-aquatics/competitions";
   private competitionResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results";
   private competitionEventResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results/event";
-  private athleteProfileUrl = "http://localhost:3000/api/world-aquatics/athletes/profile";
 
   constructor(private http:HttpClient ) { }
   getDatosApi(){
@@ -114,13 +113,6 @@ export class DatosService {
     if (filters.nationality) params = params.set('nationality', filters.nationality);
     if (filters.name) params = params.set('name', filters.name);
     return this.http.get(this.athletesUrl, { params });
-  }
-
-  getAthleteProfile(filters: { url?: string; slug?: string }): Observable<any> {
-    let params = new HttpParams();
-    if (filters.url) params = params.set('url', filters.url);
-    if (filters.slug) params = params.set('slug', filters.slug);
-    return this.http.get(this.athleteProfileUrl, { params });
   }
 
   postHighlightedRankings(payload: any): Observable<any> {

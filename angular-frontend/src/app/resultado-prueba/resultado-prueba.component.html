@@ -67,8 +67,8 @@
               <mat-icon class="select-icon">pool</mat-icon>
               Seleccionar Prueba de Natación
             </mat-label>
-            <mat-select 
-              [(ngModel)]="selectedEventGuid" 
+            <mat-select
+              [(ngModel)]="selectedEventGuid"
               (selectionChange)="selectEvent($event.value)"
               placeholder="Elige una prueba..."
             >
@@ -81,7 +81,7 @@
                     <small class="event-option__subtitle">{{ event.subtitle }}</small>
                     }
                   </div>
-                  
+
                 </div>
               </mat-option>
               }
@@ -96,13 +96,13 @@
               <mat-icon>waves</mat-icon>
               Series disponibles
             </h3>
-            <mat-radio-group 
+            <mat-radio-group
               class="units-radio-group"
               [(ngModel)]="selectedUnitId"
               (change)="onUnitChange($event.value)"
             >
               @for (unit of selectedEvent.units; track unit.unitId) {
-              <mat-radio-button 
+              <mat-radio-button
                 [value]="unit.unitId"
                 class="unit-radio"
                 [disabled]="tableLoading"
@@ -112,8 +112,8 @@
                     <mat-icon class="unit-label__icon">schedule</mat-icon>
                     <span class="unit-label__name">{{ unit.name || 'Serie ' + (unit.order || '') }}</span>
                     @if (unit.status) {
-                    <span 
-                      class="unit-label__status" 
+                    <span
+                      class="unit-label__status"
                       [class.official]="unit.status && unit.status.toLowerCase().includes('official')"
                     >
                       {{ unit.status }}

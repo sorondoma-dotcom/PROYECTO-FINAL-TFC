@@ -8,13 +8,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatChipsModule } from '@angular/material/chips';
 import { CountryFlagPipe } from '../pipes/country-flag.pipe';
 import { CityNamePipe } from '../pipes/city-name.pipe';
-import { Competition, CompetitionGroup } from '../models/competition.interface';
+import { Competition as WorldCompetition, CompetitionGroup, Competition } from '../models/competition.interface';
 import { CompetitionFacadeService } from '../facades/competition-facade.service';
 import { CompetitionFilters } from '../models/filters/competition-filters.interface';
 import { Router } from '@angular/router';
 import { ConfirmationService } from '../shared/services/confirmation.service';
+import {
+  CompetitionService as AdminCompetitionService,
+  Competition as ScheduledCompetition
+} from '../services/competition.service';
 
 @Component({
   selector: 'app-competicion',
@@ -29,6 +34,7 @@ import { ConfirmationService } from '../shared/services/confirmation.service';
     MatSelectModule,
     MatCardModule,
     MatProgressSpinnerModule,
+    MatChipsModule,
     CountryFlagPipe,
     CityNamePipe
   ],
@@ -50,6 +56,10 @@ export class CompeticionComponent implements OnInit {
   error: string | null = null;
   filterText = '';
 
+  scheduledCompetitions: ScheduledCompetition[] = [];
+  scheduledLoading = false;
+  scheduledError: string | null = null;
+
   selectedYear = new Date().getFullYear();
   yearOptions: number[] = [];
   selectedDiscipline = 'SW';
@@ -66,13 +76,15 @@ export class CompeticionComponent implements OnInit {
   constructor(
     private competitionFacade: CompetitionFacadeService,
     private router: Router,
-    private confirmation: ConfirmationService
+    private confirmation: ConfirmationService,
+    private adminCompetitionService: AdminCompetitionService
   ) {}
 
   ngOnInit(): void {
     // Inicializa el selector de años con el rango fijo 2019–2025
     this.updateYearOptions([]);
     this.loadCompetitions();
+    this.loadScheduledCompetitions();
   }
 
   loadCompetitions(refresh = false): void {
@@ -146,6 +158,64 @@ export class CompeticionComponent implements OnInit {
     this.competitions = list.map((item, index) => this.normalizeCompetition(item, index));
     this.updateYearOptions(this.competitions);
     this.applyFilters();
+  }
+
+  loadScheduledCompetitions(): void {
+    this.scheduledLoading = true;
+    this.scheduledError = null;
+
+    this.adminCompetitionService.getAllCompetitions().subscribe({
+      next: (response) => {
+        const competitions = (Array.isArray(response?.competitions) ? response.competitions : []) as ScheduledCompetition[];
+        this.scheduledCompetitions = [...competitions].sort(
+          (a, b) => this.getScheduledSortValue(a) - this.getScheduledSortValue(b)
+        );
+      },
+      error: (err) => {
+        console.error('Error cargando competiciones agendadas', err);
+        this.scheduledError = 'No se pudieron cargar las competiciones agendadas.';
+        this.scheduledCompetitions = [];
+      },
+      complete: () => {
+        this.scheduledLoading = false;
+      }
+    });
+  }
+
+  getScheduledStatusChipColor(status?: ScheduledCompetition['estado']): 'primary' | 'accent' | 'warn' {
+    switch (status) {
+      case 'en_curso':
+        return 'primary';
+      case 'finalizada':
+      case 'cancelada':
+        return 'warn';
+      default:
+        return 'accent';
+    }
+  }
+
+  getScheduledLogoUrl(comp: ScheduledCompetition): string | null {
+    if (comp.logo_url) {
+      return comp.logo_url;
+    }
+    if (comp.logo_path) {
+      return comp.logo_path.startsWith('http') ? comp.logo_path : `http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public${comp.logo_path}`;
+    }
+    return null;
+  }
+
+  private getScheduledSortValue(comp: ScheduledCompetition): number {
+    const candidates = [comp.fecha_inicio, comp.fecha_fin];
+    for (const raw of candidates) {
+      if (!raw) {
+        continue;
+      }
+      const parsed = Date.parse(raw);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return Number.MAX_SAFE_INTEGER;
   }
 
   private normalizeCompetition(raw: any, index: number): Competition {

@@ -252,7 +252,7 @@
             }
           </div>
         </div>
-        
+
         @if (dbResults.length > 0) {
           <div class="results-table-wrapper">
             <table class="results-table">
@@ -279,7 +279,7 @@
                 </td>
                 <td class="text-center medal-cell">
                   @if (r.medal) {
-                    <span class="medal-badge" [class.gold]="r.medal === 'Gold'" 
+                    <span class="medal-badge" [class.gold]="r.medal === 'Gold'"
                           [class.silver]="r.medal === 'Silver'" [class.bronze]="r.medal === 'Bronze'">
                       @if (r.medal === 'Gold') {
                         <mat-icon>emoji_events</mat-icon>
@@ -328,12 +328,12 @@
                   }
                 </td>
               </tr>
-            } 
+            }
             </tbody>
           </table>
         </div>
       }
-      
+
       @if (dbResults.length === 0 && !loading) {
         <div class="results-empty">
           <mat-icon>info</mat-icon>
@@ -343,31 +343,6 @@
       }
       </mat-card>
     }
-
-    <mat-card class="panel mat-elevation-z3 chart-panel">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Evolucion</p>
-          <h3>Grafica de progresion</h3>
-        </div>
-      </div>
-      @if (loading) {
-        <div class="center">
-          <mat-progress-spinner diameter="32" mode="indeterminate"></mat-progress-spinner>
-        </div>
-      } @else if (hasChartData) {
-        <div class="chart-wrapper">
-          <canvas
-            baseChart
-            [data]="lineChartData"
-            [type]="'line'"
-            [options]="lineChartOptions">
-          </canvas>
-        </div>
-      } @else {
-        <div class="empty">Aun no hay suficientes marcas para graficar.</div>
-      }
-    </mat-card>
 
     <mat-card class="panel mat-elevation-z3">
       <div class="panel__header">
@@ -405,29 +380,48 @@
     <mat-card class="panel mat-elevation-z3">
       <div class="panel__header">
         <div>
-          <p class="eyebrow">Eventos proximos</p>
+          <p class="eyebrow">Eventos próximos</p>
           <h3>Calendario sugerido</h3>
+          @if (upcomingEvents.length) {
+            <p class="panel__subtitle">{{ upcomingEvents.length }} evento(s) disponible(s)</p>
+          }
         </div>
         @if (loadingCompetitions) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
       </div>
       @if (upcomingEvents.length) {
-        <mat-list>
+        <mat-list class="events-list">
           @for (event of upcomingEvents; track event.name) {
             <mat-list-item>
-              <div mat-line class="event-title">{{ event.name }}</div>
-              <div mat-line class="muted">
-                {{ event.city || '' }} {{ event.countryCode || '' }} - {{ formatDateLabel(event.startDate || event.date || event.endDate) }}
+              <div class="event-content">
+                <div class="event-title">{{ event.name }}</div>
+                <div class="muted">
+                  @if (event.city) {
+                    <mat-icon inline>location_on</mat-icon>
+                    {{ event.city }}
+                  }
+                  @if (event.countryCode) {
+                    · {{ event.countryCode }}
+                  }
+                  @if (event.startDate || event.date || event.endDate) {
+                    ·
+                    <mat-icon inline>event</mat-icon>
+                    {{ formatDateLabel(event.startDate || event.date || event.endDate) }}
+                  }
+                </div>
+                <mat-chip-set class="event-tags">
+                  @if (event.poolName) { <mat-chip>{{ event.poolName }}</mat-chip> }
+                  @if (event.status) { <mat-chip>{{ event.status | titlecase }}</mat-chip> }
+                  @if (event.stage) { <mat-chip color="primary" selected>{{ event.stage }}</mat-chip> }
+                </mat-chip-set>
               </div>
-              <mat-chip-set class="event-tags">
-                @if (event.poolName) { <mat-chip>{{ event.poolName }}</mat-chip> }
-                @if (event.status) { <mat-chip>{{ event.status | titlecase }}</mat-chip> }
-                @if (event.stage) { <mat-chip color="primary" selected>{{ event.stage }}</mat-chip> }
-              </mat-chip-set>
             </mat-list-item>
           }
         </mat-list>
       } @else if (!loadingCompetitions) {
-        <div class="empty">No hay eventos proximos para este pais o disciplina.</div>
+        <div class="empty">
+          <mat-icon>event_busy</mat-icon>
+          <p>No hay eventos próximos para este país o disciplina.</p>
+        </div>
       }
     </mat-card>
   </div>
