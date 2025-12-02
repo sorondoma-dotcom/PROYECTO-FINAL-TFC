@@ -148,6 +148,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   selectedEventKey: string | null = null;
   private rankingKeyLoaded: string | null = null;
   private rankingInFlight = false;
+  private readonly maxRecordEntries = 3;
 
   get hasChartData(): boolean {
     const datasets: any[] = (this.lineChartData as any)?.datasets || [];
@@ -748,7 +749,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
         }
 
         if (res?.bestResults && Array.isArray(res.bestResults)) {
-          this.profileRecords = res.bestResults.map((r: any) => ({
+          const mappedRecords = res.bestResults.map((r: any) => ({
             label: r.event,
             bestTime: r.time,
             competition: r.competition || '',
@@ -760,6 +761,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
             distance: r.distance ? String(r.distance) : this.extractDistanceFromEvent(r.event),
             raw: r
           }));
+          this.profileRecords = this.orderRecords(mappedRecords);
           if (res.profileImage) this.athlete.imageUrl = res.profileImage;
           if (res.nationality) this.athlete.nationality = res.nationality;
           if (res.birth) this.athlete.birth = res.birth;
@@ -973,33 +975,18 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
   buildRecords(performances: any[]): PersonalRecord[] {
     if (this.profileRecords.length) {
-      return this.profileRecords;
+      return this.profileRecords.slice(0, this.maxRecordEntries);
     }
-    if (!performances || performances.length === 0) return [];
+    if (!Array.isArray(performances) || performances.length === 0) return [];
 
-    const timesWithValue = performances
+    const enriched = performances
       .map((p) => ({ ...p, value: this.parseTimeToSeconds(p.time) }))
-      .filter((p) => Number.isFinite(p.value));
+      .filter((p) => Number.isFinite(p.value))
+      .sort((a, b) => (a.value ?? Infinity) - (b.value ?? Infinity))
+      .slice(0, this.maxRecordEntries)
+      .map((p) => this.performanceToPersonalRecord(p, this.formatSeconds(p.value)));
 
-    if (!timesWithValue.length) return [];
-
-    const best = timesWithValue.reduce((bestItem, current) => {
-      if (!bestItem) return current;
-      return current.value < bestItem.value ? current : bestItem;
-    });
-
-    const label = `${this.athlete.distance}m ${this.getStrokeLabel(this.athlete.stroke)} (${this.athlete.pool})`;
-
-    return [
-      {
-        label,
-        bestTime: this.formatSeconds(best.value),
-        competition: best.competition || best.tag || '',
-        date: best.date || '',
-        location: best.location || '',
-        points: best.points || null
-      }
-    ];
+    return enriched;
   }
 
   buildAverages(dataset: any[], athletePerformances: any[]): AverageInfo {
@@ -1250,10 +1237,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     }
 
     if (!this.profileRecords.length) {
-      const derivedRecords = this.pickHighlightRecord(enriched);
-      if (derivedRecords) {
-        this.profileRecords = [derivedRecords];
-      }
+      this.profileRecords = this.buildRecordsFromChartData(enriched);
     }
 
     this.updateChart();
@@ -1334,57 +1318,64 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     return [distanceLabel, strokeLabel].filter(Boolean).join(' ').trim() || 'Mejor marca';
   }
 
-  private pickHighlightRecord(entries: ChartEventResult[]): PersonalRecord | null {
+  private buildRecordsFromChartData(entries: ChartEventResult[]): PersonalRecord[] {
     if (!entries.length) {
-      return null;
+      return [];
     }
 
-    const priority = (entry: any): number => {
-      const medal = String(entry.raw?.medal || '').toLowerCase();
-      const recordTags = String(entry.raw?.recordTags || entry.raw?.record_tags || '').toUpperCase();
-      const hasWr = recordTags.includes('WR');
-      const hasCr = recordTags.includes('CR');
-      const hasNr = recordTags.includes('NR');
-      const hasMedal = medal === 'gold' || medal === 'silver' || medal === 'bronze';
+    return entries
+      .filter((entry) => Number.isFinite(entry.timeValue))
+      .sort((a, b) => (a.timeValue ?? Infinity) - (b.timeValue ?? Infinity))
+      .slice(0, this.maxRecordEntries)
+      .map((entry) => ({
+        label: entry.event || this.buildFallbackEventLabel(entry.distance, entry.stroke),
+        bestTime: entry.timeText || this.formatSeconds(entry.timeValue),
+        competition: entry.competition,
+        date: entry.date,
+        location: entry.country || '',
+        points: null,
+        stroke: entry.stroke,
+        course: entry.pool,
+        distance: entry.distance,
+        raw: entry.raw
+      }));
+  }
 
-      if (hasWr) return 1000;
-      if (hasCr) return 900;
-      if (hasNr) return 800;
-      if (hasMedal) {
-        if (medal === 'gold') return 700;
-        if (medal === 'silver') return 600;
-        return 500; // bronze
-      }
-
-      return 100;
-    };
-
-    const sorted = [...entries]
-      .map((entry) => ({ entry, priority: priority(entry) }))
-      .sort((a, b) => {
-        if (b.priority !== a.priority) {
-          return b.priority - a.priority;
-        }
-        return (a.entry.timeValue ?? Infinity) - (b.entry.timeValue ?? Infinity);
-      });
-
-    const best = sorted[0]?.entry;
-    if (!best) {
-      return null;
-    }
+  private performanceToPersonalRecord(performance: any, formattedTime: string): PersonalRecord {
+    const labelSource = performance.event || performance.label || performance.name || '';
+    const normalizedStroke = this.normalizeStrokeCode(performance.stroke || performance.style) || null;
+    const normalizedDistance =
+      performance.distance ? String(performance.distance) : this.extractDistanceFromEvent(labelSource);
+    const label = labelSource || this.buildFallbackEventLabel(normalizedDistance, normalizedStroke);
 
     return {
-      label: best.event || this.buildFallbackEventLabel(best.distance, best.stroke),
-      bestTime: best.timeText || this.formatSeconds(best.timeValue),
-      competition: best.competition,
-      date: best.date,
-      location: best.country || '',
-      points: null,
-      stroke: best.stroke,
-      course: best.pool,
-      distance: best.distance,
-      raw: best.raw
+      label: label || `${this.athlete.distance}m ${this.getStrokeLabel(this.athlete.stroke)}`,
+      bestTime: formattedTime,
+      competition: performance.competition || performance.tag || performance.meet || '',
+      date: performance.date || performance.eventDate || performance.raceDate || performance.updatedAt || '',
+      location: performance.location || performance.city || performance.compCountry || performance.country || '',
+      points: performance.points ?? performance.finaPoints ?? null,
+      stroke: normalizedStroke,
+      course: performance.poolConfiguration || performance.course || performance.pool || null,
+      distance: normalizedDistance,
+      raw: performance
     };
+  }
+
+  private orderRecords(records: PersonalRecord[]): PersonalRecord[] {
+    if (!records.length) {
+      return [];
+    }
+
+    return [...records]
+      .sort((a, b) => {
+        const aValue = this.parseTimeToSeconds(a.bestTime);
+        const bValue = this.parseTimeToSeconds(b.bestTime);
+        const safeA = Number.isFinite(aValue) ? aValue : Number.POSITIVE_INFINITY;
+        const safeB = Number.isFinite(bValue) ? bValue : Number.POSITIVE_INFINITY;
+        return safeA - safeB;
+      })
+      .slice(0, this.maxRecordEntries);
   }
 
   buildLabel(performance: any): string {

@@ -117,70 +117,144 @@
       </div>
     </mat-card>
 
-    <mat-card class="panel">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Pulso de competiciones</p>
-          <h2>Lo que sucede hoy</h2>
+    @if (olympicLeader || goldLeaders || silverLeaders || worldRecordLeaders) {
+      <mat-card class="panel hall-card">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Hall of fame</p>
+            <h2>Lideres por medallas</h2>
+          </div>
         </div>
-        <mat-chip class="pill muted">{{ competitionPulse.length }} activos</mat-chip>
-      </div>
-
-      @if (!loading && competitionPulse.length === 0) {
-        <div class="empty-state">
-          <mat-icon>visibility_off</mat-icon>
-          <p>Sin eventos sincronizados ahora mismo.</p>
-        </div>
-      } @else {
-        <div class="pulse-list">
-          @for (comp of competitionPulse; track comp.name) {
-            <div class="pulse-item">
-              <div class="pulse-item__status" [ngClass]="getStatusClass(comp.status)"></div>
-              <div class="pulse-item__body">
-                <strong>{{ comp.name }}</strong>
-                <div class="meta">
-                  @if (comp.countryCode) {
-                    <span>{{ comp.countryCode | countryFlag }}</span>
-                  }
-                  @if (comp.city) {
-                    <span>{{ comp.city | cityName }}</span>
-                  }
-                  <span>{{ formatDateLabel(comp) }}</span>
+        <div class="hall-grid">
+          @if (olympicLeader) {
+            <div class="hall-highlight">
+              <div class="hall-highlight__badge">
+                <mat-icon>emoji_events</mat-icon>
+                <span>Records olímpicos</span>
+              </div>
+              <div class="hall-highlight__body">
+                <div class="avatar">
+                  <span>{{ olympicLeader.name.charAt(0) }}</span>
+                </div>
+                <div>
+                  <strong>{{ olympicLeader.name }}</strong>
+                  <p class="meta">
+                    @if (olympicLeader.countryCode) {
+                      <span class="flag">{{ olympicLeader.countryCode | countryFlag }}</span>
+                    }
+                    <span>{{ olympicLeader.records }} OR</span>
+                  </p>
                 </div>
               </div>
-              <span class="pill" [ngClass]="getStatusClass(comp.status)">{{ getStatusLabel(comp.status) }}</span>
+              <p class="hall-highlight__note">Máximo número de registros olímpicos etiquetados como OR.</p>
+            </div>
+          }
+
+          @if (goldLeaders) {
+            <div class="hall-section">
+              <div class="hall-section__head gold">
+                <mat-icon>military_tech</mat-icon>
+                <span>Medallas de oro</span>
+              </div>
+              <div class="gender-grid">
+                @if (goldLeaders.male) {
+                  <div class="gender-card">
+                    <p class="label">Masculino</p>
+                    <strong>{{ goldLeaders.male.name }}</strong>
+                    <p class="meta">
+                      @if (goldLeaders.male.countryCode) {
+                        <span class="flag">{{ goldLeaders.male.countryCode | countryFlag }}</span>
+                      }
+                      <span>{{ goldLeaders.male.value }} oros</span>
+                    </p>
+                  </div>
+                }
+                @if (goldLeaders.female) {
+                  <div class="gender-card">
+                    <p class="label">Femenino</p>
+                    <strong>{{ goldLeaders.female.name }}</strong>
+                    <p class="meta">
+                      @if (goldLeaders.female.countryCode) {
+                        <span class="flag">{{ goldLeaders.female.countryCode | countryFlag }}</span>
+                      }
+                      <span>{{ goldLeaders.female.value }} oros</span>
+                    </p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (silverLeaders) {
+            <div class="hall-section">
+              <div class="hall-section__head silver">
+                <mat-icon>workspace_premium</mat-icon>
+                <span>Medallas de plata</span>
+              </div>
+              <div class="gender-grid">
+                @if (silverLeaders.male) {
+                  <div class="gender-card">
+                    <p class="label">Masculino</p>
+                    <strong>{{ silverLeaders.male.name }}</strong>
+                    <p class="meta">
+                      @if (silverLeaders.male.countryCode) {
+                        <span class="flag">{{ silverLeaders.male.countryCode | countryFlag }}</span>
+                      }
+                      <span>{{ silverLeaders.male.value }} platas</span>
+                    </p>
+                  </div>
+                }
+                @if (silverLeaders.female) {
+                  <div class="gender-card">
+                    <p class="label">Femenino</p>
+                    <strong>{{ silverLeaders.female.name }}</strong>
+                    <p class="meta">
+                      @if (silverLeaders.female.countryCode) {
+                        <span class="flag">{{ silverLeaders.female.countryCode | countryFlag }}</span>
+                      }
+                      <span>{{ silverLeaders.female.value }} platas</span>
+                    </p>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (worldRecordLeaders) {
+            <div class="hall-section">
+              <div class="hall-section__head wr">
+                <mat-icon>star</mat-icon>
+                <span>Record WR</span>
+              </div>
+              <div class="gender-grid">
+                @if (worldRecordLeaders.male) {
+                  <div class="gender-card">
+                    <p class="label">Masculino</p>
+                    <strong>{{ worldRecordLeaders.male.name }}</strong>
+                    <p class="meta">
+                      @if (worldRecordLeaders.male.countryCode) {
+                        <span class="flag">{{ worldRecordLeaders.male.countryCode | countryFlag }}</span>
+                      }
+                      <span>{{ worldRecordLeaders.male.value }} WR</span>
+                    </p>
+                  </div>
+                }
+                @if (worldRecordLeaders.female) {
+                  <div class="gender-card">
+                    <p class="label">Femenino</p>
+                    <strong>{{ worldRecordLeaders.female.name }}</strong>
+                    <p class="meta">
+                      @if (worldRecordLeaders.female.countryCode) {
+                        <span class="flag">{{ worldRecordLeaders.female.countryCode | countryFlag }}</span>
+                      }
+                      <span>{{ worldRecordLeaders.female.value }} WR</span>
+                    </p>
+                  </div>
+                }
+              </div>
             </div>
           }
         </div>
-      }
-    </mat-card>
-
-    @if (olympicLeader) {
-      <mat-card class="panel olympic-card">
-        <div class="panel__header">
-          <div>
-            <p class="eyebrow">Records olimpicos</p>
-            <h2>Reina del medallero</h2>
-          </div>
-          <mat-icon>emoji_events</mat-icon>
-        </div>
-        <div class="olympic-card__body">
-          <div class="avatar">
-            <span>{{ olympicLeader.name.charAt(0) }}</span>
-          </div>
-          <div class="olympic-card__info">
-            <strong>{{ olympicLeader.name }}</strong>
-            <p class="meta">
-              @if (olympicLeader.countryCode) {
-                <span class="flag">{{ olympicLeader.countryCode | countryFlag }}</span>
-              }
-              <span>{{ olympicLeader.records }} record(s) OR</span>
-            </p>
-          </div>
-        </div>
-        <p class="olympic-card__note">
-          Conteo basado en registros olímpicos (etiqueta OR) dentro del histórico de resultados.
-        </p>
       </mat-card>
     }
   </div>
@@ -223,32 +297,6 @@
       </div>
     </mat-card>
 
-    <mat-card class="panel">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Objetivos de cobertura</p>
-          <h2>Roadmap semanal</h2>
-        </div>
-      </div>
-
-      <div class="goal-list">
-        @for (goal of focusGoals; track goal.title) {
-          <div class="goal-card">
-            <div class="goal-card__head">
-              <div class="icon-pill small" [ngClass]="goal.accent">
-                <mat-icon>{{ goal.icon }}</mat-icon>
-              </div>
-              <div>
-                <p class="label">{{ goal.title }}</p>
-                <p class="hint">{{ goal.hint }}</p>
-              </div>
-              <span class="goal-progress">{{ goal.progress }}%</span>
-            </div>
-            <mat-progress-bar [value]="goal.progress" mode="determinate" color="primary"></mat-progress-bar>
-          </div>
-        }
-      </div>
-    </mat-card>
   </div>
 
   <div class="panel-grid">

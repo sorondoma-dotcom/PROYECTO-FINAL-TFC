@@ -16,18 +16,23 @@
         <mat-form-field appearance="outline" class="proof-selector__field">
           <mat-label>Prueba activa</mat-label>
           <mat-select [value]="selectedProofId" (selectionChange)="onActiveProofChange($event.value)">
-            <mat-option *ngFor="let proofOption of proofs" [value]="proofOption.id">
-              {{ proofOption.nombre_prueba }} · {{ proofOption.distancia }}m · {{ proofOption.estilo }}
-            </mat-option>
+            @for (proofOption of proofs; track $index) {
+              <mat-option  [value]="proofOption.id">
+                {{ proofOption.nombre_prueba }} · {{ proofOption.distancia }}m · {{ proofOption.estilo }}
+              </mat-option>
+            }
+            
           </mat-select>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="proof-selector__field">
           <mat-label>Pruebas destino</mat-label>
           <mat-select multiple [(ngModel)]="targetProofIds">
-            <mat-option *ngFor="let proofOption of proofs" [value]="proofOption.id">
-              {{ proofOption.nombre_prueba }} · {{ proofOption.distancia }}m · {{ proofOption.estilo }}
-            </mat-option>
+            @for (proofOption of proofs; track $index) {
+              <mat-option [value]="proofOption.id">
+                  {{ proofOption.nombre_prueba }} · {{ proofOption.distancia }}m · {{ proofOption.estilo }}
+              </mat-option>
+            }
           </mat-select>
           <mat-hint>El atleta se inscribe en cada prueba seleccionada.</mat-hint>
         </mat-form-field>

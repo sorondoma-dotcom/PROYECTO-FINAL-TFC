@@ -54,14 +54,6 @@ interface AthleteSpotlight {
   stroke?: string;
 }
 
-interface FocusGoal {
-  title: string;
-  progress: number;
-  hint: string;
-  icon: string;
-  accent: 'primary' | 'accent' | 'success' | 'muted';
-}
-
 interface RankingEntry {
   name?: string;
   country?: string;
@@ -96,6 +88,18 @@ interface OlympicLeader {
   records: number;
 }
 
+interface MedalLeader {
+  athleteId: number;
+  name: string;
+  countryCode?: string | null;
+  value: number;
+}
+
+interface GenderLeaders {
+  male: MedalLeader | null;
+  female: MedalLeader | null;
+}
+
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
@@ -125,6 +129,9 @@ export class EstadisticasComponent implements OnInit {
   private remoteStats = { total: 0, live: 0, coverage: 0 };
   private localStats = { total: 0, live: 0, upcoming: 0 };
   olympicLeader: OlympicLeader | null = null;
+  goldLeaders: GenderLeaders | null = null;
+  silverLeaders: GenderLeaders | null = null;
+  worldRecordLeaders: GenderLeaders | null = null;
 
   summaryCards: SummaryCard[] = [
     {
@@ -182,12 +189,6 @@ export class EstadisticasComponent implements OnInit {
     { name: 'Summer McIntosh', country: 'CA', event: '400 libre', time: '3:55.3', points: 980 },
     { name: 'Leon Marchand', country: 'FR', event: '200 estilos', time: '1:54.6', points: 972 },
     { name: 'Maggie MacNeil', country: 'CA', event: '100 mariposa', time: '55.0', points: 940 }
-  ];
-
-  focusGoals: FocusGoal[] = [
-    { title: 'Cobertura por pais', progress: 72, hint: 'Feed WA + NCAA + locales', icon: 'public', accent: 'primary' },
-    { title: 'Seguimiento en vivo', progress: 54, hint: 'Carriles con marcadores sincronizados', icon: 'radio', accent: 'accent' },
-    { title: 'Perfiles enriquecidos', progress: 61, hint: 'Fotos, puntos y bio curada', icon: 'badge', accent: 'muted' }
   ];
 
   constructor(private datosService: DatosService, private competitionService: CompetitionService) {}
@@ -304,7 +305,12 @@ export class EstadisticasComponent implements OnInit {
       }
 
       if (olympicLeader) {
-        this.applyOlympicLeader(olympicLeader);
+        this.applyHallOfFameStats(olympicLeader);
+      } else {
+        this.olympicLeader = null;
+        this.goldLeaders = null;
+        this.silverLeaders = null;
+        this.worldRecordLeaders = null;
       }
 
       this.loading = false;
@@ -356,13 +362,6 @@ export class EstadisticasComponent implements OnInit {
       }))
       .slice(0, 6);
 
-    if (upcoming > 0) {
-      this.focusGoals = this.focusGoals.map((goal) =>
-        goal.title === 'Seguimiento en vivo'
-          ? { ...goal, progress: Math.min(100, goal.progress + 6), hint: 'Calendario sincronizado con WA' }
-          : goal
-      );
-    }
   }
 
   private applyScheduledCompetitions(payload: any): void {
@@ -567,17 +566,53 @@ export class EstadisticasComponent implements OnInit {
     return map[stroke] || stroke.toLowerCase();
   }
 
-  private applyOlympicLeader(payload: any): void {
-    const leader = payload?.leader ?? payload;
-    if (!leader || !leader.name) {
-      this.olympicLeader = null;
-      return;
+  private applyHallOfFameStats(payload: any): void {
+    const leader = payload?.olympicLeader ?? payload?.leader ?? null;
+    this.olympicLeader = this.mapLeader(leader, 'records');
+    this.goldLeaders = this.mapGenderLeaders(payload?.gold);
+    this.silverLeaders = this.mapGenderLeaders(payload?.silver);
+    this.worldRecordLeaders = this.mapGenderLeaders(payload?.worldRecords);
+  }
+
+  private mapLeader(source: any, valueKey: 'records' | 'total' = 'records'): OlympicLeader | null {
+    if (!source || !source.name) {
+      return null;
     }
-    this.olympicLeader = {
-      athleteId: leader.athleteId,
-      name: leader.name,
-      countryCode: leader.countryCode || null,
-      records: leader.records || 0
+    return {
+      athleteId: source.athleteId ?? 0,
+      name: source.name,
+      countryCode: source.countryCode || null,
+      records: typeof source[valueKey] === 'number' ? source[valueKey] : source.records || 0
+    };
+  }
+
+  private mapGenderLeaders(block: any): GenderLeaders | null {
+    if (!block || (block.male == null && block.female == null)) {
+      return null;
+    }
+
+    const male = this.mapMedalLeader(block.male);
+    const female = this.mapMedalLeader(block.female);
+
+    if (!male && !female) {
+      return null;
+    }
+
+    return { male, female };
+  }
+
+  private mapMedalLeader(raw: any): MedalLeader | null {
+    if (!raw || !raw.name) {
+      return null;
+    }
+
+    const value = typeof raw.total === 'number' ? raw.total : (typeof raw.records === 'number' ? raw.records : raw.value || 0);
+
+    return {
+      athleteId: raw.athleteId ?? 0,
+      name: raw.name,
+      countryCode: raw.countryCode || null,
+      value
     };
   }
 }

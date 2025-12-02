@@ -322,37 +322,6 @@
   font-weight: 700;
 }
 
-.pulse-list {
-  display: grid;
-  gap: 10px;
-}
-
-.pulse-item {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface-strong);
-}
-
-.pulse-item__body .meta {
-  display: flex;
-  gap: 8px;
-  margin: 2px 0 0;
-  color: var(--color-text-soft);
-  font-size: 13px;
-}
-
-.pulse-item__status {
-  width: 12px;
-  height: 44px;
-  border-radius: 8px;
-  background: var(--color-border);
-}
-
 .athlete-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -396,42 +365,6 @@
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
-}
-
-.goal-list {
-  display: grid;
-  gap: 10px;
-}
-
-.goal-card {
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-strong);
-  display: grid;
-  gap: 6px;
-}
-
-.goal-card__head {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.goal-card__head .label {
-  margin: 0;
-  font-weight: 700;
-}
-
-.goal-card__head .hint {
-  margin: 2px 0 0;
-  color: var(--color-text-soft);
-  font-size: 13px;
-}
-
-.goal-progress {
-  font-weight: 700;
 }
 
 .pill {
@@ -485,40 +418,120 @@
   gap: 18px;
 }
 
-.olympic-card {
-  background: linear-gradient(135deg, #fff7e6, #fff);
-  border: 1px solid rgba(251, 146, 60, 0.35);
+.hall-card {
+  background: linear-gradient(135deg, rgba(255, 247, 230, 0.6), #fff);
+  border: 1px solid rgba(251, 146, 60, 0.25);
 }
 
-.olympic-card__body {
+.hall-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.hall-highlight {
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: rgba(251, 191, 36, 0.1);
+  display: grid;
+  gap: 10px;
+}
+
+.hall-highlight__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.hall-highlight__body {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 12px;
   align-items: center;
 }
 
-.olympic-card__body .avatar {
+.hall-highlight .avatar {
   width: 56px;
   height: 56px;
   border-radius: 16px;
   background: linear-gradient(135deg, #f97316, #fbbf24);
-  display: grid;
-  place-items: center;
   color: #fff;
   font-size: 24px;
   font-weight: 800;
+  display: grid;
+  place-items: center;
 }
 
-.olympic-card__info .meta {
-  margin: 4px 0 0;
+.hall-highlight .meta {
   display: flex;
   gap: 8px;
-  align-items: center;
+  margin: 4px 0 0;
   color: var(--color-text-soft);
 }
 
-.olympic-card__note {
+.hall-highlight__note {
   margin: 0;
+  color: var(--color-text-soft);
+  font-size: 13px;
+}
+
+.hall-section {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  display: grid;
+  gap: 10px;
+}
+
+.hall-section__head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.hall-section__head.gold {
+  color: #b45309;
+}
+
+.hall-section__head.silver {
+  color: #475569;
+}
+
+.hall-section__head.wr {
+  color: #0f766e;
+}
+
+.gender-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.gender-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  background: var(--color-surface-strong);
+  display: grid;
+  gap: 4px;
+}
+
+.gender-card .label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-soft);
+}
+
+.gender-card .meta {
+  margin: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
   color: var(--color-text-soft);
   font-size: 13px;
 }

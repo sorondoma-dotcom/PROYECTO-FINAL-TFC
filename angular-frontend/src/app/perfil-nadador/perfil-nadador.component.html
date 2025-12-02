@@ -172,6 +172,89 @@
     <mat-card class="panel mat-elevation-z3">
       <div class="panel__header">
         <div>
+          <p class="eyebrow">Comparacion</p>
+          <h3>Promedio de su categoria</h3>
+        </div>
+      </div>
+      @if (averages.athleteBest !== null && averages.categoryAverage !== null) {
+        <div class="average-row">
+          <div>
+            <p class="small-label">Tu mejor</p>
+            <h4>{{ formatSeconds(averages.athleteBest) }}</h4>
+          </div>
+          <div>
+            <p class="small-label">Promedio listado</p>
+            <h4>{{ formatSeconds(averages.categoryAverage) }}</h4>
+          </div>
+        </div>
+        <div class="gap-row">
+          <span class="gap-label" [class.positive]="averages.diff !== null && averages.diff < 0">
+            {{ averageDiffLabel() }} ({{ averageGapSeconds() }})
+          </span>
+          <mat-progress-bar
+            mode="determinate"
+            [color]="averages.diff !== null && averages.diff <= 0 ? 'primary' : 'warn'"
+            [value]="progressValue()">
+          </mat-progress-bar>
+        </div>
+      } @else {
+        <div class="empty">Necesitamos al menos una marca tuya y datos de la prueba para comparar.</div>
+      }
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3">
+      <div class="panel__header">
+        <div>
+          <p class="eyebrow">Eventos próximos</p>
+          <h3>Calendario sugerido</h3>
+          @if (upcomingEvents.length) {
+            <p class="panel__subtitle">{{ upcomingEvents.length }} evento(s) disponible(s)</p>
+          }
+        </div>
+        @if (loadingCompetitions) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
+      </div>
+      @if (upcomingEvents.length) {
+        <div class="events-scroll">
+          <mat-list class="events-list">
+            @for (event of upcomingEvents; track event.name) {
+              <mat-list-item>
+                <div class="event-content">
+                  <div class="event-title">{{ event.name }}</div>
+                  <div class="muted">
+                    @if (event.city) {
+                      <mat-icon inline>location_on</mat-icon>
+                      {{ event.city }}
+                    }
+                    @if (event.countryCode) {
+                      · {{ event.countryCode }}
+                    }
+                    @if (event.startDate || event.date || event.endDate) {
+                      ·
+                      <mat-icon inline>event</mat-icon>
+                      {{ formatDateLabel(event.startDate || event.date || event.endDate) }}
+                    }
+                  </div>
+                  <mat-chip-set class="event-tags">
+                    @if (event.poolName) { <mat-chip>{{ event.poolName }}</mat-chip> }
+                    @if (event.status) { <mat-chip>{{ event.status | titlecase }}</mat-chip> }
+                    @if (event.stage) { <mat-chip color="primary" selected>{{ event.stage }}</mat-chip> }
+                  </mat-chip-set>
+                </div>
+              </mat-list-item>
+            }
+          </mat-list>
+        </div>
+      } @else if (!loadingCompetitions) {
+        <div class="empty">
+          <mat-icon>event_busy</mat-icon>
+          <p>No hay eventos próximos para este país o disciplina.</p>
+        </div>
+      }
+    </mat-card>
+
+    <mat-card class="panel mat-elevation-z3">
+      <div class="panel__header">
+        <div>
           <p class="eyebrow">Datos biometricos</p>
           <h3>Ficha rapida</h3>
         </div>
@@ -205,14 +288,7 @@
       </div>
     </mat-card>
 
-    <mat-card class="panel mat-elevation-z3">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Records personales</p>
-          <h3>Mejores marcas</h3>
-        </div>
-        @if (loading) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
-      </div>
+    <mat-card class="panel mat-elevation-z3 records-panel">
       @if (records.length) {
         <div class="records-list">
           @for (record of records; track record.label) {
@@ -256,81 +332,81 @@
         @if (dbResults.length > 0) {
           <div class="results-table-wrapper">
             <table class="results-table">
-          <thead>
-            <tr>
-              <th>Prueba</th>
-              <th>Tiempo</th>
-              <th class="text-center">Medalla</th>
-              <th class="text-center">Piscina</th>
-              <th>Competición</th>
-              <th class="text-center">País</th>
-              <th class="text-center">Fecha</th>
-              <th class="text-center">Records</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for(r of dbResults; track r.id) {
-              <tr class="result-row">
-                <td class="event-cell">
-                  <strong>{{ r.event }}</strong>
-                </td>
-                <td class="time-cell">
-                  <span class="time-badge">{{ r.timeText }}</span>
-                </td>
-                <td class="text-center medal-cell">
-                  @if (r.medal) {
-                    <span class="medal-badge" [class.gold]="r.medal === 'Gold'"
-                          [class.silver]="r.medal === 'Silver'" [class.bronze]="r.medal === 'Bronze'">
-                      @if (r.medal === 'Gold') {
-                        <mat-icon>emoji_events</mat-icon>
+              <thead>
+                <tr>
+                  <th>Prueba</th>
+                  <th>Tiempo</th>
+                  <th class="text-center">Medalla</th>
+                  <th class="text-center">Piscina</th>
+                  <th>Competición</th>
+                  <th class="text-center">País</th>
+                  <th class="text-center">Fecha</th>
+                  <th class="text-center">Records</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of dbResults; track r.id) {
+                  <tr class="result-row">
+                    <td class="event-cell" data-label="Prueba">
+                      <strong>{{ r.event }}</strong>
+                    </td>
+                    <td class="time-cell" data-label="Tiempo">
+                      <span class="time-badge">{{ r.timeText }}</span>
+                    </td>
+                    <td class="text-center medal-cell" data-label="Medalla">
+                      @if (r.medal) {
+                        <span class="medal-badge" [class.gold]="r.medal === 'Gold'"
+                              [class.silver]="r.medal === 'Silver'" [class.bronze]="r.medal === 'Bronze'">
+                          @if (r.medal === 'Gold') {
+                            <mat-icon>emoji_events</mat-icon>
+                          }
+                          @if (r.medal === 'Silver') {
+                            <mat-icon>military_tech</mat-icon>
+                          }
+                          @if (r.medal === 'Bronze') {
+                            <mat-icon>workspace_premium</mat-icon>
+                          }
+                          {{ r.medal }}
+                        </span>
                       }
-                      @if (r.medal === 'Silver') {
-                        <mat-icon>military_tech</mat-icon>
+                      @if (!r.medal) {
+                        <span class="muted">-</span>
                       }
-                      @if (r.medal === 'Bronze') {
-                        <mat-icon>workspace_premium</mat-icon>
+                    </td>
+                    <td class="text-center" data-label="Piscina">
+                      @if (r.poolLength) {
+                        <span class="pool-badge">{{ r.poolLength }}</span>
                       }
-                      {{ r.medal }}
-                    </span>
-                  }
-                  @if (!r.medal) {
-                    <span class="muted">-</span>
-                  }
-                </td>
-                <td class="text-center">
-                  @if (r.poolLength) {
-                    <span class="pool-badge">{{ r.poolLength }}</span>
-                  }
-                  @if (!r.poolLength) {
-                    <span class="muted">-</span>
-                  }
-                </td>
-                <td class="competition-cell">
-                  <span class="competition-name">{{ r.competition || 'Sin competición' }}</span>
-                </td>
-                <td class="text-center">
-                  @if (r.compCountryCode) {
-                    <span class="country-badge">{{ r.compCountryCode }}</span>
-                  }
-                  @if (!r.compCountryCode) {
-                    <span class="muted">-</span>
-                  }
-                </td>
-                <td class="text-center date-cell">
-                  <span class="date-text">{{ formatDateLabel(r.raceDate) }}</span>
-                </td>
-                <td class="text-center records-cell">
-                  @if (r.recordTags) {
-                    <span class="record-tag">{{ r.recordTags }}</span>
-                  }
-                  @if (!r.recordTags) {
-                    <span class="muted">-</span>
-                  }
-                </td>
-              </tr>
-            }
-            </tbody>
-          </table>
+                      @if (!r.poolLength) {
+                        <span class="muted">-</span>
+                      }
+                    </td>
+                    <td class="competition-cell" data-label="Competición">
+                      <span class="competition-name">{{ r.competition || 'Sin competición' }}</span>
+                    </td>
+                    <td class="text-center" data-label="País">
+                      @if (r.compCountryCode) {
+                        <span class="country-badge">{{ r.compCountryCode }}</span>
+                      }
+                      @if (!r.compCountryCode) {
+                        <span class="muted">-</span>
+                      }
+                    </td>
+                    <td class="text-center date-cell" data-label="Fecha">
+                      <span class="date-text">{{ formatDateLabel(r.raceDate) }}</span>
+                    </td>
+                    <td class="text-center records-cell" data-label="Records">
+                      @if (r.recordTags) {
+                        <span class="record-tag">{{ r.recordTags }}</span>
+                      }
+                      @if (!r.recordTags) {
+                        <span class="muted">-</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
         </div>
       }
 
@@ -343,87 +419,6 @@
       }
       </mat-card>
     }
-
-    <mat-card class="panel mat-elevation-z3">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Comparacion</p>
-          <h3>Promedio de su categoria</h3>
-        </div>
-      </div>
-      @if (averages.athleteBest !== null && averages.categoryAverage !== null) {
-        <div class="average-row">
-          <div>
-            <p class="small-label">Tu mejor</p>
-            <h4>{{ formatSeconds(averages.athleteBest) }}</h4>
-          </div>
-          <div>
-            <p class="small-label">Promedio listado</p>
-            <h4>{{ formatSeconds(averages.categoryAverage) }}</h4>
-          </div>
-        </div>
-        <div class="gap-row">
-          <span class="gap-label" [class.positive]="averages.diff !== null && averages.diff < 0">
-            {{ averageDiffLabel() }} ({{ averageGapSeconds() }})
-          </span>
-          <mat-progress-bar
-            mode="determinate"
-            [color]="averages.diff !== null && averages.diff <= 0 ? 'primary' : 'warn'"
-            [value]="progressValue()">
-          </mat-progress-bar>
-        </div>
-      } @else {
-        <div class="empty">Necesitamos al menos una marca tuya y datos de la prueba para comparar.</div>
-      }
-    </mat-card>
-
-    <mat-card class="panel mat-elevation-z3">
-      <div class="panel__header">
-        <div>
-          <p class="eyebrow">Eventos próximos</p>
-          <h3>Calendario sugerido</h3>
-          @if (upcomingEvents.length) {
-            <p class="panel__subtitle">{{ upcomingEvents.length }} evento(s) disponible(s)</p>
-          }
-        </div>
-        @if (loadingCompetitions) { <mat-progress-spinner diameter="28" mode="indeterminate"></mat-progress-spinner> }
-      </div>
-      @if (upcomingEvents.length) {
-        <mat-list class="events-list">
-          @for (event of upcomingEvents; track event.name) {
-            <mat-list-item>
-              <div class="event-content">
-                <div class="event-title">{{ event.name }}</div>
-                <div class="muted">
-                  @if (event.city) {
-                    <mat-icon inline>location_on</mat-icon>
-                    {{ event.city }}
-                  }
-                  @if (event.countryCode) {
-                    · {{ event.countryCode }}
-                  }
-                  @if (event.startDate || event.date || event.endDate) {
-                    ·
-                    <mat-icon inline>event</mat-icon>
-                    {{ formatDateLabel(event.startDate || event.date || event.endDate) }}
-                  }
-                </div>
-                <mat-chip-set class="event-tags">
-                  @if (event.poolName) { <mat-chip>{{ event.poolName }}</mat-chip> }
-                  @if (event.status) { <mat-chip>{{ event.status | titlecase }}</mat-chip> }
-                  @if (event.stage) { <mat-chip color="primary" selected>{{ event.stage }}</mat-chip> }
-                </mat-chip-set>
-              </div>
-            </mat-list-item>
-          }
-        </mat-list>
-      } @else if (!loadingCompetitions) {
-        <div class="empty">
-          <mat-icon>event_busy</mat-icon>
-          <p>No hay eventos próximos para este país o disciplina.</p>
-        </div>
-      }
-    </mat-card>
   </div>
 
   @if (rankingError) {

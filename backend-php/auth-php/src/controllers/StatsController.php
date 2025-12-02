@@ -13,20 +13,12 @@ class StatsController
     public function getOlympicRecordLeader(): void
     {
         try {
-            $leader = $this->statsService->getOlympicRecordLeader();
-            if (!$leader) {
-                jsonResponse([
-                    'leader' => null,
-                    'message' => 'No se encontraron registros olímpicos'
-                ]);
-                return;
-            }
-
-            jsonResponse(['leader' => $leader]);
+            $payload = $this->statsService->getHallOfFameStats();
+            jsonResponse($payload);
         } catch (\Throwable $e) {
             error_log('StatsController::getOlympicRecordLeader error: ' . $e->getMessage());
             http_response_code(500);
-            jsonResponse(['error' => 'No pudimos calcular el record olímpico']);
+            jsonResponse(['error' => 'No pudimos calcular las estadisticas solicitadas']);
         }
     }
 }
