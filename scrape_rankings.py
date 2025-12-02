@@ -5,9 +5,6 @@ from urllib.parse import urlencode
 from playwright.sync_api import sync_playwright
 import mysql.connector
 
-# =========================
-# CONFIGURACIÓN
-# =========================
 
 DB_CONFIG = {
     "host": "localhost",
@@ -19,12 +16,11 @@ DB_CONFIG = {
 
 BASE_RANKINGS_URL = "https://www.worldaquatics.com/swimming/rankings"
 
-# Parámetros por defecto (cámbialos para otro ranking):
 RANKING_PARAMS = {
     "gender": "M",               # "M" o "F"
     "distance": 50,              # 50, 100, 200, 400, 800, 1500
     "stroke": "FREESTYLE",       # FREESTYLE, BACKSTROKE, BREASTSTROKE, BUTTERFLY, MEDLEY
-    "poolConfiguration": "LCM",  # LCM o SCM
+    "poolConfiguration": "SCM",  # LCM o SCM
     "year": "all",               # "all" o año concreto
     "startDate": "",
     "endDate": "",
@@ -37,9 +33,6 @@ SLEEP_AFTER_SHOW_MORE = 2.0   # segundos
 HEADLESS = True               # pon False si quieres ver el navegador
 
 
-# =========================
-# VALIDACIÓN DE PARÁMETROS
-# =========================
 
 VALID_COMBOS = {
     50: {"FREESTYLE", "BACKSTROKE", "BREASTSTROKE", "BUTTERFLY"},
@@ -52,7 +45,7 @@ VALID_COMBOS = {
 
 def generate_all_param_sets():
     genders = ["M", "F"]
-    pool_configurations = ["LCM"]  # si quieres también SCM: ["LCM", "SCM"]
+    pool_configurations = ["SCM"]  # si quieres también LCM: ["LCM", "SCM"]
 
     for gender in genders:
         for pool_conf in pool_configurations:
@@ -64,7 +57,6 @@ def generate_all_param_sets():
                     params["stroke"] = stroke
                     params["poolConfiguration"] = pool_conf
                     yield params
-
 
 
 def validate_params(params: dict):
@@ -101,52 +93,39 @@ def build_rankings_url(params: dict) -> str:
     return f"{BASE_RANKINGS_URL}?{urlencode(query)}"
 
 
-# =========================
-# FUNCIONES BD
-# =========================
 
 def get_db_connection():
     return mysql.connector.connect(**DB_CONFIG)
 
 
 def ensure_table_exists():
+    """
+    Crea la tabla con la estructura que has pasado (ajustada con PRIMARY KEY/AUTO_INCREMENT).
+    Si la tabla ya existe, no la toca.
+    """
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS swimming_rankings (
-            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
             gender CHAR(1) NOT NULL,
-            distance SMALLINT NOT NULL,
+            distance SMALLINT(6) NOT NULL,
             stroke VARCHAR(20) NOT NULL,
             pool_configuration VARCHAR(10) NOT NULL,
-
-            overall_rank INT NOT NULL,
+            overall_rank INT(11) NOT NULL,
             country_code CHAR(3) NOT NULL,
-            athlete_name VARCHAR(255) NOT NULL,
-            age TINYINT UNSIGNED NULL,
             time_text VARCHAR(16) NOT NULL,
-            points INT NULL,
-            tag VARCHAR(10) NULL,
-            record_tag VARCHAR(20) NULL,
-
-            competition VARCHAR(255) NULL,
-            location_country_code CHAR(3) NULL,
-            race_date DATE NULL,
-
-            athlete_id INT UNSIGNED NULL,
-            athlete_profile_url VARCHAR(255) NULL,
-            image_url VARCHAR(255) NULL,
-
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                ON UPDATE CURRENT_TIMESTAMP,
-
-            PRIMARY KEY (id),
-            UNIQUE KEY uniq_ranking_entry (
-                gender, distance, stroke, pool_configuration,
-                athlete_id, race_date, time_text
-            )
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            points INT(11) DEFAULT NULL,
+            tag VARCHAR(10) DEFAULT NULL,
+            record_tag VARCHAR(20) DEFAULT NULL,
+            competition VARCHAR(255) DEFAULT NULL,
+            location_country_code CHAR(3) DEFAULT NULL,
+            race_date DATE DEFAULT NULL,
+            athlete_id INT(10) UNSIGNED DEFAULT NULL,
+            created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT NULL,
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
     """)
     conn.commit()
     cur.close()
@@ -155,7 +134,9 @@ def ensure_table_exists():
 
 def upsert_ranking_row(row: dict):
     """
-    row: dict con todos los campos a guardar
+    Inserta una fila en la tabla swimming_rankings usando SOLO las columnas
+    que existen en tu definición actual.
+    De momento es un INSERT normal (si ejecutas varias veces, duplica datos).
     """
     conn = get_db_connection()
     cur = conn.cursor()
@@ -163,32 +144,16 @@ def upsert_ranking_row(row: dict):
     sql = """
         INSERT INTO swimming_rankings (
             gender, distance, stroke, pool_configuration,
-            overall_rank, country_code, athlete_name, age,
-            time_text, points, tag, record_tag,
-            competition, location_country_code, race_date,
-            athlete_id, athlete_profile_url, image_url
+            overall_rank, country_code, time_text, points,
+            tag, record_tag, competition,
+            location_country_code, race_date, athlete_id
         )
         VALUES (
             %(gender)s, %(distance)s, %(stroke)s, %(pool_configuration)s,
-            %(overall_rank)s, %(country_code)s, %(athlete_name)s, %(age)s,
-            %(time_text)s, %(points)s, %(tag)s, %(record_tag)s,
-            %(competition)s, %(location_country_code)s, %(race_date)s,
-            %(athlete_id)s, %(athlete_profile_url)s, %(image_url)s
+            %(overall_rank)s, %(country_code)s, %(time_text)s, %(points)s,
+            %(tag)s, %(record_tag)s, %(competition)s,
+            %(location_country_code)s, %(race_date)s, %(athlete_id)s
         )
-        ON DUPLICATE KEY UPDATE
-            overall_rank = VALUES(overall_rank),
-            country_code = VALUES(country_code),
-            athlete_name = VALUES(athlete_name),
-            age = VALUES(age),
-            time_text = VALUES(time_text),
-            points = VALUES(points),
-            tag = VALUES(tag),
-            record_tag = VALUES(record_tag),
-            competition = VALUES(competition),
-            location_country_code = VALUES(location_country_code),
-            race_date = VALUES(race_date),
-            athlete_profile_url = VALUES(athlete_profile_url),
-            image_url = VALUES(image_url);
     """
 
     cur.execute(sql, row)
@@ -274,7 +239,6 @@ def scrape_rankings_page(params: dict):
                 break
 
             if not btn.is_enabled():
-                # En tu error, justo estaba en estado 'disabled is-loading'
                 print("[*] Botón 'Show More' deshabilitado (cargando o sin más datos). Fin de paginación.")
                 break
 
@@ -329,7 +293,7 @@ def scrape_rankings_page(params: dict):
                     if img.count() > 0:
                         image_url = normalize_url(img.first.get_attribute("src"))
 
-                # Edad
+                # Edad (NO se guarda en BD de momento)
                 age_text = cells.nth(3).inner_text().strip()
                 age = parse_int(age_text)
 
@@ -373,8 +337,8 @@ def scrape_rankings_page(params: dict):
 
                     "overall_rank": overall_rank,
                     "country_code": country_code,
-                    "athlete_name": athlete_name,
-                    "age": age,
+                    "athlete_name": athlete_name,          # no se inserta
+                    "age": age,                            # no se inserta
                     "time_text": time_text,
                     "points": points,
                     "tag": tag_text,
@@ -385,8 +349,8 @@ def scrape_rankings_page(params: dict):
                     "race_date": race_date,
 
                     "athlete_id": athlete_id,
-                    "athlete_profile_url": athlete_profile_url,
-                    "image_url": image_url,
+                    "athlete_profile_url": athlete_profile_url,  # no se inserta
+                    "image_url": image_url,                      # no se inserta
                 }
 
                 rows_data.append(row_data)
@@ -399,18 +363,10 @@ def scrape_rankings_page(params: dict):
     return rows_data
 
 
-# =========================
-# MAIN
-# =========================
 
 def main():
     ensure_table_exists()
 
-    # Si quieres solo UNA prueba, deja esto:
-    # rows = scrape_rankings_page(RANKING_PARAMS)
-    # ...
-
-    # 👉 Todas las pruebas posibles (según VALID_COMBOS y genders)
     for params in generate_all_param_sets():
         desc = f"{params['gender']} {params['distance']} {params['stroke']} {params['poolConfiguration']}"
         print(f"\n==============================")
@@ -422,7 +378,7 @@ def main():
             print(f"[+] Filas obtenidas para {desc}: {len(rows)}")
 
             for idx, row in enumerate(rows, start=1):
-                print(f"[{idx}/{len(rows)}] Guardando {row['athlete_name']} ({row['time_text']})")
+                print(f"[{idx}/{len(rows)}] Guardando ranking {row['time_text']} (athlete_id={row['athlete_id']})")
                 upsert_ranking_row(row)
 
         except Exception as e:
@@ -432,7 +388,6 @@ def main():
         time.sleep(2)
 
     print("[✓] Proceso completado para todas las pruebas.")
-
 
 
 if __name__ == "__main__":

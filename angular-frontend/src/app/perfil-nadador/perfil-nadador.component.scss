@@ -956,3 +956,108 @@
     justify-content: center;
   }
 }
+
+@media (max-width: 560px) {
+  .hero {
+    padding: 1.25rem 1rem 1.5rem;
+  }
+
+  .hero__topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .breadcrumb {
+    font-size: 0.8rem;
+    text-align: left;
+  }
+
+  .hero__photo-block {
+    order: 2;
+  }
+
+  .hero__info {
+    order: 1;
+    text-align: left;
+
+    h1 {
+      font-size: 1.7rem;
+    }
+  }
+
+  .hero__metric-stack {
+    order: 3;
+    min-width: auto;
+    grid-template-columns: 1fr;
+  }
+
+  .hero__actions {
+    width: 100%;
+    justify-content: stretch;
+
+    button {
+      flex: 1 1 auto;
+    }
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .profile-form__avatar {
+    flex-direction: column;
+  }
+
+  .profile-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .bio-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .record-card__body {
+    grid-template-columns: 1fr;
+  }
+
+  .results-table-wrapper {
+    margin: 0 -1rem;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 0.75rem 0.6rem;
+    font-size: 0.82rem;
+  }
+
+  .chart-wrapper {
+    padding: 1rem;
+    min-height: 320px;
+  }
+
+  .events-list mat-list-item {
+    padding: 1rem 0.5rem !important;
+  }
+
+  .empty {
+    padding: 1.5rem 1rem;
+  }
+}

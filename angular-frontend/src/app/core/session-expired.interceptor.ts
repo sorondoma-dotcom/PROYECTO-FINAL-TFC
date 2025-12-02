@@ -27,7 +27,7 @@ export class SessionExpiredInterceptor implements HttpInterceptor {
     return next.handle(req).pipe(
       catchError((err: HttpErrorResponse) => {
         // Detectar 401 con mensaje de sesión cerrada
-        if (err && err.status === 401) {
+        if (err && err.status === 401 && this.isBackendRequest(req.url)) {
           const serverMsg = err.error?.error || err.statusText || '';
           const lowered = serverMsg.toString().toLowerCase();
           
@@ -68,5 +68,10 @@ export class SessionExpiredInterceptor implements HttpInterceptor {
         return throwError(() => err);
       })
     );
+  }
+
+  private isBackendRequest(url: string): boolean {
+    const normalized = url.toLowerCase();
+    return normalized.includes('/backend-php/auth-php/public/api');
   }
 }

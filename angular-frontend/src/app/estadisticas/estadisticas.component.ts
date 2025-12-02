@@ -89,6 +89,13 @@ interface ScheduledStatusMetric {
   accent: 'primary' | 'accent' | 'success' | 'muted' | 'warn';
 }
 
+interface OlympicLeader {
+  athleteId: number;
+  name: string;
+  countryCode?: string | null;
+  records: number;
+}
+
 @Component({
   selector: 'app-estadisticas',
   standalone: true,
@@ -117,6 +124,7 @@ export class EstadisticasComponent implements OnInit {
 
   private remoteStats = { total: 0, live: 0, coverage: 0 };
   private localStats = { total: 0, live: 0, upcoming: 0 };
+  olympicLeader: OlympicLeader | null = null;
 
   summaryCards: SummaryCard[] = [
     {
@@ -273,8 +281,16 @@ export class EstadisticasComponent implements OnInit {
             console.error('Fallo al cargar competiciones agendadas', err);
             return of(null);
           })
+        ),
+      olympicLeader: this.datosService
+        .getOlympicRecordLeader()
+        .pipe(
+          catchError((err) => {
+            console.error('Fallo al calcular records olimpicos', err);
+            return of(null);
+          })
         )
-    }).subscribe(({ competitions, sprint, scheduled }) => {
+    }).subscribe(({ competitions, sprint, scheduled, olympicLeader }) => {
       if (scheduled) {
         this.applyScheduledCompetitions(scheduled);
       }
@@ -285,6 +301,10 @@ export class EstadisticasComponent implements OnInit {
 
       if (sprint) {
         this.applyAthleteData(sprint);
+      }
+
+      if (olympicLeader) {
+        this.applyOlympicLeader(olympicLeader);
       }
 
       this.loading = false;
@@ -545,5 +565,19 @@ export class EstadisticasComponent implements OnInit {
       MEDLEY_RELAY: 'relevo estilos'
     };
     return map[stroke] || stroke.toLowerCase();
+  }
+
+  private applyOlympicLeader(payload: any): void {
+    const leader = payload?.leader ?? payload;
+    if (!leader || !leader.name) {
+      this.olympicLeader = null;
+      return;
+    }
+    this.olympicLeader = {
+      athleteId: leader.athleteId,
+      name: leader.name,
+      countryCode: leader.countryCode || null,
+      records: leader.records || 0
+    };
   }
 }

@@ -145,6 +145,30 @@ class AthleteController
         }
     }
 
+    public function getProfileById(int $athleteId): void
+    {
+        try {
+            $profile = $this->athleteProfileService->getAthleteProfile($athleteId);
+            if (!$profile) {
+                jsonResponse([
+                    'error' => 'No encontramos la ficha del nadador en la base de datos'
+                ], 404);
+                return;
+            }
+
+            jsonResponse([
+                'success' => true,
+                'athlete' => $profile['athlete'],
+                'upcomingCompetitions' => $profile['upcomingCompetitions']
+            ]);
+        } catch (\Throwable $e) {
+            error_log('AthleteController::getProfileById error: ' . $e->getMessage());
+            jsonResponse([
+                'error' => 'No pudimos cargar el perfil solicitado'
+            ], 500);
+        }
+    }
+
     /**
      * GET /api/athletes/results/medals?athleteId=123
      * Obtiene el conteo de medallas de un atleta

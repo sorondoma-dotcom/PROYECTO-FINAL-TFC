@@ -57,17 +57,6 @@ export class NavComponent implements OnDestroy, DoCheck {
     { label: 'Administración', icon: 'admin_panel_settings', route: '/admin/competiciones' }
   ];
 
-  get profileMenuItem() {
-    const user = this.authService.currentUser();
-    const hasAthleteProfile = !!user?.athleteId;
-    return {
-      label: 'Mi perfil',
-      icon: hasAthleteProfile ? 'person_pin' : 'person',
-      route: hasAthleteProfile ? '/mi-perfil/nadador' : '/mi-perfil'
-    };
-  }
-
-
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
     public authService: AuthService,
@@ -181,30 +170,10 @@ export class NavComponent implements OnDestroy, DoCheck {
   get visibleMenuItems() {
     let items = [...this.menuItems];
 
-    if (this.isAthleteUser()) {
-      const profileItem = this.profileMenuItem;
-      const alreadyIncluded = items.some((item) => item.route === profileItem.route);
-      if (!alreadyIncluded) {
-        items = [
-          items[0],
-          items[1],
-          profileItem,
-          ...items.slice(2)
-        ];
-      }
-    }
-
     if (this.isUserAdmin()) {
       items = items.concat(this.adminMenuItems);
     }
     return items;
-  }
-
-  private isAthleteUser(): boolean {
-    const user = this.authService.currentUser();
-    const role = (user?.role ?? '').toString().toLowerCase();
-    const allowedRoles = ['usuario', 'user', 'nadador'];
-    return !!user?.athleteId || allowedRoles.includes(role);
   }
 
   canShowNotificationBell(): boolean {
@@ -321,5 +290,17 @@ export class NavComponent implements OnDestroy, DoCheck {
       clearInterval(this.notificationsTimer);
       this.notificationsTimer = undefined;
     }
+  }
+
+  get profileRoute(): string {
+    const user = this.authService.currentUser();
+    if (user?.athleteId) {
+      return '/mi-perfil/nadador';
+    }
+    return '/mi-perfil';
+  }
+
+  goToProfile(): void {
+    this.router.navigate([this.profileRoute]);
   }
 }

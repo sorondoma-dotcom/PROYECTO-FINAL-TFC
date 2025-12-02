@@ -139,7 +139,7 @@
           </mat-menu>
 
           @if (authService.isLoggedIn()) {
-            <button class="user-chip" mat-button [matTooltip]="userFullName" (click)="logout()">
+            <button class="user-chip" mat-button [matMenuTriggerFor]="userMenu" [matTooltip]="userFullName">
               <div class="avatar" [class.avatar--image]="userAvatar">
                 @if (userAvatar) {
                   <img [src]="userAvatar" [alt]="userFullName" loading="lazy">
@@ -148,12 +148,23 @@
                 }
               </div>
               <span class="user-name">{{ userFullName }}</span>
-              <mat-icon class="logout-icon">logout</mat-icon>
+              <mat-icon>expand_more</mat-icon>
             </button>
           }
         </div>
       </div>
     </mat-toolbar>
+
+    <mat-menu #userMenu="matMenu" class="user-menu">
+      <button mat-menu-item (click)="goToProfile()">
+        <mat-icon>person</mat-icon>
+        <span>Ver perfil</span>
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Cerrar sesión</span>
+      </button>
+    </mat-menu>
 
     <div class="page-surface">
       <div class="gradient-backdrop"></div>

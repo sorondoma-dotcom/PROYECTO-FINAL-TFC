@@ -154,6 +154,35 @@
         </div>
       }
     </mat-card>
+
+    @if (olympicLeader) {
+      <mat-card class="panel olympic-card">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Records olimpicos</p>
+            <h2>Reina del medallero</h2>
+          </div>
+          <mat-icon>emoji_events</mat-icon>
+        </div>
+        <div class="olympic-card__body">
+          <div class="avatar">
+            <span>{{ olympicLeader.name.charAt(0) }}</span>
+          </div>
+          <div class="olympic-card__info">
+            <strong>{{ olympicLeader.name }}</strong>
+            <p class="meta">
+              @if (olympicLeader.countryCode) {
+                <span class="flag">{{ olympicLeader.countryCode | countryFlag }}</span>
+              }
+              <span>{{ olympicLeader.records }} record(s) OR</span>
+            </p>
+          </div>
+        </div>
+        <p class="olympic-card__note">
+          Conteo basado en registros olímpicos (etiqueta OR) dentro del histórico de resultados.
+        </p>
+      </mat-card>
+    }
   </div>
 
   <div class="panel-grid">

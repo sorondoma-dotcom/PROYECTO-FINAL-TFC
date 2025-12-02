@@ -198,12 +198,27 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
   loadInscripciones(competicionId: number): void {
     this.competitionService.getCompetition(competicionId).subscribe({
       next: (response) => {
-        this.inscripciones = response.inscriptions || [];
+        const list = response.inscriptions || [];
+        this.inscripciones = this.filterActiveInscriptions(list);
       },
       error: (error) => {
         console.error('Error cargando inscripciones:', error);
       }
     });
+  }
+
+  private filterActiveInscriptions(list: Inscription[]): Inscription[] {
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    return list.filter((item) => !this.isRetiredStatus(item.estado_inscripcion));
+  }
+
+  private isRetiredStatus(status?: string | null): boolean {
+    if (!status) {
+      return false;
+    }
+    return status.toLowerCase() === 'retirado';
   }
 
   editarCompeticion(competition?: Competition, event?: Event): void {

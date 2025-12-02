@@ -120,11 +120,15 @@ class InscriptionRepository
         return $stmt->execute([$competicion_id]);
     }
 
-    public function countByCompetition(int $competicion_id): int
+    public function countByCompetition(int $competicion_id, bool $onlyActive = false): int
     {
-        $stmt = $this->pdo->prepare('SELECT COUNT(*) as count FROM inscripciones_atleticas WHERE competicion_id = ?');
+        if ($onlyActive) {
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) as count FROM inscripciones_atleticas WHERE competicion_id = ? AND estado_inscripcion != \'retirado\'');
+        } else {
+            $stmt = $this->pdo->prepare('SELECT COUNT(*) as count FROM inscripciones_atleticas WHERE competicion_id = ?');
+        }
         $stmt->execute([$competicion_id]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return (int) $result['count'];
+        return (int) ($result['count'] ?? 0);
     }
 }

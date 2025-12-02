@@ -78,7 +78,7 @@
     </div>
   }
   @if(!loading && nadadores.length > 0){
-    <div class="table-wrapper">
+    <div class="table-wrapper desktop-table">
     <table mat-table [dataSource]="nadadores" class="ranking-table mat-elevation-z2">
       <ng-container matColumnDef="overallRank">
         <th mat-header-cell *matHeaderCellDef>#</th>
@@ -177,6 +177,79 @@
       <tr mat-header-row *matHeaderRowDef="['overallRank','athlete','performance','competition','date','actions']"></tr>
       <tr mat-row *matRowDef="let row; columns: ['overallRank','athlete','performance','competition','date','actions'];"></tr>
     </table>
+    </div>
+
+    <div class="mobile-ranking">
+      @for (n of nadadores; track $index) {
+        <article class="mobile-card mat-elevation-z2">
+          <div class="mobile-card__header">
+            <span class="rank-badge" [ngClass]="{'gold': n.overallRank === 1, 'silver': n.overallRank === 2, 'bronze': n.overallRank === 3}">
+              {{ n.overallRank }}
+            </span>
+            <div class="mobile-card__athlete">
+              <div class="mobile-avatar">
+                @if (n.imageUrl) {
+                  <img [src]="n.imageUrl" [alt]="n.name" loading="lazy" (error)="onImageError($event)">
+                } @else {
+                  <mat-icon>person</mat-icon>
+                }
+              </div>
+              <div class="mobile-card__identity">
+                <strong>{{ n.name }}</strong>
+                <small class="muted-line">
+                  <span>{{ n.country | countryFlag }} {{ n.country }}</span>
+                  @if(n.age){
+                    <span>&middot; {{ n.age }} anios</span>
+                  }
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <div class="mobile-card__section">
+            <span class="section-label">Marca</span>
+            <div class="mobile-card__value">
+              <span class="time-text">{{ n.time }}</span>
+              @if(n.recordTag){
+                <span class="record-tag">{{ n.recordTag }}</span>
+              }
+            </div>
+            <div class="mobile-card__tags">
+              <span class="pill">{{ n.distance }}m</span>
+              <span class="pill">{{ n.stroke }}</span>
+              <span class="pill">{{ n.poolConfiguration }}</span>
+              @if(n.points){
+                <span class="points-chip">{{ n.points }} pts</span>
+              }
+              @if(n.tag){
+                <span class="pill neutral">{{ n.tag }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="mobile-card__section">
+            <span class="section-label">Competicion</span>
+            <div class="mobile-card__value">
+              <strong>{{ n.competition || '-' }}</strong>
+              <small class="muted-line">
+                <span>{{ n.location | countryFlag }} {{ n.location }}</span>
+                <span>· {{ n.date }}</span>
+              </small>
+            </div>
+          </div>
+
+          <div class="mobile-card__actions">
+            <button mat-stroked-button color="accent" (click)="verTimeline(n)">
+              <mat-icon>timeline</mat-icon>
+              Timeline
+            </button>
+            <button mat-raised-button color="primary" (click)="verPerfil(n)">
+              <mat-icon>person</mat-icon>
+              Perfil
+            </button>
+          </div>
+        </article>
+      }
     </div>
 
     <!-- Informacion de paginacion y boton "Cargar mas" -->

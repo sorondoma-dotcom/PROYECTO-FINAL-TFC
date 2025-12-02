@@ -6,6 +6,7 @@ require __DIR__ . '/../src/controllers/AthleteController.php';
 require __DIR__ . '/../src/controllers/CompetitionController.php';
 require __DIR__ . '/../src/controllers/ProofController.php';
 require __DIR__ . '/../src/controllers/NotificationController.php';
+require __DIR__ . '/../src/controllers/StatsController.php';
 require __DIR__ . '/../src/services/AuthService.php';
 require __DIR__ . '/../src/services/MailService.php';
 require __DIR__ . '/../src/services/RankingService.php';
@@ -14,6 +15,7 @@ require __DIR__ . '/../src/services/AthleteProfileService.php';
 require __DIR__ . '/../src/services/CompetitionService.php';
 require __DIR__ . '/../src/services/ProofService.php';
 require __DIR__ . '/../src/services/NotificationService.php';
+require __DIR__ . '/../src/services/StatsService.php';
 require __DIR__ . '/../src/repositories/UserRepository.php';
 require __DIR__ . '/../src/repositories/SwimmingRankingRepository.php';
 require __DIR__ . '/../src/repositories/AthleteResultRepository.php';
@@ -36,6 +38,7 @@ use App\Controllers\AthleteController;
 use App\Controllers\CompetitionController;
 use App\Controllers\ProofController;
 use App\Controllers\NotificationController;
+use App\Controllers\StatsController;
 use App\Repositories\UserRepository;
 use App\Repositories\SwimmingRankingRepository;
 use App\Repositories\AthleteResultRepository;
@@ -50,6 +53,7 @@ use App\Services\AthleteProfileService;
 use App\Services\CompetitionService;
 use App\Services\ProofService;
 use App\Services\NotificationService;
+use App\Services\StatsService;
 
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
@@ -96,14 +100,18 @@ if (empty($uri)) {
 
 // Rutas publicas que NO requieren autenticacion
 $publicRoutes = [
-    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats', '/api/competitions'],
-    'POST' => ['/api/login', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
+    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats', '/api/competitions', '/api/stats/olympic-records'],
+    'POST' => ['/api/login', '/api/logout', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
     'PUT' => ['/api/password-reset']
 ];
 
 // Verificar si la ruta requiere autenticacion
 $requiresAuth = true;
 if (isset($publicRoutes[$method]) && in_array($uri, $publicRoutes[$method], true)) {
+    $requiresAuth = false;
+}
+
+if ($requiresAuth && $method === 'GET' && preg_match('/^\/api\/athletes\/(\d+)\/profile$/', $uri)) {
     $requiresAuth = false;
 }
 
@@ -168,6 +176,8 @@ $proofService = new ProofService($pdo);
 $proofController = new ProofController($proofService);
 
 $notificationController = new NotificationController($notificationService);
+$statsService = new StatsService($pdo);
+$statsController = new StatsController($statsService);
 
 if ($method === 'POST' && $uri === '/api/register') {
     $authController->register();
@@ -195,10 +205,14 @@ if ($method === 'POST' && $uri === '/api/register') {
     $athleteController->getResults();
 } elseif ($method === 'GET' && $uri === '/api/athletes/me') {
     $athleteController->getSelfProfile();
+} elseif ($method === 'GET' && preg_match('/^\/api\/athletes\/(\d+)\/profile$/', $uri, $matches)) {
+    $athleteController->getProfileById((int) $matches[1]);
 } elseif ($method === 'GET' && $uri === '/api/athletes/results/medals') {
     $athleteController->getMedals();
 } elseif ($method === 'GET' && $uri === '/api/athletes/results/stats') {
     $athleteController->getStats();
+} elseif ($method === 'GET' && $uri === '/api/stats/olympic-records') {
+    $statsController->getOlympicRecordLeader();
 } elseif ($method === 'GET' && $uri === '/api/competitions') {
     $competitionController->getAllCompetitions();
 } elseif ($method === 'POST' && $uri === '/api/competitions') {

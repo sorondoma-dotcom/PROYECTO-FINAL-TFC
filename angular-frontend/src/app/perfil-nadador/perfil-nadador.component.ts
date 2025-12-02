@@ -540,45 +540,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
         };
 
         const schedule: any[] = Array.isArray(res?.upcomingCompetitions) ? res.upcomingCompetitions : [];
-        this.upcomingEvents = schedule.map((item: any) => {
-          const competition = item?.competition ?? {};
-          const name = competition.nombre || competition.name || '';
-          const country = competition.pais || competition.country || '';
-          const city = competition.ciudad || competition.city || '';
-          const startDate = competition.fecha_inicio || item?.startDate || null;
-          const endDate = competition.fecha_fin || item?.endDate || null;
-          const pool = competition.tipo_piscina || item?.poolType || null;
-
-          return {
-            id: competition.id ?? item?.competitionId ?? null,
-            competitionId: competition.id ?? item?.competitionId ?? null,
-            nombre: name,
-            name,
-            stage: competition.stage ?? null,
-            date: startDate,
-            pais: country,
-            countryCode: country,
-            ciudad: city,
-            city,
-            fecha_inicio: startDate,
-            startDate,
-            fecha_fin: endDate,
-            endDate,
-            tipo_piscina: pool,
-            poolName: pool,
-            estado: competition.estado || item?.competitionStatus || null,
-            status: item?.status || null,
-            logo_path: competition.logo_path || item?.logoPath || null,
-            logoPath: competition.logo_path || item?.logoPath || null,
-            lugar_evento: competition.lugar_evento || item?.venue || null,
-            flagImage: competition.flagImage ?? null,
-            logo: competition.logo ?? null,
-            url: competition.url ?? null,
-            month: competition.month ?? null,
-            year: competition.year ?? null,
-            monthNumber: competition.monthNumber ?? null
-          } as Competition;
-        });
+        this.upcomingEvents = this.mapUpcomingCompetitions(schedule);
         this.loadingCompetitions = false;
 
         this.applyAccountDetailsToAthlete();
@@ -595,6 +557,49 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
         }
         this.rankingError = err?.error?.error || 'No pudimos cargar tu perfil.';
       }
+    });
+  }
+
+  private mapUpcomingCompetitions(schedule: any[]): Competition[] {
+    const source = Array.isArray(schedule) ? schedule : [];
+    return source.map((item: any) => {
+      const competition = item?.competition ?? {};
+      const name = competition.nombre || competition.name || '';
+      const country = competition.pais || competition.country || '';
+      const city = competition.ciudad || competition.city || '';
+      const startDate = competition.fecha_inicio || item?.startDate || null;
+      const endDate = competition.fecha_fin || item?.endDate || null;
+      const pool = competition.tipo_piscina || item?.poolType || null;
+
+      return {
+        id: competition.id ?? item?.competitionId ?? null,
+        competitionId: competition.id ?? item?.competitionId ?? null,
+        nombre: name,
+        name,
+        stage: competition.stage ?? null,
+        date: startDate,
+        pais: country,
+        countryCode: country,
+        ciudad: city,
+        city,
+        fecha_inicio: startDate,
+        startDate,
+        fecha_fin: endDate,
+        endDate,
+        tipo_piscina: pool,
+        poolName: pool,
+        estado: competition.estado || item?.competitionStatus || null,
+        status: item?.status || null,
+        logo_path: competition.logo_path || item?.logoPath || null,
+        logoPath: competition.logo_path || item?.logoPath || null,
+        lugar_evento: competition.lugar_evento || item?.venue || null,
+        flagImage: competition.flagImage ?? null,
+        logo: competition.logo ?? null,
+        url: competition.url ?? null,
+        month: competition.month ?? null,
+        year: competition.year ?? null,
+        monthNumber: competition.monthNumber ?? null
+      } as Competition;
     });
   }
 
@@ -871,11 +876,62 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
   loadUpcomingCompetitions(): void {
     if (this.viewingSelf) {
-      this.loadingCompetitions = false;
       return;
     }
 
+    if (this.athlete.athleteId) {
+      this.loadUpcomingCompetitionsFromProfile(this.athlete.athleteId);
+    } else {
+      this.loadSuggestedCalendar();
+    }
+  }
+
+  private loadUpcomingCompetitionsFromProfile(athleteId: number): void {
     this.loadingCompetitions = true;
+    this.competitionsError = null;
+
+    this.datosService.getAthleteProfile(athleteId).subscribe({
+      next: (response) => {
+        if (response?.athlete) {
+          this.mergeAthleteProfile(response.athlete);
+        }
+
+        const schedule: any[] = Array.isArray(response?.upcomingCompetitions) ? response.upcomingCompetitions : [];
+        if (schedule.length) {
+          this.upcomingEvents = this.mapUpcomingCompetitions(schedule);
+          this.loadingCompetitions = false;
+          return;
+        }
+
+        this.loadSuggestedCalendar();
+      },
+      error: () => {
+        this.loadSuggestedCalendar();
+      }
+    });
+  }
+
+  private mergeAthleteProfile(athleteData: any): void {
+    if (!athleteData) {
+      return;
+    }
+
+    this.athlete = {
+      ...this.athlete,
+      athleteId: this.athlete.athleteId ?? athleteData.athleteId ?? athleteData.athlete_id ?? null,
+      name: this.athlete.name || athleteData.name || athleteData.athlete_name || '',
+      country: this.athlete.country || athleteData.countryCode || athleteData.country || '',
+      nationality: this.athlete.nationality || athleteData.countryCode || '',
+      imageUrl: this.athlete.imageUrl || athleteData.imageUrl || '',
+      profileUrl: this.athlete.profileUrl || athleteData.profileUrl || '',
+      gender: this.athlete.gender ?? athleteData.gender ?? null,
+      age: this.athlete.age ?? (typeof athleteData.age === 'number' ? athleteData.age : null)
+    };
+  }
+
+  private loadSuggestedCalendar(): void {
+    this.loadingCompetitions = true;
+    this.competitionsError = null;
     const currentYear = new Date().getFullYear();
 
     this.datosService

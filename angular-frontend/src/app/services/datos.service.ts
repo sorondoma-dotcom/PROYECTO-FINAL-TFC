@@ -132,9 +132,17 @@ export class DatosService {
     });
   }
 
+  getAthleteProfile(athleteId: number): Observable<any> {
+    return this.http.get(`${this.phpApiBase}/athletes/${athleteId}/profile`);
+  }
+
   getCurrentAthleteProfile(): Observable<any> {
     return this.http.get(`${this.phpApiBase}/athletes/me`, {
       withCredentials: true
     });
+  }
+
+  getOlympicRecordLeader(): Observable<any> {
+    return this.http.get(`${this.phpApiBase}/stats/olympic-records`);
   }
 }

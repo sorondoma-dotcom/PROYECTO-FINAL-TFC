@@ -485,6 +485,44 @@
   gap: 18px;
 }
 
+.olympic-card {
+  background: linear-gradient(135deg, #fff7e6, #fff);
+  border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+.olympic-card__body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.olympic-card__body .avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f97316, #fbbf24);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.olympic-card__info .meta {
+  margin: 4px 0 0;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--color-text-soft);
+}
+
+.olympic-card__note {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 13px;
+}
+
 .scheduled-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

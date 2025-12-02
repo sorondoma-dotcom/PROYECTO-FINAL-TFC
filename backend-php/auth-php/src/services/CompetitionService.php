@@ -131,7 +131,7 @@ class CompetitionService
 
         $result = [];
         foreach ($competitions as $comp) {
-            $inscCount = $this->inscriptions->countByCompetition($comp->id);
+            $inscCount = $this->inscriptions->countByCompetition($comp->id, true);
             $data = $comp->toArray();
             $data['total_inscritos'] = $inscCount;
             $result[] = $data;
@@ -155,6 +155,33 @@ class CompetitionService
         // Validar que el atleta no esté ya inscrito
         $existing = $this->inscriptions->findByAthleteAndCompetition($athlete_id, $competicion_id);
         if ($existing) {
+            if ($existing->estado_inscripcion === 'retirado') {
+                $reactivateData = [
+                    'estado_inscripcion' => 'inscrito',
+                    'confirmado_en' => null
+                ];
+
+                if ($numero_dorsal !== null) {
+                    $reactivateData['numero_dorsal'] = $numero_dorsal;
+                }
+
+                if ($notas !== null) {
+                    $reactivateData['notas'] = $notas;
+                }
+
+                $reactivated = $this->inscriptions->update($existing->id, $reactivateData) ?? $existing;
+
+                if ($this->notifications) {
+                    $this->notifications->createInscriptionConfirmation($competition, $reactivated);
+                }
+
+                return [
+                    'success' => true,
+                    'inscription' => $reactivated->toArray(),
+                    'message' => 'El atleta había rechazado la invitación. Se renovó la solicitud de confirmación.'
+                ];
+            }
+
             throw new \RuntimeException('El atleta ya está inscrito en esta competición');
         }
 
