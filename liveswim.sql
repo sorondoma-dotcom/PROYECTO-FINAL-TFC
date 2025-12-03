@@ -5786,7 +5786,7 @@ INSERT INTO `resultados` (`id`, `athlete_id`, `event`, `time_text`, `record_tags
 --
 
 CREATE TABLE `swimming_rankings` (
-  `id` int(10) UNSIGNED NOT NULL,
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `gender` char(1) NOT NULL,
   `distance` smallint(6) NOT NULL,
   `stroke` varchar(20) NOT NULL,
@@ -5802,7 +5802,8 @@ CREATE TABLE `swimming_rankings` (
   `race_date` date DEFAULT NULL,
   `athlete_id` int(10) UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT NULL
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
