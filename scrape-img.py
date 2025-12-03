@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import mysql.connector
 from mysql.connector import Error
 
-# ===== CONFIGURACIÓN DB (Rellena con tus datos) =====
 DB_CONFIG = {
     "host": "localhost",
     "user": "liveSwim",
@@ -12,10 +11,10 @@ DB_CONFIG = {
     "database": "liveSwim",
 }
 
-# URL base del perfil de atleta
+
 BASE_URL = "https://www.worldaquatics.com/athletes/{athlete_id}/{athlete_id}"
 
-# Tiempo entre peticiones (segundos) para no ir muy agresivos
+
 REQUEST_DELAY = 0.8
 
 
@@ -49,18 +48,14 @@ def fetch_athlete_image_url(athlete_id):
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # Buscamos el bloque que comentas:
-    # <div class="athlete-header__profile" ...>
     container = soup.find("div", class_="athlete-header__profile")
     if not container:
         print(f"[WARN] Athlete {athlete_id} - no se encontró el contenedor 'athlete-header__profile'")
         return None, url
 
-    # Dentro buscamos la imagen de perfil:
-    # <img class="athlete-header__profile--image  object-fit-cover-picture__img" src="..." alt="...">
     img = container.find("img", class_="athlete-header__profile--image")
     if not img:
-        # Por si acaso la clase varía un poco, probamos a coger el primer <img> dentro del contenedor
+        
         img = container.find("img")
 
     if not img:
@@ -72,7 +67,7 @@ def fetch_athlete_image_url(athlete_id):
         print(f"[WARN] Athlete {athlete_id} - imagen sin atributo src")
         return None, url
 
-    # Si la URL viniera relativa (no debería, pero por si acaso)
+    
     if img_src.startswith("//"):
         img_src = "https:" + img_src
 
