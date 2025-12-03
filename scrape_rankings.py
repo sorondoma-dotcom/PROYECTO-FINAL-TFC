@@ -132,6 +132,65 @@ def ensure_table_exists():
     conn.close()
 
 
+def athlete_exists(athlete_id: int) -> bool:
+    """Comprueba si ya existe un atleta con ese ID en la tabla atletas."""
+    if athlete_id is None:
+        return False
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM atletas WHERE athlete_id = %s LIMIT 1", (athlete_id,))
+    exists = cur.fetchone() is not None
+    cur.close()
+    conn.close()
+    return exists
+
+
+def insert_athlete(athlete_data: dict):
+    """Inserta un atleta en la tabla atletas."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    sql = """
+        INSERT INTO atletas (
+            athlete_id, athlete_name, age, gender, country_code,
+            image_url, athlete_profile_url
+        ) VALUES (
+            %(athlete_id)s, %(athlete_name)s, %(age)s, %(gender)s,
+            %(country_code)s, %(image_url)s, %(athlete_profile_url)s
+        )
+    """
+    cur.execute(sql, athlete_data)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def ensure_athlete_saved(row: dict):
+    """
+    Guarda el atleta en la tabla atletas si no existía previamente.
+    """
+    athlete_id = row.get("athlete_id")
+    if athlete_id is None:
+        print("[!] Fila sin athlete_id, se omite guardado en atletas")
+        return
+
+    if athlete_exists(athlete_id):
+        return
+
+    athlete_data = {
+        "athlete_id": athlete_id,
+        "athlete_name": row.get("athlete_name"),
+        "age": row.get("age"),
+        "gender": row.get("gender"),
+        "country_code": row.get("country_code"),
+        "image_url": row.get("image_url"),
+        "athlete_profile_url": row.get("athlete_profile_url"),
+    }
+
+    insert_athlete(athlete_data)
+    print(f"[+] Atleta {athlete_id} insertado en la tabla atletas")
+
+
 def upsert_ranking_row(row: dict):
     """
     Inserta una fila en la tabla swimming_rankings usando SOLO las columnas
@@ -379,6 +438,7 @@ def main():
 
             for idx, row in enumerate(rows, start=1):
                 print(f"[{idx}/{len(rows)}] Guardando ranking {row['time_text']} (athlete_id={row['athlete_id']})")
+                ensure_athlete_saved(row)
                 upsert_ranking_row(row)
 
         except Exception as e:
