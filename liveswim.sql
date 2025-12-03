@@ -32,8 +32,8 @@ CREATE TABLE `athlete_notifications` (
   `athlete_id` int(10) UNSIGNED NOT NULL,
   `competicion_id` int(10) UNSIGNED NOT NULL,
   `inscripcion_id` int(10) UNSIGNED NOT NULL,
-  `notification_type` enum('confirmacion_inscripcion') DEFAULT 'confirmacion_inscripcion',
-  `status` enum('pendiente','aceptada','rechazada','leida') DEFAULT 'pendiente',
+  `notification_type` enum('confirmacion_inscripcion','recordatorio_evento','actualizacion_resultado','mensaje_admin') DEFAULT 'confirmacion_inscripcion',
+  `status` enum('pendiente','aceptada','rechazada','leida','archivada') DEFAULT 'pendiente',
   `titulo` varchar(255) NOT NULL,
   `mensaje` text DEFAULT NULL,
   `read_at` datetime DEFAULT NULL,
@@ -359,16 +359,18 @@ CREATE TABLE `inscripciones_atleticas` (
   `estado_inscripcion` enum('inscrito','confirmado','retirado','descalificado') DEFAULT 'inscrito',
   `notas` text DEFAULT NULL,
   `inscrito_en` datetime DEFAULT current_timestamp(),
-  `confirmado_en` datetime DEFAULT NULL
+  `confirmado_en` datetime DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Volcado de datos para la tabla `inscripciones_atleticas`
 --
 
-INSERT INTO `inscripciones_atleticas` (`id`, `competicion_id`, `athlete_id`, `numero_dorsal`, `estado_inscripcion`, `notas`, `inscrito_en`, `confirmado_en`) VALUES
-(203, 16, 1000482, NULL, 'confirmado', NULL, '2025-12-01 10:41:14', '2025-12-01 10:41:23'),
-(205, 15, 1000482, NULL, 'retirado', NULL, '2025-12-01 10:51:34', NULL);
+INSERT INTO `inscripciones_atleticas` (`id`, `competicion_id`, `athlete_id`, `numero_dorsal`, `estado_inscripcion`, `notas`, `inscrito_en`, `confirmado_en`, `created_at`, `updated_at`) VALUES
+(203, 16, 1000482, NULL, 'confirmado', NULL, '2025-12-01 10:41:14', '2025-12-01 10:41:23', '2025-12-01 10:41:14', '2025-12-01 10:41:23'),
+(205, 15, 1000482, NULL, 'retirado', NULL, '2025-12-01 10:51:34', NULL, '2025-12-01 10:51:34', '2025-12-01 10:51:34');
 
 -- --------------------------------------------------------
 
@@ -394,7 +396,7 @@ CREATE TABLE `inscripciones_pruebas` (
 --
 
 CREATE TABLE `resultados` (
-  `id` int(10) UNSIGNED NOT NULL,
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `athlete_id` int(10) UNSIGNED NOT NULL,
   `event` varchar(255) NOT NULL,
   `time_text` varchar(32) NOT NULL,
@@ -406,7 +408,8 @@ CREATE TABLE `resultados` (
   `comp_country_code` char(3) DEFAULT NULL,
   `race_date` date DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
-  `updated_at` datetime DEFAULT NULL
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -7483,7 +7486,7 @@ ALTER TABLE `competiciones_agendadas`
 --
 ALTER TABLE `competiciones_pruebas`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unique_prueba` (`competicion_id`,`nombre_prueba`,`distancia`,`estilo`),
+  ADD UNIQUE KEY `unique_prueba` (`competicion_id`,`nombre_prueba`,`distancia`,`estilo`,`genero`),
   ADD KEY `idx_pruebas_competicion` (`competicion_id`);
 
 --
@@ -7503,6 +7506,13 @@ ALTER TABLE `inscripciones_pruebas`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `unique_athlete_event` (`inscripcion_atletica_id`,`prueba_id`),
   ADD KEY `prueba_id` (`prueba_id`);
+
+--
+-- Indices de la tabla `resultados`
+--
+ALTER TABLE `resultados`
+  ADD KEY `idx_resultados_athlete_event` (`athlete_id`,`event`),
+  ADD KEY `idx_resultados_race_date` (`race_date`);
 
 --
 -- Indices de la tabla `users`
@@ -7533,6 +7543,12 @@ ALTER TABLE `competiciones_agendadas`
 --
 ALTER TABLE `competiciones_pruebas`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+
+--
+-- AUTO_INCREMENT de la tabla `resultados`
+--
+ALTER TABLE `resultados`
+  AUTO_INCREMENT=5365;
 
 --
 -- AUTO_INCREMENT de la tabla `inscripciones_atleticas`
@@ -7588,6 +7604,12 @@ ALTER TABLE `inscripciones_atleticas`
 ALTER TABLE `inscripciones_pruebas`
   ADD CONSTRAINT `inscripciones_pruebas_ibfk_1` FOREIGN KEY (`inscripcion_atletica_id`) REFERENCES `inscripciones_atleticas` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `inscripciones_pruebas_ibfk_2` FOREIGN KEY (`prueba_id`) REFERENCES `competiciones_pruebas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `resultados`
+--
+ALTER TABLE `resultados`
+  ADD CONSTRAINT `fk_resultados_atleta` FOREIGN KEY (`athlete_id`) REFERENCES `atletas` (`athlete_id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `users`
