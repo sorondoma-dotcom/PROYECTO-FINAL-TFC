@@ -93,11 +93,11 @@
               @if (canUploadAvatar) {
                 <button mat-stroked-button color="primary" type="button" (click)="fileInput.click()" [disabled]="savingProfile">
                   <mat-icon>photo_camera</mat-icon>
-                  Subir foto
+                  {{ accountUser?.avatarUrl ? 'Reemplazar foto' : 'Subir foto' }}
                 </button>
                 <input #fileInput type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarSelected($event)" hidden>
               } @else {
-                <p class="muted">Ya cuentas con una foto de perfil.</p>
+                <p class="muted">Este rol no permite actualizar la foto de perfil.</p>
               }
 
               @if (selectedAvatar) {

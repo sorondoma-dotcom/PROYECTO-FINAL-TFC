@@ -298,10 +298,6 @@ class AuthService
         $shouldProcessAvatar = $avatarFile && is_array($avatarFile) && isset($avatarFile['error']) && $avatarFile['error'] !== UPLOAD_ERR_NO_FILE;
 
         if ($shouldProcessAvatar) {
-            if ($this->userHasAvatar($user)) {
-                throw new \RuntimeException('Ya tienes una foto de perfil asignada.');
-            }
-
             $avatarPayload = $this->extractAvatarPayload($avatarFile);
             $updates['avatar_blob'] = $avatarPayload['data'];
             $updates['avatar_mime'] = $avatarPayload['mime'];
@@ -429,6 +425,11 @@ class AuthService
     {
         $relativePath = null;
 
+        // Si en la base hay un enlace absoluto (https://...), priorizarlo sin importar blobs previos
+        if (!empty($user->avatarPath) && preg_match('#^https?://#i', $user->avatarPath)) {
+            return $user->avatarPath;
+        }
+
         if ($user->avatarHasBlob) {
             $timestamp = $user->avatarUpdatedAt ? strtotime($user->avatarUpdatedAt) : time();
             $relativePath = sprintf('/api/users/%d/avatar?ts=%d', $user->id, max($timestamp, 1));
@@ -436,6 +437,11 @@ class AuthService
             $relativePath = '/' . ltrim($user->avatarPath, '/');
         } else {
             return null;
+        }
+
+        $configuredBase = rtrim(env('PUBLIC_BASE_URL', ''), '/');
+        if ($configuredBase !== '') {
+            return $configuredBase . $relativePath;
         }
 
         $host = $_SERVER['HTTP_HOST'] ?? '';

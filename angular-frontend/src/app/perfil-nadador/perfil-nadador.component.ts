@@ -263,7 +263,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   }
 
   get canUploadAvatar(): boolean {
-    return this.canEditProfile && !this.accountUser?.avatarUrl;
+    return this.canEditProfile;
   }
 
   get canSubmitProfile(): boolean {
@@ -278,11 +278,6 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   }
 
   onAvatarSelected(event: Event): void {
-    if (!this.canUploadAvatar) {
-      this.openSnackBar('Ya tienes una foto de perfil asignada.');
-      return;
-    }
-
     const input = event.target as HTMLInputElement;
     const file = input?.files && input.files.length ? input.files[0] : null;
 
