@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { CompetitionService, Competition as ScheduledCompetition, Inscription } from '../../services/competition.service';
 import { ProofService, Proof, ProofInscription } from '../../services/proof.service';
+import { resolvePhpAssetUrl } from '../../config/api.config';
 
 interface SerieInfo {
   number: number;
@@ -248,9 +249,7 @@ export class ScheduledCompetitionDetailComponent implements OnInit, OnDestroy {
     }
 
     if (comp.logo_path) {
-      return comp.logo_path.startsWith('http')
-        ? comp.logo_path
-        : `http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public${comp.logo_path}`;
+      return resolvePhpAssetUrl(comp.logo_path);
     }
 
     return null;

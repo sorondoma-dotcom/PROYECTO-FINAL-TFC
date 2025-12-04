@@ -189,15 +189,30 @@ Notas y buenas prácticas:
 - Nunca incluyas `node_modules/` en el repositorio (ya está en `.gitignore`).
 - Para entornos de producción o para simplificar instalaciones en Windows, considera usar Docker (instrucciones básicas en la sección siguiente).
 
-### Opción Docker (recomendado para entornos limpios)
+### Opcion Docker (stack completo)
 
-Si tienes Docker instalado puedes construir y levantar servicios sin instalar dependencias en Windows:
+El repositorio incluye contenedores listos para levantar el frontend Angular, la API Node, el backend PHP y MySQL sin instalar dependencias locales.
 
 ```bash
-# desde la raíz del repo (ejemplo mínimo para api-swim-live)
-cd api-swim-live
-docker build -t swimlive-api .
-docker run -p 8080:8080 swimlive-api
+docker compose build
+docker compose up -d
 ```
 
-Adapta puertos y Dockerfile según necesites. Puedo añadir un `Dockerfile` y `docker-compose.yml` de ejemplo si quieres.
+Servicios expuestos:
+
+- Frontend (Angular + Nginx + proxy inverso): http://localhost:8080
+- API Node (web scraping / World Aquatics): http://localhost:3000
+- Backend PHP (autenticacion y gestion): http://localhost:8081
+- MySQL: puerto 3306 (credenciales definidas en `docker-compose.yml`)
+
+La base `liveswim.sql` se importa automaticamente la primera vez.
+
+ Para reiniciar por completo usa `docker compose down -v`.
+
+Variables clave (puedes sobreescribirlas con `docker compose --env-file` o variables de entorno):
+
+- `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`
+- `ALLOWED_ORIGINS` para el backend PHP (por defecto: `http://localhost,http://localhost:8080`)
+- `PORT` y `MYSQL_*` para la API Node
+
+Para detener todo el stack ejecuta `docker compose down`. Revisa logs con `docker compose logs -f <servicio>`.

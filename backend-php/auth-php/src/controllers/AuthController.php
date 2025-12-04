@@ -140,6 +140,27 @@ class AuthController
         }
     }
 
+    public function streamAvatar(int $userId): void
+    {
+        try {
+            $avatar = $this->service->getUserAvatar($userId);
+            if (!$avatar) {
+                http_response_code(404);
+                return;
+            }
+
+            header('Content-Type: ' . $avatar['mime']);
+            header('Cache-Control: public, max-age=86400');
+            if (!headers_sent()) {
+                header('Content-Length: ' . strlen($avatar['data']));
+            }
+            echo $avatar['data'];
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo '';
+        }
+    }
+
     private function getJsonInput(): array
     {
         $raw = file_get_contents('php://input');

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap, finalize } from 'rxjs/operators';
+import { API_CONFIG } from '../config/api.config';
 
 interface LoginRequest {
   email: string;
@@ -16,7 +17,7 @@ interface RegisterRequest extends LoginRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly baseUrl = 'http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api';
+  private readonly baseUrl = API_CONFIG.phpApiBase;
   private readonly storageKey = 'auth_user';
   private readonly httpOptions = { withCredentials: true };
 

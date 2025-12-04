@@ -3,12 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { CompetitionFilters } from '../models/filters/competition-filters.interface';
 import { RankingFilters } from '../models/filters/ranking-filters.interface';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WorldAquaticsApiService {
-  private readonly baseUrl = 'http://localhost:3000/api/world-aquatics';
+  private readonly baseUrl = `${API_CONFIG.nodeApiBase}/world-aquatics`;
 
   constructor(private http: HttpClient) {}
 

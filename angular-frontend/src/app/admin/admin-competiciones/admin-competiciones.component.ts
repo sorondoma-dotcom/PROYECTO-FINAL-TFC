@@ -23,6 +23,7 @@ import { ManageAthletesDialogComponent } from '../manage-athletes-dialog/manage-
 import { EditCompetitionDialogComponent } from './edit-competition-dialog/edit-competition-dialog.component';
 import { ManageProofsDialogComponent } from '../manage-proofs-dialog/manage-proofs-dialog.component';
 import { ProofInscriptionDialogComponent } from '../proof-inscription-dialog/proof-inscription-dialog.component';
+import { resolvePhpAssetUrl } from '../../config/api.config';
 
 // Componente principal
 @Component({
@@ -55,7 +56,6 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
   competiciones: Competition[] = [];
   selectedCompetition: Competition | null = null;
   inscripciones: Inscription[] = [];
-  readonly logoBaseUrl = 'http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public';
   selectedTabIndex = 0;
 
   // Formularios
@@ -391,6 +391,9 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
     }
     if (fieldName === 'fecha_fin' || fieldName === 'fecha_fin_hora') {
       if (this.competicionForm.hasError('fechaFinAntesInicio')) {
+        if (this.isSameDayRange()) {
+          return 'Si la competición es el mismo día, la hora de fin debe ser superior a la hora de inicio.';
+        }
         return 'La fecha u hora de finalización debe ser posterior al inicio';
       }
       if (this.competicionForm.hasError('fechaFinFueraDeRango')) {
@@ -548,7 +551,10 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
     return data;
   }
 
-  private formatDateTime(dateValue: Date | string | null | undefined, timeValue: string | null | undefined): string | null {
+  private formatDateTime(
+    dateValue: Date | string | null | undefined,
+    timeValue: string | null | undefined
+  ): string | null {
     if (!dateValue) {
       return null;
     }
@@ -558,12 +564,27 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
       return null;
     }
 
+    let hours = 0;
+    let minutes = 0;
+
     if (timeValue) {
-      const [hours, minutes] = timeValue.split(':').map(part => Number(part) || 0);
-      date.setHours(hours, minutes, 0, 0);
+      const parsed = timeValue.split(':').map(part => Number(part) || 0);
+      hours = parsed[0] ?? hours;
+      minutes = parsed[1] ?? minutes;
+    } else if (typeof dateValue === 'string' && dateValue.includes('T')) {
+      hours = date.getHours();
+      minutes = date.getMinutes();
     }
 
-    return date.toISOString();
+    return [
+      date.getFullYear(),
+      this.pad(date.getMonth() + 1),
+      this.pad(date.getDate())
+    ].join('-') + ` ${this.pad(hours)}:${this.pad(minutes)}:00`;
+  }
+
+  private pad(value: number): string {
+    return value.toString().padStart(2, '0');
   }
 
   private revokeLogoPreview(): void {
@@ -679,12 +700,23 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
       return null;
     }
 
-    if (/^https?:\/\//i.test(candidate)) {
-      return candidate;
+    return resolvePhpAssetUrl(candidate);
+  }
+
+  isSameDayRange(): boolean {
+    const fechaInicio = this.competicionForm?.get('fecha_inicio')?.value;
+    const fechaFin = this.competicionForm?.get('fecha_fin')?.value;
+    if (!fechaInicio || !fechaFin) {
+      return false;
     }
 
-    const base = this.logoBaseUrl.replace(/\/$/, '');
-    const normalizedPath = candidate.startsWith('/') ? candidate : `/${candidate}`;
-    return `${base}${normalizedPath}`;
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
+
+    return (
+      inicio.getFullYear() === fin.getFullYear() &&
+      inicio.getMonth() === fin.getMonth() &&
+      inicio.getDate() === fin.getDate()
+    );
   }
 }

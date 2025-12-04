@@ -294,35 +294,28 @@ class AuthService
             $updates['last_name'] = $this->validateLastName($rawLastName);
         }
 
-        $avatarPath = null;
+        $avatarPayload = null;
         $shouldProcessAvatar = $avatarFile && is_array($avatarFile) && isset($avatarFile['error']) && $avatarFile['error'] !== UPLOAD_ERR_NO_FILE;
 
         if ($shouldProcessAvatar) {
-            if (!empty($user->avatarPath)) {
+            if ($this->userHasAvatar($user)) {
                 throw new \RuntimeException('Ya tienes una foto de perfil asignada.');
             }
 
-            $avatarPath = $this->storeAvatarFile($avatarFile);
-            $updates['avatar_path'] = $avatarPath;
+            $avatarPayload = $this->extractAvatarPayload($avatarFile);
+            $updates['avatar_blob'] = $avatarPayload['data'];
+            $updates['avatar_mime'] = $avatarPayload['mime'];
+            $updates['avatar_path'] = null;
+            $updates['avatar_updated_at'] = $avatarPayload['uploaded_at'];
         }
 
         if (!$updates) {
             return $this->formatUser($user);
         }
 
-        try {
-            $updatedUser = $this->users->updateProfile((int) $userId, $updates);
-        } catch (\Throwable $e) {
-            if ($avatarPath) {
-                $this->deleteAvatarFile($avatarPath);
-            }
-            throw $e;
-        }
+        $updatedUser = $this->users->updateProfile((int) $userId, $updates);
 
         if (!$updatedUser) {
-            if ($avatarPath) {
-                $this->deleteAvatarFile($avatarPath);
-            }
             throw new \RuntimeException('No pudimos actualizar tus datos.');
         }
 
@@ -400,7 +393,7 @@ class AuthService
         $_SESSION['athlete_id'] = $user->athleteId;
         $_SESSION['user_last_name'] = $user->lastName ?? null;
         $_SESSION['user_role'] = $user->role ?? 'user';
-        $_SESSION['user_avatar'] = $user->avatarPath ?? null;
+        $_SESSION['user_avatar'] = $this->buildAvatarUrl($user);
     }
 
     private function formatUser(User $user): array
@@ -416,7 +409,7 @@ class AuthService
             'role' => $user->role ?? 'user',
             'isAdmin' => (bool) ($user->isAdmin ?? false),
             'athleteId' => $user->athleteId,
-            'avatarUrl' => $this->buildAvatarUrl($user->avatarPath),
+            'avatarUrl' => $this->buildAvatarUrl($user),
         ];
     }
 
@@ -432,13 +425,18 @@ class AuthService
         ];
     }
 
-    private function buildAvatarUrl(?string $relativePath): ?string
+    private function buildAvatarUrl(User $user): ?string
     {
-        if (!$relativePath) {
+        $relativePath = null;
+
+        if ($user->avatarHasBlob) {
+            $timestamp = $user->avatarUpdatedAt ? strtotime($user->avatarUpdatedAt) : time();
+            $relativePath = sprintf('/api/users/%d/avatar?ts=%d', $user->id, max($timestamp, 1));
+        } elseif (!empty($user->avatarPath)) {
+            $relativePath = '/' . ltrim($user->avatarPath, '/');
+        } else {
             return null;
         }
-
-        $relativePath = '/' . ltrim($relativePath, '/');
 
         $host = $_SERVER['HTTP_HOST'] ?? '';
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
@@ -451,7 +449,7 @@ class AuthService
         return sprintf('%s://%s%s%s', $scheme, $host, $basePath, $relativePath);
     }
 
-    private function storeAvatarFile(array $avatar): string
+    private function extractAvatarPayload(array $avatar): array
     {
         $error = $avatar['error'] ?? UPLOAD_ERR_NO_FILE;
         if ($error !== UPLOAD_ERR_OK) {
@@ -491,37 +489,16 @@ class AuthService
             throw new \RuntimeException('Formato de imagen no permitido. Usa JPG, PNG o WebP.');
         }
 
-        $uploadDir = dirname(__DIR__, 2) . '/public/uploads/avatars';
-        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
-            throw new \RuntimeException('No se pudo preparar el directorio de avatares.');
+        $binary = file_get_contents($tmpPath);
+        if ($binary === false) {
+            throw new \RuntimeException('No se pudo leer la imagen de perfil.');
         }
 
-        $unique = str_replace('.', '', uniqid('avatar_', true));
-        $filename = $unique . '.' . $allowed[$mime];
-        $destination = $uploadDir . '/' . $filename;
-
-        $moved = move_uploaded_file($tmpPath, $destination);
-        if (!$moved && PHP_SAPI === 'cli') {
-            $moved = rename($tmpPath, $destination);
-        }
-
-        if (!$moved) {
-            throw new \RuntimeException('Error al guardar la imagen de perfil.');
-        }
-
-        return '/uploads/avatars/' . $filename;
-    }
-
-    private function deleteAvatarFile(string $relativePath): void
-    {
-        if (!$relativePath || !str_contains($relativePath, '/uploads/avatars/')) {
-            return;
-        }
-
-        $fullPath = dirname(__DIR__, 2) . '/public/' . ltrim($relativePath, '/');
-        if (is_file($fullPath)) {
-            @unlink($fullPath);
-        }
+        return [
+            'data' => $binary,
+            'mime' => $mime,
+            'uploaded_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+        ];
     }
 
     private function getPublicBasePath(): string
@@ -533,5 +510,47 @@ class AuthService
         }
 
         return substr($scriptName, 0, $position + 1);
+    }
+
+    private function userHasAvatar(User $user): bool
+    {
+        return $user->avatarHasBlob || !empty($user->avatarPath);
+    }
+
+    public function getUserAvatar(int $userId): ?array
+    {
+        $payload = $this->users->getAvatarBinary($userId);
+        if ($payload) {
+            return $payload;
+        }
+
+        $user = $this->users->findById($userId);
+        if (!$user || empty($user->avatarPath)) {
+            return null;
+        }
+
+        $fullPath = dirname(__DIR__, 2) . '/public/' . ltrim($user->avatarPath, '/');
+        if (!is_file($fullPath)) {
+            return null;
+        }
+
+        $mime = $user->avatarMime;
+        if (!$mime) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo ? finfo_file($finfo, $fullPath) : null;
+            if ($finfo) {
+                finfo_close($finfo);
+            }
+        }
+
+        $binary = file_get_contents($fullPath);
+        if ($binary === false) {
+            return null;
+        }
+
+        return [
+            'data' => $binary,
+            'mime' => $mime ?: 'image/jpeg',
+        ];
     }
 }

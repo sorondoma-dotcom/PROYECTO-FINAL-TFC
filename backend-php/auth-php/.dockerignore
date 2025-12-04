@@ -1,0 +1,7 @@
+data/session_debug.log
+data/notification_debug.log
+public/uploads
+vendor
+node_modules
+.env.local
+.DS_Store

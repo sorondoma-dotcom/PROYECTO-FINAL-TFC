@@ -7,6 +7,12 @@
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
+Drop database if exists `liveswim`;
+
+create database if not exists `liveswim` default character set utf8mb4 collate utf8mb4_general_ci;
+USE `liveswim`;
+
+
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";

@@ -14,6 +14,7 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 
 import { CompetitionService } from '../../services/competition.service';
 import { DatosService } from '../../services/datos.service';
+import { API_CONFIG } from '../../config/api.config';
 
 interface Athlete {
   athlete_id: number;
@@ -262,7 +263,7 @@ export class ManageAthletesDialogComponent implements OnInit {
   private loadAthletes(): void {
     this.loading = true;
     
-    const athletesUrl = 'http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api/athletes';
+    const athletesUrl = `${API_CONFIG.phpApiBase}/athletes`;
     
     this.http.get<any>(athletesUrl, { withCredentials: true }).subscribe({
       next: (response: any) => {

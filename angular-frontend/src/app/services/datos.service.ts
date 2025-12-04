@@ -1,26 +1,30 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { API_CONFIG } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class DatosService {
-  private url = "http://localhost:3000/api/natacion";
-  private phpApiBase = "http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public/api";
-  private rankingsUrl = `${this.phpApiBase}/rankings`;
-  private athleteResultsUrl = `${this.phpApiBase}/athletes/results`;
-  private athletesUrl = "http://localhost:3000/api/world-aquatics/athletes";
-  private competitionsUrl = "http://localhost:3000/api/world-aquatics/competitions";
-  private competitionResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results";
-  private competitionEventResultsUrl = "http://localhost:3000/api/world-aquatics/competitions/results/event";
+  private readonly nodeApiBase = API_CONFIG.nodeApiBase;
+  private readonly phpApiBase = API_CONFIG.phpApiBase;
+  private readonly worldAquaticsBase = `${this.nodeApiBase}/world-aquatics`;
+
+  private readonly natacionUrl = `${this.nodeApiBase}/natacion`;
+  private readonly rankingsUrl = `${this.phpApiBase}/rankings`;
+  private readonly athleteResultsUrl = `${this.phpApiBase}/athletes/results`;
+  private readonly athletesUrl = `${this.worldAquaticsBase}/athletes`;
+  private readonly competitionsUrl = `${this.worldAquaticsBase}/competitions`;
+  private readonly competitionResultsUrl = `${this.worldAquaticsBase}/competitions/results`;
+  private readonly competitionEventResultsUrl = `${this.worldAquaticsBase}/competitions/results/event`;
 
   constructor(private http:HttpClient ) { }
   getDatosApi(){
-    return this.http.get(this.url);
+    return this.http.get(this.natacionUrl);
   }
   getCompeticionDetalle(id: string): Observable<any> {
-    return this.http.get(`${this.url}/${id}`);
+    return this.http.get(`${this.natacionUrl}/${id}`);
   }
 
   // nuevo método: obtiene rankings desde la API pasando filtros

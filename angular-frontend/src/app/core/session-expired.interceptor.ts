@@ -72,6 +72,9 @@ export class SessionExpiredInterceptor implements HttpInterceptor {
 
   private isBackendRequest(url: string): boolean {
     const normalized = url.toLowerCase();
-    return normalized.includes('/backend-php/auth-php/public/api');
+    return (
+      normalized.includes('/auth-api/') ||
+      normalized.includes('/backend-php/auth-php/public/api')
+    );
   }
 }

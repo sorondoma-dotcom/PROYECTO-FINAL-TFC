@@ -16,6 +16,9 @@ class User
     public ?bool $isAdmin;
     public ?int $athleteId;
     public ?string $avatarPath;
+    public ?string $avatarMime = null;
+    public ?string $avatarUpdatedAt = null;
+    public bool $avatarHasBlob = false;
 
     public static function fromArray(array $row): self
     {
@@ -33,6 +36,9 @@ class User
         $user->isAdmin = (bool) ($row['is_admin'] ?? false);
         $user->athleteId = isset($row['athlete_id']) ? (int) $row['athlete_id'] : null;
         $user->avatarPath = $row['avatar_path'] ?? null;
+        $user->avatarMime = $row['avatar_mime'] ?? null;
+        $user->avatarUpdatedAt = $row['avatar_updated_at'] ?? null;
+        $user->avatarHasBlob = (bool) ($row['avatar_has_blob'] ?? false);
         return $user;
     }
 }

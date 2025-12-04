@@ -14,6 +14,7 @@ import { CityNamePipe } from '../pipes/city-name.pipe';
 import { Competition as WorldCompetition, CompetitionGroup, Competition } from '../models/competition.interface';
 import { CompetitionFacadeService } from '../facades/competition-facade.service';
 import { CompetitionFilters } from '../models/filters/competition-filters.interface';
+import { resolvePhpAssetUrl } from '../config/api.config';
 import { Router } from '@angular/router';
 import { ConfirmationService } from '../shared/services/confirmation.service';
 import {
@@ -199,7 +200,7 @@ export class CompeticionComponent implements OnInit {
       return comp.logo_url;
     }
     if (comp.logo_path) {
-      return comp.logo_path.startsWith('http') ? comp.logo_path : `http://localhost/PROYECTO-FINAL-TFC/backend-php/auth-php/public${comp.logo_path}`;
+      return resolvePhpAssetUrl(comp.logo_path);
     }
     return null;
   }

@@ -56,26 +56,30 @@ use App\Services\NotificationService;
 use App\Services\StatsService;
 
 if (session_status() === PHP_SESSION_NONE) {
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $hostWithoutPort = explode(':', $host, 2)[0] ?? $host;
+    $sessionDomain = env('SESSION_COOKIE_DOMAIN', $hostWithoutPort);
+    $sessionSecure = filter_var(env('SESSION_COOKIE_SECURE', 'false'), FILTER_VALIDATE_BOOL);
+    $sessionSameSite = env('SESSION_COOKIE_SAMESITE', 'Lax');
+
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => '/',
-        'domain' => 'localhost',
-        'secure' => false,
+        'domain' => $sessionDomain,
+        'secure' => $sessionSecure,
         'httponly' => true,
-        'samesite' => 'Lax'
+        'samesite' => $sessionSameSite
     ]);
     session_start();
 }
 
-$allowedOrigins = [
-    'http://localhost:4200',
-    'https://0bfkk9hz-4200.uks1.devtunnels.ms',
-];
-$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if (in_array($requestOrigin, $allowedOrigins, true)) {
+$originsFromEnv = env('ALLOWED_ORIGINS', 'http://localhost:4200,http://localhost,http://localhost:8080');
+$allowedOrigins = array_values(array_filter(array_map('trim', explode(',', $originsFromEnv))));
+$requestOrigin = trim($_SERVER['HTTP_ORIGIN'] ?? '');
+if ($requestOrigin !== '' && in_array($requestOrigin, $allowedOrigins, true)) {
     header("Access-Control-Allow-Origin: {$requestOrigin}");
     header('Access-Control-Allow-Credentials: true');
-    header('Vary: Origin'); // responde segun origen permitido
+    header('Vary: Origin');
 }
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
@@ -89,8 +93,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-$basePath = '/PROYECTO-FINAL-TFC/backend-php/auth-php/public';
-if (strpos($uri, $basePath) === 0) {
+$scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+$scriptDir = str_replace('\\', '/', dirname($scriptName));
+$basePath = ($scriptDir !== '/' && $scriptDir !== '.') ? rtrim($scriptDir, '/') : '';
+if ($basePath !== '' && strpos($uri, $basePath) === 0) {
     $uri = substr($uri, strlen($basePath));
 }
 
@@ -112,6 +118,9 @@ if (isset($publicRoutes[$method]) && in_array($uri, $publicRoutes[$method], true
 }
 
 if ($requiresAuth && $method === 'GET' && preg_match('/^\/api\/athletes\/(\d+)\/profile$/', $uri)) {
+    $requiresAuth = false;
+}
+if ($requiresAuth && $method === 'GET' && preg_match('/^\/api\/users\/(\d+)\/avatar$/', $uri)) {
     $requiresAuth = false;
 }
 
@@ -197,6 +206,8 @@ if ($method === 'POST' && $uri === '/api/register') {
     $authController->sendVerificationCode();
 } elseif ($method === 'POST' && $uri === '/api/email/verify') {
     $authController->verifyEmail();
+} elseif ($method === 'GET' && preg_match('/^\/api\/users\/(\d+)\/avatar$/', $uri, $matches)) {
+    $authController->streamAvatar((int) $matches[1]);
 } elseif ($method === 'GET' && $uri === '/api/rankings') {
     $rankingController->index();
 } elseif ($method === 'GET' && $uri === '/api/athletes') {

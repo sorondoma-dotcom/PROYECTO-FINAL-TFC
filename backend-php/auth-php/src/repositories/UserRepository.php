@@ -30,7 +30,10 @@ class UserRepository
             role VARCHAR(50) DEFAULT "user",
             is_admin BOOLEAN DEFAULT FALSE,
             athlete_id INT UNSIGNED NULL,
-            avatar_path VARCHAR(255) NULL DEFAULT NULL
+            avatar_path VARCHAR(255) NULL DEFAULT NULL,
+            avatar_blob LONGBLOB NULL DEFAULT NULL,
+            avatar_mime VARCHAR(100) NULL DEFAULT NULL,
+            avatar_updated_at DATETIME NULL DEFAULT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
         
         $this->db->exec($sql);
@@ -43,8 +46,34 @@ class UserRepository
         $this->addColumnIfMissing('athlete_id', 'INT UNSIGNED NULL');
         $this->addColumnIfMissing('last_name', 'VARCHAR(255) NULL DEFAULT NULL');
         $this->addColumnIfMissing('avatar_path', 'VARCHAR(255) NULL DEFAULT NULL');
+        $this->addColumnIfMissing('avatar_blob', 'LONGBLOB NULL DEFAULT NULL');
+        $this->addColumnIfMissing('avatar_mime', 'VARCHAR(100) NULL DEFAULT NULL');
+        $this->addColumnIfMissing('avatar_updated_at', 'DATETIME NULL DEFAULT NULL');
         $this->addColumnIfMissing('updated_at', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
         $this->addIndexIfMissing('idx_users_athlete_id', 'athlete_id');
+    }
+
+    private function baseSelectColumns(): string
+    {
+        return implode(', ', [
+            'id',
+            'name',
+            'last_name',
+            'email',
+            'password',
+            'created_at',
+            'updated_at',
+            'email_verified_at',
+            'verification_code_hash',
+            'verification_expires_at',
+            'role',
+            'is_admin',
+            'athlete_id',
+            'avatar_path',
+            'avatar_mime',
+            'avatar_updated_at',
+            'CASE WHEN avatar_blob IS NULL OR OCTET_LENGTH(avatar_blob) = 0 THEN 0 ELSE 1 END AS avatar_has_blob'
+        ]);
     }
 
     private function addColumnIfMissing(string $column, string $definition): void
@@ -72,7 +101,7 @@ class UserRepository
 
     public function findByEmail(string $email): ?User
     {
-        $stmt = $this->db->prepare('SELECT * FROM users WHERE email = :email LIMIT 1');
+        $stmt = $this->db->prepare(sprintf('SELECT %s FROM users WHERE email = :email LIMIT 1', $this->baseSelectColumns()));
         $stmt->execute(['email' => strtolower($email)]);
         $row = $stmt->fetch();
         return $row ? User::fromArray($row) : null;
@@ -99,7 +128,7 @@ class UserRepository
 
     public function findById(int $id): ?User
     {
-        $stmt = $this->db->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');
+        $stmt = $this->db->prepare(sprintf('SELECT %s FROM users WHERE id = :id LIMIT 1', $this->baseSelectColumns()));
         $stmt->execute(['id' => $id]);
         $row = $stmt->fetch();
         return $row ? User::fromArray($row) : null;
@@ -151,9 +180,27 @@ class UserRepository
             $params['last_name'] = $data['last_name'];
         }
 
+        $paramTypes = [];
+
         if (array_key_exists('avatar_path', $data)) {
             $fields[] = 'avatar_path = :avatar_path';
             $params['avatar_path'] = $data['avatar_path'];
+        }
+
+        if (array_key_exists('avatar_blob', $data)) {
+            $fields[] = 'avatar_blob = :avatar_blob';
+            $params['avatar_blob'] = $data['avatar_blob'];
+            $paramTypes['avatar_blob'] = PDO::PARAM_LOB;
+        }
+
+        if (array_key_exists('avatar_mime', $data)) {
+            $fields[] = 'avatar_mime = :avatar_mime';
+            $params['avatar_mime'] = $data['avatar_mime'];
+        }
+
+        if (array_key_exists('avatar_updated_at', $data)) {
+            $fields[] = 'avatar_updated_at = :avatar_updated_at';
+            $params['avatar_updated_at'] = $data['avatar_updated_at'];
         }
 
         if (!$fields) {
@@ -163,7 +210,15 @@ class UserRepository
         $fields[] = 'updated_at = NOW()';
         $sql = sprintf('UPDATE users SET %s WHERE id = :id', implode(', ', $fields));
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $key => $value) {
+            $type = $paramTypes[$key] ?? PDO::PARAM_STR;
+            if ($type === PDO::PARAM_LOB) {
+                $stmt->bindValue(':' . $key, $value, PDO::PARAM_LOB);
+            } else {
+                $stmt->bindValue(':' . $key, $value);
+            }
+        }
+        $stmt->execute();
 
         return $this->findById($userId);
     }
@@ -175,5 +230,22 @@ class UserRepository
         );
         $stmt->execute(['id' => $userId]);
         return $this->findById($userId);
+    }
+
+    public function getAvatarBinary(int $userId): ?array
+    {
+        $stmt = $this->db->prepare('SELECT avatar_blob, avatar_mime, avatar_updated_at FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || $row['avatar_blob'] === null) {
+            return null;
+        }
+
+        return [
+            'data' => $row['avatar_blob'],
+            'mime' => $row['avatar_mime'] ?: 'image/jpeg',
+            'updated_at' => $row['avatar_updated_at'] ?? null,
+        ];
     }
 }

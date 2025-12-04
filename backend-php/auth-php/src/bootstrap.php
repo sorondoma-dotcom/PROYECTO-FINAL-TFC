@@ -3,8 +3,14 @@ declare(strict_types=1);
 
 function env(string $key, string $default = ''): string
 {
+    $value = getenv($key);
+    if ($value !== false && $value !== '') {
+        return $value;
+    }
+
     loadEnv();
-    return $_ENV[$key] ?? getenv($key) ?: $default;
+
+    return $_ENV[$key] ?? $default;
 }
 
 function loadEnv(): void
@@ -17,7 +23,7 @@ function loadEnv(): void
 
     $envPath = __DIR__ . '/../.env';
     if (!file_exists($envPath)) {
-        throw new RuntimeException('Archivo .env no encontrado en: ' . $envPath);
+        return;
     }
 
     $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -26,6 +32,9 @@ function loadEnv(): void
             continue;
         }
         [$k, $v] = array_map('trim', explode('=', $line, 2));
+        if (getenv($k) !== false) {
+            continue;
+        }
         $v = trim($v, "\"'");
         putenv("$k=$v");
         $_ENV[$k] = $v;
