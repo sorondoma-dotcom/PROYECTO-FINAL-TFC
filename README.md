@@ -1,197 +1,192 @@
-# 🏊‍♂️ SwimLive
+# SwimLive
 
-**Trabajo de Fin de Curso (TFC)**  
-**Autor:** Miguel Alfredo Sorondo Hernández(https://github.com/sorondoma-dotcom)  
-**Repositorio:** [PROYECTO-FINAL-TFC](https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC.git)
+Trabajo final orientado a la difusion de resultados de natacion. La plataforma combina un frontend Angular, un backend PHP para autenticacion y gestion de atletas, y una API Node.js que realiza scraping de datos publicos para alimentar los listados.
 
 ---
 
-## 📘 Descripción general
+## Tecnologias principales
 
-**SwimLive** es un proyecto orientado a mejorar la **accesibilidad a la natación**, ofreciendo una plataforma donde atletas, entrenadores y federaciones pueden consultar información en tiempo real sobre competiciones de natación.  
-
-El objetivo principal es permitir la **visualización de competiciones activas**, filtradas por país, fecha o tipo de piscina (25 m o 50 m), junto con los resultados correspondientes.
-
-Este proyecto ha sido desarrollado como parte del **Trabajo de Fin de Curso**, combinando distintas tecnologías web modernas para crear una arquitectura funcional y escalable.
-
----
-
-## ⚙️ Tecnologías utilizadas
-
-| Tecnología | Uso principal |
-|-------------|----------------|
-| **Angular** | Desarrollo del *frontend* interactivo. |
-| **Node.js** | Creación de la API que conecta el frontend con los datos. |
-| **PHP** | Gestión de consultas a la base de datos y manejo de usuarios y metadatos. |
-| **MySQL Workbench** | Base de datos principal para almacenar competiciones, resultados y usuarios. |
-
-> 💡 El proyecto utiliza una arquitectura separada entre **frontend**, **backend** y **API**, lo que facilita el mantenimiento y escalabilidad.
+| Capa | Tecnologias |
+|------|-------------|
+| Frontend | Angular 19, Angular Material, SSR opcional |
+| Autenticacion y gestion | PHP 8.1+, MySQL/PDO, PHPMailer |
+| Scraping / datos externos | Node.js 18+, Express, Puppeteer, MySQL |
+| Base de datos | MySQL 8 (script `liveswim.sql` + `setup-database.sql`) |
 
 ---
 
-## 📂 Estructura del proyecto
-
-```bash
-SwimLive/
-├── frontend/
-│   └── ProyectoAngular/         # Código del frontend en Angular
-│
-├── backend/
-│   ├── Model/                   # Modelos de datos
-│   ├── Controller/              # Controladores de la lógica del servidor
-│   └── ConnectionDB/            # Conexión con la base de datos MySQL
-│
-└── api/
-    └── index.js                 # Punto de entrada de la API (Node.js)
+## Estructura del repositorio
 
 ```
----
+PROYECTO-FINAL-TFC/
+|-- angular-frontend/        # SPA Angular con proxy hacia ambos backends
+|-- api-swim-live/           # API Node.js (scraping World Aquatics + endpoints extras)
+|-- backend-php/
+|   |-- auth-php/            # Backend PHP con endpoints de auth, atletas, rankings, etc.
+|-- scraper-python/          # Scripts auxiliares (no necesarios para el arranque nativo)
+|-- liveswim.sql             # Dump principal con datos base
+|-- docker-compose.yml       # Stack completo con Docker (opcional)
+`-- README.md                # Este archivo
+```
 
-## 🚀 Ejecución del proyecto
-
-### 🔧 Requisitos previos
-- Tener instalado **Node.js** y **npm**
-- Tener instalado **MySQL Workbench**
-- Configurar una base de datos MySQL local
-
-### ▶️ Iniciar la API (Node.js)
-1. Abrir una terminal en la carpeta `api/`
-2. Ejecutar:
-   ```bash
-   node index.js
-
+Cada carpeta incluye su propio README o documentacion mas especifica (`backend-php/auth-php/README.md`, etc.).
 
 ---
 
-## 🚀 Ejecución del proyecto
+## Requisitos generales para ejecucion nativa
 
-### 🔧 Requisitos previos
-- Tener instalado **Node.js** y **npm**
-- Tener instalado **MySQL Workbench**
-- Configurar una base de datos MySQL local
+- Git
+- Node.js 18+ y npm
+- PHP 8.1+ con extension PDO MySQL (XAMPP/WAMP o PHP standalone)
+- MySQL 8 (o MariaDB equivalente)
+- Opcional pero recomendado: Python 3 (para scripts auxiliares) y Composer si ampliaras el backend PHP
 
-### ▶️ Iniciar la API (Node.js)
-1. Abrir una terminal en la carpeta `api/`
-2. Ejecutar:
-   ```bash
-   node index.js
+> Consejo: manten cada servicio en una terminal distinta para ver logs en vivo.
 
-
-   La API se ejecutará en local, lista para recibir peticiones del frontend.
-
-🧩 Funcionalidades principales
-
-   • 📅 Consulta de competiciones activas por país, fecha o tipo de piscina (25 m / 50 m).
-
-  • 🏆 Visualización de resultados en tiempo real.
-
-  • 🔍 Filtro inteligente para facilitar la búsqueda de eventos.
-
-  • 🧾 Integración con una base de datos para la gestión de información de atletas y resultados.
-
-  • 🛠️ To-Do (pendiente de desarrollo)
-
-  •  Finalizar el despliegue del frontend Angular.
-
-  •  Implementar el archivo .env para gestionar variables de entorno (DB_HOST, DB_USER, etc.).
-
-  • Mejorar la interfaz visual y añadir componentes interactivos.
-
-  • Añadir un sistema de autenticación para usuarios y entrenadores.
-
-  • Incluir capturas de pantalla y demo visual.
-
-🤝 Cómo contribuir
-
-  • Este proyecto forma parte de un trabajo académico, por lo que no se aceptan contribuciones externas de momento.
-   Sin embargo, se agradecen los comentarios, sugerencias o feedback constructivo a través del repositorio de GitHub.
-
-❤️ Agradecimientos
-
- • Agradezco especialmente a:
-
- • Jordi Pozo
-
- • José Antonio Carrascal Alderete
-
- • José Luis Román Bienes
-
- • Ana Rosa Hoyos Terán
-
-  por su apoyo, orientación y colaboración durante el desarrollo de este proyecto.
-
-🔗 Enlaces
-
-📦 Repositorio: https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC
-
-© 2025 — SwimLive. Proyecto académico desarrollado como parte del Trabajo de Fin de Curso
 ---
 
-## 🪟 Cómo ejecutar en Windows (rápido)
+## Guia rapida de uso nativo
 
-Estas instrucciones permiten clonar el repositorio en un equipo con Windows y levantar la API mínima y la interfaz estática para ver la aplicación localmente.
-
-Requisitos mínimos:
-
-- Node.js (recomendado LTS) y npm disponibles en PATH
-- Git (para clonar)
-- Opcional: Python 3 (para servir archivos estáticos si no quieres instalar paquetes npm adicionales)
-
-Pasos rápidos:
-
-1. Clona el repositorio:
+### 1. Clonar y preparar la base de datos
 
 ```bash
 git clone https://github.com/sorondoma-dotcom/PROYECTO-FINAL-TFC.git
 cd PROYECTO-FINAL-TFC
 ```
 
-2. Iniciar la API Node (carpeta `api-swim-live`):
+1. Crea una base `liveswim` y un usuario con permisos (`liveSwim`/`1234` o el que prefieras).
+2. Importa los datos iniciales:
+   ```bash
+   mysql -u root -p liveswim < liveswim.sql
+   ```
+3. Si quieres cargar usuarios de prueba del backend PHP ejecuta tambien:
+   ```bash
+   mysql -u root -p < backend-php/auth-php/setup-database.sql
+   ```
 
-```bash
-cd api-swim-live
-# Instala dependencias exactamente según package-lock (recomendado)
-npm ci
-# Inicia la API
-node index.js
+**Credenciales de referencia (puedes cambiarlas):**
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=liveswim
+DB_USER=liveSwim
+DB_PASS=1234
 ```
 
-La API por defecto escucha en el puerto que está definido en `index.js` (si no, normalmente 3000 o 8080). Abre el navegador en http://localhost:<puerto> según corresponda.
+Guardalas; se reutilizan en los tres servicios.
 
-3. Ver la página estática `api-swim-live/index.html` (opciones):
+---
 
-- Usando `npx http-server` (si no lo tienes instalado globalmente):
+### 2. Backend PHP (auth + atletas)
 
-```bash
-npx http-server . -p 8080
-# luego abrir http://localhost:8080/index.html
-```
+Ubicacion: `backend-php/auth-php`
 
-- O usando Python 3 (viene instalado en muchas máquinas):
+1. Copia o edita el archivo `.env` (el repo incluye uno funcional como ejemplo). Variables minimas:
+   ```env
+   DB_DSN="mysql:host=localhost;dbname=liveswim;charset=utf8mb4"
+   DB_USER="liveSwim"
+   DB_PASS="1234"
+   ALLOWED_ORIGINS="http://localhost:4200,http://localhost:8080"
+   MAIL_ENABLED=false
+   MAIL_HOST="smtp.gmail.com"
+   MAIL_PORT=587
+   MAIL_SECURE="tls"
+   MAIL_USER="example@gmail.com"
+   MAIL_PASS="app-password"
+   MAIL_FROM="example@gmail.com"
+   MAIL_FROM_NAME="SwimLive"
+   ```
+2. Si usas Apache (XAMPP) basta con apuntar el VirtualHost a `backend-php/auth-php/public`.
+3. Para pruebas rapidas puedes ejecutar:
+   ```bash
+   cd backend-php/auth-php
+   php -S localhost:8081 -t public
+   ```
+4. Valida que responde en `http://localhost:8081/api/health` y revisa los endpoints detallados en `backend-php/auth-php/README.md`.
 
-```bash
-python -m http.server 8080
-# luego abrir http://localhost:8080/index.html
-```
+**Notas clave**
+- El backend gestiona login, registro, atletas, competiciones y notificaciones.
+- Sube avatares a `public/uploads/`; asegurate de que la carpeta puede escribirse.
 
-4. Si tienes un frontend Angular (carpeta `frontend/` o similar):
+---
 
-- Entra en la carpeta del frontend (si existe), instala dependencias y arranca el servidor de desarrollo:
+### 3. API Node.js (scraping / datos publicos)
 
-```bash
-cd ../frontend/ProyectoAngular || cd ../frontend
-npm ci
-npm run start # o ng serve si tu package.json lo define
-```
+Ubicacion: `api-swim-live`
 
-Notas y buenas prácticas:
+1. Instala dependencias:
+   ```bash
+   cd api-swim-live
+   npm ci
+   ```
+2. Crea un `.env` (no versionado). Ejemplo basico:
+   ```env
+   PORT=3000
+   MYSQL_HOST=localhost
+   MYSQL_PORT=3306
+   MYSQL_USER=liveSwim
+   MYSQL_PASSWORD=1234
+   MYSQL_DATABASE=liveswim
+   LOG_LEVEL=debug
+   PUPPETEER_CACHE_DIR=./.puppeteer-cache
+   WORLD_AQUATICS_COMP_TTL=3600
+   WORLD_AQUATICS_EVENTS_TTL=3600
+   WORLD_AQUATICS_EVENT_RESULT_TTL=900
+   ```
+3. Arranca el servidor:
+   ```bash
+   npm run dev   # con nodemon y logs verbosos
+   # o
+   npm start
+   ```
+4. Prueba el endpoint principal:
+   ```bash
+   curl http://localhost:3000/api/world-aquatics/competitions
+   ```
 
-- Nunca incluyas `node_modules/` en el repositorio (ya está en `.gitignore`).
-- Para entornos de producción o para simplificar instalaciones en Windows, considera usar Docker (instrucciones básicas en la sección siguiente).
+**Notas clave**
+- Usa Puppeteer; el primer arranque puede tardar en descargar Chromium.
+- Comparte la misma base MySQL que el backend PHP para estadisticas y cacheos.
 
-### Opcion Docker (stack completo)
+---
 
-El repositorio incluye contenedores listos para levantar el frontend Angular, la API Node, el backend PHP y MySQL sin instalar dependencias locales.
+### 4. Frontend Angular
+
+Ubicacion: `angular-frontend`
+
+1. Instala dependencias:
+   ```bash
+   cd angular-frontend
+   npm ci
+   ```
+2. Inicia el servidor de desarrollo con el proxy configurado hacia los backends:
+   ```bash
+   npm start
+   ```
+   - `/api` apunta a `http://localhost:3000` (Node)
+   - `/auth-api` apunta a `http://localhost:8081` (PHP)
+3. Abre `http://localhost:4200`. Si ya tenias credenciales (`test@test.com` / `test123`) podras iniciar sesion.
+
+**Notas clave**
+- `src/app/config/api.config.ts` autodetecta el origen y usa el proxy; para despliegues recuerda exponer `/api` y `/auth-api` desde tu reverse proxy (Nginx, Apache, etc.).
+- Para builds SSR o de produccion utiliza `npm run build` y sirve la carpeta `dist/angular-frontend`.
+
+---
+
+### 5. Flujo recomendado de arranque nativo
+
+1. MySQL en marcha con `liveswim` importado.
+2. `php -S localhost:8081 -t public` dentro de `backend-php/auth-php`.
+3. `npm start` dentro de `api-swim-live` (puerto 3000).
+4. `npm start` dentro de `angular-frontend` (puerto 4200 con proxy).
+
+Con esas tres terminales abiertas tendras toda la plataforma operativa sin depender de Docker.
+
+---
+
+## Uso con Docker (opcional)
+
+Si prefieres evitar instalaciones locales:
 
 ```bash
 docker compose build
@@ -199,20 +194,19 @@ docker compose up -d
 ```
 
 Servicios expuestos:
+- Frontend (Angular + Nginx): `http://localhost:8080`
+- API Node: `http://localhost:3000`
+- Backend PHP: `http://localhost:8081`
+- MySQL: `localhost:3310` (usuario `liveswim_user` / `liveswim_pass`)
 
-- Frontend (Angular + Nginx + proxy inverso): http://localhost:8080
-- API Node (web scraping / World Aquatics): http://localhost:3000
-- Backend PHP (autenticacion y gestion): http://localhost:8081
-- MySQL: puerto 3306 (credenciales definidas en `docker-compose.yml`)
+Deten todo con `docker compose down` o `docker compose down -v` para borrar datos.
 
-La base `liveswim.sql` se importa automaticamente la primera vez.
+---
 
- Para reiniciar por completo usa `docker compose down -v`.
+## Documentacion complementaria
 
-Variables clave (puedes sobreescribirlas con `docker compose --env-file` o variables de entorno):
+- `backend-php/auth-php/README.md`: detalle completo de endpoints (GET, POST, PUT, DELETE) y configuracion SMTP.
+- `api-swim-live/src/`: controladores y servicios de scraping (`worldAquatics.controller` contiene la lista de rutas publicas).
+- Scripts Python (`scraper-python/`) para importaciones puntuales.
 
-- `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`
-- `ALLOWED_ORIGINS` para el backend PHP (por defecto: `http://localhost,http://localhost:8080`)
-- `PORT` y `MYSQL_*` para la API Node
-
-Para detener todo el stack ejecuta `docker compose down`. Revisa logs con `docker compose logs -f <servicio>`.
+Si detectas discrepancias o anades nuevos endpoints recuerda actualizar ambos README para mantener sincronizada la informacion.
