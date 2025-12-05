@@ -62,7 +62,7 @@ export class CompetitionService {
     return this.http.post<any>(`${this.baseUrl}/competitions`, competition, this.httpOptions);
   }
 
-  updateCompetition(id: number, competition: Partial<Competition>): Observable<any> {
+  updateCompetition(id: number, competition: Partial<Competition> | FormData): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/competitions/${id}`, competition, this.httpOptions);
   }
 

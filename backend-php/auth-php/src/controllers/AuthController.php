@@ -143,17 +143,31 @@ class AuthController
     public function streamAvatar(int $userId): void
     {
         try {
-            $avatar = $this->service->getUserAvatar($userId);
+            $options = $this->buildAvatarStreamOptions();
+            $avatar = $this->service->getUserAvatar($userId, $options);
             if (!$avatar) {
                 http_response_code(404);
                 return;
             }
 
-            header('Content-Type: ' . $avatar['mime']);
-            header('Cache-Control: public, max-age=86400');
-            if (!headers_sent()) {
-                header('Content-Length: ' . strlen($avatar['data']));
+            $etag = '"' . sha1($avatar['data']) . '"';
+            $lastModified = $this->formatLastModifiedHeader($avatar['updated_at'] ?? null);
+
+            header('Cache-Control: public, max-age=604800, immutable');
+            if ($etag) {
+                header('ETag: ' . $etag);
             }
+            if ($lastModified !== null) {
+                header('Last-Modified: ' . $lastModified);
+            }
+
+            if ($this->isClientCacheFresh($etag, $lastModified)) {
+                http_response_code(304);
+                return;
+            }
+
+            header('Content-Type: ' . $avatar['mime']);
+            header('Content-Length: ' . strlen($avatar['data']));
             echo $avatar['data'];
         } catch (\Throwable $e) {
             http_response_code(500);
@@ -166,5 +180,70 @@ class AuthController
         $raw = file_get_contents('php://input');
         $decoded = json_decode($raw, true);
         return is_array($decoded) ? $decoded : [];
+    }
+
+    private function buildAvatarStreamOptions(): ?array
+    {
+        $size = isset($_GET['size']) ? strtolower((string) $_GET['size']) : null;
+        $sizeMap = [
+            'xs' => 48,
+            'sm' => 96,
+            'md' => 192,
+            'lg' => 384,
+            'xl' => 768,
+        ];
+
+        $maxWidth = null;
+        if ($size && isset($sizeMap[$size])) {
+            $maxWidth = $sizeMap[$size];
+        }
+
+        if (isset($_GET['w'])) {
+            $custom = max(16, min(1024, (int) $_GET['w']));
+            $maxWidth = $custom;
+        }
+
+        $options = [];
+        if ($maxWidth !== null) {
+            $options['maxWidth'] = $maxWidth;
+            $options['maxHeight'] = $maxWidth;
+            $options['quality'] = $maxWidth <= 96 ? 72 : ($maxWidth <= 192 ? 78 : 85);
+        }
+
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        if (stripos($accept, 'image/webp') !== false) {
+            $options['format'] = 'webp';
+        }
+
+        return $options ?: null;
+    }
+
+    private function formatLastModifiedHeader(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return null;
+        }
+        return gmdate('D, d M Y H:i:s', $timestamp) . ' GMT';
+    }
+
+    private function isClientCacheFresh(?string $etag, ?string $lastModified): bool
+    {
+        $ifNoneMatch = $_SERVER['HTTP_IF_NONE_MATCH'] ?? '';
+        if ($etag && $ifNoneMatch && trim($ifNoneMatch) === $etag) {
+            return true;
+        }
+
+        if ($lastModified) {
+            $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'] ?? '';
+            if ($ifModifiedSince && strtotime($ifModifiedSince) >= strtotime($lastModified)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

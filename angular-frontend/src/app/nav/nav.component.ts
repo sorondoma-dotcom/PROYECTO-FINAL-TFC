@@ -164,7 +164,8 @@ export class NavComponent implements OnDestroy, DoCheck {
   }
 
   get userAvatar(): string | null {
-    return this.authService.currentUser()?.avatarUrl ?? null;
+    const user = this.authService.currentUser();
+    return user?.avatarThumbUrl || user?.avatarUrl || null;
   }
 
   get visibleMenuItems() {

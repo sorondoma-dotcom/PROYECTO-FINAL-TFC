@@ -313,7 +313,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     this.selectedAvatar = null;
     this.profileError = null;
     this.releaseAvatarObjectUrl();
-    this.avatarPreview = this.accountUser?.avatarUrl || null;
+    this.avatarPreview = this.accountUser?.avatarLargeUrl || this.accountUser?.avatarUrl || null;
   }
 
   resetProfileForm(): void {
@@ -413,7 +413,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     this.accountUser = user;
     const role = (user?.role ?? '').toString().toLowerCase();
     this.canEditProfile = ['usuario', 'user', 'nadador'].includes(role);
-    this.avatarPreview = user?.avatarUrl || this.avatarPreview;
+    this.avatarPreview = user?.avatarLargeUrl || user?.avatarUrl || this.avatarPreview;
 
     if (this.canEditProfile) {
       this.profileForm.enable({ emitEvent: false });
@@ -475,9 +475,12 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       this.athlete.name = displayName;
     }
 
-    if (this.accountUser.avatarUrl) {
-      this.athlete.imageUrl = this.accountUser.avatarUrl;
-      this.avatarPreview = this.accountUser.avatarUrl;
+    if (this.accountUser.avatarUrl || this.accountUser.avatarLargeUrl) {
+      const preferred = this.accountUser.avatarLargeUrl || this.accountUser.avatarUrl;
+      if (preferred) {
+        this.athlete.imageUrl = preferred;
+        this.avatarPreview = preferred;
+      }
     }
   }
 

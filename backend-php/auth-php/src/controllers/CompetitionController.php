@@ -72,12 +72,40 @@ class CompetitionController
 
     public function updateCompetition(int $id): void
     {
+        $uploadedLogoPath = null;
+
         try {
-            $body = json_decode(file_get_contents('php://input'), true);
+            $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+            $isMultipart = is_string($contentType) && str_contains($contentType, 'multipart/form-data');
+
+            if ($isMultipart) {
+                $body = $_POST;
+            } else {
+                $parsed = json_decode(file_get_contents('php://input'), true);
+                $body = is_array($parsed) ? $parsed : [];
+            }
+
+            if (!is_array($body)) {
+                $body = [];
+            }
+
+            if ($isMultipart && isset($_FILES['logo']) && ($_FILES['logo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $uploadedLogoPath = $this->storeCompetitionLogo($_FILES['logo']);
+                $body['logo_path'] = $uploadedLogoPath;
+            }
 
             $result = $this->competitionService->updateCompetition($id, $body);
+
+            if (!empty($result['replaced_logo'])) {
+                $this->deleteCompetitionLogo($result['replaced_logo']);
+                unset($result['replaced_logo']);
+            }
+
             echo json_encode($this->formatCompetitionResponse($result));
         } catch (\Exception $e) {
+            if ($uploadedLogoPath) {
+                $this->deleteCompetitionLogo($uploadedLogoPath);
+            }
             http_response_code(400);
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }

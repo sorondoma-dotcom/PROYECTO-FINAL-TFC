@@ -54,13 +54,13 @@ class CompetitionService
     {
         $competition = $this->competitions->findById($id);
         if (!$competition) {
-            throw new \RuntimeException('Competición no encontrada');
+            throw new \RuntimeException('Competici?n no encontrada');
         }
 
         // Si cambia el nombre, validar unicidad
         if (isset($data['nombre']) && $data['nombre'] !== $competition->nombre) {
             if ($this->competitions->findByNombre($data['nombre'])) {
-                throw new \RuntimeException('Una competición con ese nombre ya existe');
+                throw new \RuntimeException('Una competici?n con ese nombre ya existe');
             }
         }
 
@@ -73,13 +73,57 @@ class CompetitionService
             }
         }
 
-        $updated = $this->competitions->update($id, $data);
+        $payload = $data;
+        $replacedLogo = null;
+
+        if (array_key_exists('remove_logo', $payload)) {
+            $removeLogo = $this->toBoolean($payload['remove_logo']);
+            unset($payload['remove_logo']);
+
+            if ($removeLogo) {
+                $payload['logo_path'] = null;
+                if (!empty($competition->logo_path)) {
+                    $replacedLogo = $competition->logo_path;
+                }
+            }
+        }
+
+        if (array_key_exists('logo_path', $payload)) {
+            if ($payload['logo_path'] === '' || $payload['logo_path'] === null) {
+                $payload['logo_path'] = null;
+            }
+
+            if ($competition->logo_path !== ($payload['logo_path'] ?? null) && !empty($competition->logo_path)) {
+                $replacedLogo = $competition->logo_path;
+            }
+        }
+
+        $updated = $this->competitions->update($id, $payload);
 
         return [
             'success' => true,
             'competition' => $updated->toArray(),
-            'message' => 'Competición actualizada exitosamente'
+            'message' => 'Competici?n actualizada exitosamente',
+            'replaced_logo' => $replacedLogo
         ];
+    }
+
+    private function toBoolean(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        if (is_numeric($value)) {
+            return (int) $value === 1;
+        }
+
+        if (is_string($value)) {
+            $normalized = strtolower(trim($value));
+            return in_array($normalized, ['1', 'true', 'yes', 'si', 'on'], true);
+        }
+
+        return false;
     }
 
     public function deleteCompetition(int $id): array
@@ -237,3 +281,5 @@ class CompetitionService
         ];
     }
 }
+
+

@@ -1,33 +1,21 @@
 import { Routes } from '@angular/router';
-import { CompeticionComponent } from './competicion/competicion.component';
-import { RankingNadadoresComponent } from './ranking-nadadores/ranking-nadadores.component';
-import { DashBoardComponent } from './dash-board/dash-board.component';
-import { ResultadoPruebaComponent } from './resultado-prueba/resultado-prueba.component';
-import { AuthComponent } from './auth/auth.component';
-import { ForgotPasswordComponent } from './auth/forgot-password/forgot-password.component';
-import { VerifyEmailComponent } from './auth/verify-email/verify-email.component';
-import { PerfilNadadorComponent } from './perfil-nadador/perfil-nadador.component';
-import { PerfilUsuarioComponent } from './perfil-usuario/perfil-usuario.component';
-import { EstadisticasComponent } from './estadisticas/estadisticas.component';
-import { AdminCompeticionesComponent } from './admin/admin-competiciones/admin-competiciones.component';
-import { ScheduledCompetitionDetailComponent } from './competicion/scheduled-competition-detail/scheduled-competition-detail.component';
 import { authGuard } from './guards/auth.guard';
 import { AdminGuard } from './guards/admin.guard';
 import { athleteGuard } from './guards/athlete.guard';
 
 export const routes: Routes = [
-  { path: 'auth', component: AuthComponent },
-  { path: 'forgot-password', component: ForgotPasswordComponent },
-   { path: 'verify-email', component: VerifyEmailComponent },
-  { path: '', component: DashBoardComponent, canActivate: [authGuard] },
-  { path: 'competiciones', component: CompeticionComponent, canActivate: [authGuard] },
-  { path: 'competiciones/:id/detalle', component: ScheduledCompetitionDetailComponent, canActivate: [authGuard] },
-  { path: 'mi-perfil', component: PerfilUsuarioComponent, canActivate: [authGuard] },
-  { path: 'mi-perfil/nadador', component: PerfilNadadorComponent, canActivate: [authGuard, athleteGuard] },
-  { path: 'nadadores/perfil/:name', component: PerfilNadadorComponent, canActivate: [authGuard] },
-  { path: 'nadadores', component: RankingNadadoresComponent, canActivate: [authGuard], pathMatch: 'full' },
-  { path: 'estadisticas', component: EstadisticasComponent, canActivate: [authGuard] },
-  { path: 'resultado-prueba', component: ResultadoPruebaComponent, canActivate: [authGuard] },
-  { path: 'admin/competiciones', component: AdminCompeticionesComponent, canActivate: [authGuard, AdminGuard] },
+  { path: 'auth', loadComponent: () => import('./auth/auth.component').then(m => m.AuthComponent) },
+  { path: 'forgot-password', loadComponent: () => import('./auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) },
+  { path: 'verify-email', loadComponent: () => import('./auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent) },
+  { path: '', loadComponent: () => import('./dash-board/dash-board.component').then(m => m.DashBoardComponent), canActivate: [authGuard] },
+  { path: 'competiciones', loadComponent: () => import('./competicion/competicion.component').then(m => m.CompeticionComponent), canActivate: [authGuard] },
+  { path: 'competiciones/:id/detalle', loadComponent: () => import('./competicion/scheduled-competition-detail/scheduled-competition-detail.component').then(m => m.ScheduledCompetitionDetailComponent), canActivate: [authGuard] },
+  { path: 'mi-perfil', loadComponent: () => import('./perfil-usuario/perfil-usuario.component').then(m => m.PerfilUsuarioComponent), canActivate: [authGuard] },
+  { path: 'mi-perfil/nadador', loadComponent: () => import('./perfil-nadador/perfil-nadador.component').then(m => m.PerfilNadadorComponent), canActivate: [authGuard, athleteGuard] },
+  { path: 'nadadores/perfil/:name', loadComponent: () => import('./perfil-nadador/perfil-nadador.component').then(m => m.PerfilNadadorComponent), canActivate: [authGuard] },
+  { path: 'nadadores', loadComponent: () => import('./ranking-nadadores/ranking-nadadores.component').then(m => m.RankingNadadoresComponent), canActivate: [authGuard], pathMatch: 'full' },
+  { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent), canActivate: [authGuard] },
+  { path: 'resultado-prueba', loadComponent: () => import('./resultado-prueba/resultado-prueba.component').then(m => m.ResultadoPruebaComponent), canActivate: [authGuard] },
+  { path: 'admin/competiciones', loadComponent: () => import('./admin/admin-competiciones/admin-competiciones.component').then(m => m.AdminCompeticionesComponent), canActivate: [authGuard, AdminGuard] },
   { path: '**', redirectTo: 'auth' },
 ];

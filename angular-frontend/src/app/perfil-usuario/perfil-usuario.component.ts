@@ -254,7 +254,7 @@ export class PerfilUsuarioComponent implements OnInit, OnDestroy {
   clearSelectedAvatar(): void {
     this.selectedAvatar = null;
     this.releaseAvatarObjectUrl();
-    this.avatarPreview = this.user?.avatarUrl || null;
+    this.avatarPreview = this.user?.avatarLargeUrl || this.user?.avatarUrl || null;
   }
 
   resetProfileForm(): void {
@@ -350,7 +350,7 @@ export class PerfilUsuarioComponent implements OnInit, OnDestroy {
   private applyUser(user: any): void {
     this.user = user;
     this.roleMeta = this.buildRoleMeta(user);
-    this.avatarPreview = user?.avatarUrl || null;
+    this.avatarPreview = user?.avatarLargeUrl || user?.avatarUrl || null;
     this.initProfileForm(user);
     this.timeline = this.buildTimeline(user, this.roleMeta);
     this.stats = this.buildStats(user, this.roleMeta);
@@ -447,7 +447,7 @@ export class PerfilUsuarioComponent implements OnInit, OnDestroy {
         performer: {
           name: this.userDisplayName,
           athleteId: this.user.athleteId,
-          imageUrl: this.user?.avatarUrl
+          imageUrl: this.user?.avatarLargeUrl || this.user?.avatarUrl
         }
       }
     });

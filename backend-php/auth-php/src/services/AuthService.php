@@ -389,7 +389,7 @@ class AuthService
         $_SESSION['athlete_id'] = $user->athleteId;
         $_SESSION['user_last_name'] = $user->lastName ?? null;
         $_SESSION['user_role'] = $user->role ?? 'user';
-        $_SESSION['user_avatar'] = $this->buildAvatarUrl($user);
+        $_SESSION['user_avatar'] = $this->buildAvatarUrl($user, 'sm');
     }
 
     private function formatUser(User $user): array
@@ -405,7 +405,10 @@ class AuthService
             'role' => $user->role ?? 'user',
             'isAdmin' => (bool) ($user->isAdmin ?? false),
             'athleteId' => $user->athleteId,
-            'avatarUrl' => $this->buildAvatarUrl($user),
+            'avatarUrl' => $this->buildAvatarUrl($user, 'sm'),
+            'avatarThumbUrl' => $this->buildAvatarUrl($user, 'xs'),
+            'avatarLargeUrl' => $this->buildAvatarUrl($user, 'lg'),
+            'avatarFullUrl' => $this->buildAvatarUrl($user),
         ];
     }
 
@@ -421,7 +424,7 @@ class AuthService
         ];
     }
 
-    private function buildAvatarUrl(User $user): ?string
+    private function buildAvatarUrl(User $user, ?string $size = null): ?string
     {
         $relativePath = null;
 
@@ -432,7 +435,14 @@ class AuthService
 
         if ($user->avatarHasBlob) {
             $timestamp = $user->avatarUpdatedAt ? strtotime($user->avatarUpdatedAt) : time();
-            $relativePath = sprintf('/api/users/%d/avatar?ts=%d', $user->id, max($timestamp, 1));
+            $query = [
+                'ts' => max($timestamp, 1),
+            ];
+            $sizeKey = $this->normalizeAvatarSizeKey($size);
+            if ($sizeKey !== null) {
+                $query['size'] = $sizeKey;
+            }
+            $relativePath = sprintf('/api/users/%d/avatar?%s', $user->id, http_build_query($query));
         } elseif (!empty($user->avatarPath)) {
             $relativePath = '/' . ltrim($user->avatarPath, '/');
         } else {
@@ -523,11 +533,11 @@ class AuthService
         return $user->avatarHasBlob || !empty($user->avatarPath);
     }
 
-    public function getUserAvatar(int $userId): ?array
+    public function getUserAvatar(int $userId, ?array $options = null): ?array
     {
         $payload = $this->users->getAvatarBinary($userId);
         if ($payload) {
-            return $payload;
+            return $this->maybeResizeAvatar($payload, $options);
         }
 
         $user = $this->users->findById($userId);
@@ -554,9 +564,122 @@ class AuthService
             return null;
         }
 
-        return [
+        $payload = [
             'data' => $binary,
             'mime' => $mime ?: 'image/jpeg',
+            'updated_at' => date('Y-m-d H:i:s', @filemtime($fullPath) ?: time()),
+        ];
+
+        return $this->maybeResizeAvatar($payload, $options);
+    }
+
+    private function normalizeAvatarSizeKey(?string $size): ?string
+    {
+        if ($size === null) {
+            return null;
+        }
+        $size = strtolower(trim($size));
+        $allowed = ['xs', 'sm', 'md', 'lg', 'xl'];
+        return in_array($size, $allowed, true) ? $size : null;
+    }
+
+    /**
+     * @param array{data:string,mime:string,updated_at?:?string} $avatar
+     */
+    private function maybeResizeAvatar(array $avatar, ?array $options): array
+    {
+        if (!$options) {
+            return $avatar;
+        }
+
+        $maxWidth = isset($options['maxWidth']) ? (int) $options['maxWidth'] : 0;
+        $maxHeight = isset($options['maxHeight']) ? (int) $options['maxHeight'] : $maxWidth;
+
+        $format = isset($options['format']) ? strtolower((string) $options['format']) : null;
+        $needsResize = $maxWidth > 0 || $maxHeight > 0;
+
+        if (!$needsResize && !$format) {
+            return $avatar;
+        }
+
+        if (!extension_loaded('gd') || !function_exists('imagecreatefromstring')) {
+            return $avatar;
+        }
+
+        $source = @imagecreatefromstring($avatar['data']);
+        if (!$source) {
+            return $avatar;
+        }
+
+        $width = imagesx($source);
+        $height = imagesy($source);
+        if ($width <= 0 || $height <= 0) {
+            imagedestroy($source);
+            return $avatar;
+        }
+
+        $scale = 1.0;
+        if ($maxWidth > 0 && $maxHeight > 0) {
+            $scale = min($maxWidth / $width, $maxHeight / $height, 1);
+        } elseif ($maxWidth > 0) {
+            $scale = min($maxWidth / $width, 1);
+        } elseif ($maxHeight > 0) {
+            $scale = min($maxHeight / $height, 1);
+        }
+
+        if ($scale >= 1 && !$format) {
+            imagedestroy($source);
+            return $avatar;
+        }
+
+        if ($scale >= 1) {
+            $resized = $source;
+            $newWidth = $width;
+            $newHeight = $height;
+        } else {
+            $newWidth = max(1, (int) floor($width * $scale));
+            $newHeight = max(1, (int) floor($height * $scale));
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            if (in_array($avatar['mime'], ['image/png', 'image/webp'], true)) {
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+            }
+
+            imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($source);
+        }
+
+        $quality = isset($options['quality']) ? max(10, min(100, (int) $options['quality'])) : 82;
+        $targetMime = $avatar['mime'];
+
+        ob_start();
+        $written = false;
+
+        if ($format === 'webp' && function_exists('imagewebp')) {
+            $written = imagewebp($resized, null, $quality);
+            $targetMime = 'image/webp';
+        } elseif ($avatar['mime'] === 'image/png') {
+            $compression = (int) round((100 - $quality) / 10);
+            $compression = max(0, min(9, $compression));
+            $written = imagepng($resized, null, $compression);
+            $targetMime = 'image/png';
+        } else {
+            $written = imagejpeg($resized, null, $quality);
+            $targetMime = 'image/jpeg';
+        }
+
+        imagedestroy($resized);
+        $binary = $written ? ob_get_clean() : false;
+        if ($binary === false) {
+            ob_end_clean();
+            return $avatar;
+        }
+
+        return [
+            'data' => $binary,
+            'mime' => $targetMime,
+            'updated_at' => $avatar['updated_at'] ?? null,
         ];
     }
 }

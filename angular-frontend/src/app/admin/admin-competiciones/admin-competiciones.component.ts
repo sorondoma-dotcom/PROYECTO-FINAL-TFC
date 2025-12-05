@@ -234,16 +234,16 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.competitionService.updateCompetition(target.id!, result).subscribe({
+        const payload = this.buildCompetitionUpdatePayload(result);
+        this.competitionService.updateCompetition(target.id!, payload).subscribe({
           next: () => {
             this.loadCompeticiones();
-            this.showActionResult('Se ha modificado la competición correctamente.', 'Competición actualizada', 'edit');
+            this.showActionResult('Se ha modificado la competici?n correctamente.', 'Competici?n actualizada', 'edit');
           },
-          error: (error) => console.error('Error actualizando competición:', error)
+          error: (error) => console.error('Error actualizando competici?n:', error)
         });
       }
     });
-  }
 
   eliminarCompeticion(competition?: Competition, event?: Event): void {
     event?.stopPropagation();
