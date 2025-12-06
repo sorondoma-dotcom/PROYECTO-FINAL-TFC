@@ -134,7 +134,12 @@
               </div>
               <div class="hall-highlight__body">
                 <div class="avatar">
-                  <span>{{ olympicLeader.name.charAt(0) }}</span>
+                  @if (getAthleteImageUrl(olympicLeader.imageUrl); as imageUrl) {
+                    <img [src]="imageUrl" [alt]="olympicLeader.name" (error)="onImageError($event)">
+                    <span style="display: none;">{{ olympicLeader.name.charAt(0) }}</span>
+                  } @else {
+                    <span>{{ olympicLeader.name.charAt(0) }}</span>
+                  }
                 </div>
                 <div>
                   <strong>{{ olympicLeader.name }}</strong>
@@ -159,6 +164,11 @@
               <div class="gender-grid">
                 @if (goldLeaders.male) {
                   <div class="gender-card">
+                    @if (getAthleteImageUrl(goldLeaders.male.imageUrl); as imageUrl) {
+                      <div class="mini-avatar">
+                        <img [src]="imageUrl" [alt]="goldLeaders.male.name" (error)="onSimpleImageError($event)">
+                      </div>
+                    }
                     <p class="label">Masculino</p>
                     <strong>{{ goldLeaders.male.name }}</strong>
                     <p class="meta">
@@ -171,6 +181,11 @@
                 }
                 @if (goldLeaders.female) {
                   <div class="gender-card">
+                    @if (getAthleteImageUrl(goldLeaders.female.imageUrl); as imageUrl) {
+                      <div class="mini-avatar">
+                        <img [src]="imageUrl" [alt]="goldLeaders.female.name" (error)="onSimpleImageError($event)">
+                      </div>
+                    }
                     <p class="label">Femenino</p>
                     <strong>{{ goldLeaders.female.name }}</strong>
                     <p class="meta">
@@ -194,6 +209,11 @@
               <div class="gender-grid">
                 @if (silverLeaders.male) {
                   <div class="gender-card">
+                    @if (getAthleteImageUrl(silverLeaders.male.imageUrl); as imageUrl) {
+                      <div class="mini-avatar">
+                        <img [src]="imageUrl" [alt]="silverLeaders.male.name" (error)="onSimpleImageError($event)">
+                      </div>
+                    }
                     <p class="label">Masculino</p>
                     <strong>{{ silverLeaders.male.name }}</strong>
                     <p class="meta">
@@ -206,6 +226,11 @@
                 }
                 @if (silverLeaders.female) {
                   <div class="gender-card">
+                    @if (getAthleteImageUrl(silverLeaders.female.imageUrl); as imageUrl) {
+                      <div class="mini-avatar">
+                        <img [src]="imageUrl" [alt]="silverLeaders.female.name" (error)="onSimpleImageError($event)">
+                      </div>
+                    }
                     <p class="label">Femenino</p>
                     <strong>{{ silverLeaders.female.name }}</strong>
                     <p class="meta">
@@ -229,6 +254,11 @@
               <div class="gender-grid">
                 @if (worldRecordLeaders.male) {
                   <div class="gender-card">
+                    @if (getAthleteImageUrl(worldRecordLeaders.male.imageUrl); as imageUrl) {
+                      <div class="mini-avatar">
+                        <img [src]="imageUrl" [alt]="worldRecordLeaders.male.name" (error)="onSimpleImageError($event)">
+                      </div>
+                    }
                     <p class="label">Masculino</p>
                     <strong>{{ worldRecordLeaders.male.name }}</strong>
                     <p class="meta">
@@ -241,6 +271,11 @@
                 }
                 @if (worldRecordLeaders.female) {
                   <div class="gender-card">
+                    @if (getAthleteImageUrl(worldRecordLeaders.female.imageUrl); as imageUrl) {
+                      <div class="mini-avatar">
+                        <img [src]="imageUrl" [alt]="worldRecordLeaders.female.name" (error)="onSimpleImageError($event)">
+                      </div>
+                    }
                     <p class="label">Femenino</p>
                     <strong>{{ worldRecordLeaders.female.name }}</strong>
                     <p class="meta">
@@ -306,7 +341,12 @@
           </div>
           <div class="fina-leader-body">
             <div class="avatar large">
-              <span>{{ finaPointsLeader.name.charAt(0) }}</span>
+              @if (getAthleteImageUrl(finaPointsLeader.imageUrl); as imageUrl) {
+                <img [src]="imageUrl" [alt]="finaPointsLeader.name" (error)="onImageError($event)">
+                <span style="display: none;">{{ finaPointsLeader.name.charAt(0) }}</span>
+              } @else {
+                <span>{{ finaPointsLeader.name.charAt(0) }}</span>
+              }
             </div>
             <div class="fina-leader-info">
               <div class="name-row">
@@ -335,7 +375,12 @@
         @for (athlete of topAthletes; track athlete.name) {
           <div class="athlete-card">
             <div class="avatar">
-              <span>{{ athlete.name.charAt(0) }}</span>
+              @if (getAthleteImageUrl(athlete.imageUrl); as imageUrl) {
+                <img [src]="imageUrl" [alt]="athlete.name" (error)="onImageError($event)">
+                <span style="display: none;">{{ athlete.name.charAt(0) }}</span>
+              } @else {
+                <span>{{ athlete.name.charAt(0) }}</span>
+              }
             </div>
             <div class="athlete-card__body">
               <div class="row">
@@ -372,6 +417,11 @@
           <div class="talent-list">
             @for (talent of youngTalents; track talent.athlete_id) {
               <div class="talent-card">
+                @if (getAthleteImageUrl(talent.image_url); as imageUrl) {
+                  <div class="talent-avatar">
+                    <img [src]="imageUrl" [alt]="talent.athlete_name" (error)="onSimpleImageError($event)">
+                  </div>
+                }
                 <div class="avatar">
                   <span>{{ talent.athlete_name.charAt(0) }}</span>
                 </div>
@@ -405,6 +455,11 @@
           <div class="versatile-list">
             @for (athlete of versatileAthletes; track athlete.athlete_id) {
               <div class="versatile-card">
+                @if (getAthleteImageUrl(athlete.image_url); as imageUrl) {
+                  <div class="versatile-avatar">
+                    <img [src]="imageUrl" [alt]="athlete.athlete_name" (error)="onSimpleImageError($event)">
+                  </div>
+                }
                 <div class="avatar">
                   <span>{{ athlete.athlete_name.charAt(0) }}</span>
                 </div>

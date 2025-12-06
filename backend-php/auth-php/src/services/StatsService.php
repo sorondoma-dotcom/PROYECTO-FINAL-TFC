@@ -51,6 +51,7 @@ class StatsService
                 a.athlete_name,
                 a.country_code,
                 a.gender,
+                a.image_url,
                 COUNT(DISTINCT sr.stroke) as different_strokes,
                 COUNT(DISTINCT sr.distance) as different_distances,
                 COUNT(DISTINCT CONCAT(sr.distance, '-', sr.stroke)) as total_events,
@@ -58,7 +59,7 @@ class StatsService
             FROM atletas a
             INNER JOIN swimming_rankings sr ON a.athlete_id = sr.athlete_id
             WHERE sr.points IS NOT NULL
-            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.gender
+            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.gender, a.image_url
             HAVING total_events >= 3
             ORDER BY total_events DESC, avg_points DESC
             LIMIT 5
@@ -79,6 +80,7 @@ class StatsService
                 a.athlete_name,
                 a.country_code,
                 a.gender,
+                a.image_url,
                 AVG(sr.points) as avg_points,
                 MIN(sr.points) as min_points,
                 MAX(sr.points) as max_points,
@@ -87,7 +89,7 @@ class StatsService
             FROM atletas a
             INNER JOIN swimming_rankings sr ON a.athlete_id = sr.athlete_id
             WHERE sr.points IS NOT NULL
-            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.gender
+            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.gender, a.image_url
             HAVING total_races >= 3
             ORDER BY avg_points DESC, consistency_score ASC
             LIMIT 5
@@ -109,6 +111,7 @@ class StatsService
                 a.age,
                 a.country_code,
                 a.gender,
+                a.image_url,
                 MAX(sr.points) as best_points,
                 ANY_VALUE(sr.distance) as distance,
                 ANY_VALUE(sr.stroke) as stroke,
@@ -119,7 +122,7 @@ class StatsService
             WHERE a.age IS NOT NULL 
               AND a.age < 20
               AND sr.points IS NOT NULL
-            GROUP BY a.athlete_id, a.athlete_name, a.age, a.country_code, a.gender
+            GROUP BY a.athlete_id, a.athlete_name, a.age, a.country_code, a.gender, a.image_url
             ORDER BY best_points DESC
             LIMIT 5
         SQL;
@@ -165,6 +168,7 @@ class StatsService
                 a.athlete_name,
                 a.country_code,
                 a.gender,
+                a.image_url,
                 r.event,
                 r.time_text,
                 r.record_tags,
@@ -176,7 +180,7 @@ class StatsService
             WHERE r.record_tags IS NOT NULL 
               AND r.record_tags != ''
               AND r.race_date >= DATE_SUB(CURDATE(), INTERVAL 2 YEAR)
-            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.gender, 
+            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.gender, a.image_url,
                      r.event, r.time_text, r.record_tags, r.competition, r.race_date
             ORDER BY r.race_date DESC, records_count DESC
             LIMIT 10
@@ -241,6 +245,7 @@ class StatsService
                 a.athlete_name,
                 a.country_code,
                 a.gender,
+                a.image_url,
                 sr.points as fina_points,
                 sr.time_text as swim_time,
                 sr.distance,
@@ -268,6 +273,7 @@ class StatsService
             'name' => $row['athlete_name'],
             'countryCode' => $row['country_code'] ?? null,
             'gender' => $row['gender'] ?? null,
+            'imageUrl' => $row['image_url'] ?? null,
             'finaPoints' => (int) $row['fina_points'],
             'time' => $row['swim_time'] ?? null,
             'distance' => $row['distance'] ?? null,
@@ -285,12 +291,13 @@ class StatsService
                 a.athlete_id,
                 a.athlete_name,
                 a.country_code,
+                a.image_url,
                 COUNT(*) AS total_records
             FROM resultados r
             INNER JOIN atletas a ON a.athlete_id = r.athlete_id
             WHERE (r.record_tags LIKE '%OR%' OR r.record_tags LIKE '%Olympic%')
               AND (r.competition LIKE 'Olympic%' OR r.competition LIKE '%Olympic Games%')
-            GROUP BY a.athlete_id, a.athlete_name, a.country_code
+            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.image_url
             ORDER BY total_records DESC
             LIMIT 1
         SQL;
@@ -306,6 +313,7 @@ class StatsService
             'athleteId' => (int) $row['athlete_id'],
             'name' => $row['athlete_name'],
             'countryCode' => $row['country_code'] ?? null,
+            'imageUrl' => $row['image_url'] ?? null,
             'records' => (int) $row['total_records']
         ];
     }
@@ -333,12 +341,13 @@ class StatsService
                 a.athlete_id,
                 a.athlete_name,
                 a.country_code,
+                a.image_url,
                 COUNT(*) AS total_medals
             FROM resultados r
             INNER JOIN atletas a ON a.athlete_id = r.athlete_id
             WHERE a.gender = :gender
               AND r.medal = :medal
-            GROUP BY a.athlete_id, a.athlete_name, a.country_code
+            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.image_url
             ORDER BY total_medals DESC
             LIMIT 1
         SQL;
@@ -358,6 +367,7 @@ class StatsService
             'athleteId' => (int) $row['athlete_id'],
             'name' => $row['athlete_name'],
             'countryCode' => $row['country_code'] ?? null,
+            'imageUrl' => $row['image_url'] ?? null,
             'total' => (int) $row['total_medals']
         ];
     }
@@ -369,12 +379,13 @@ class StatsService
                 a.athlete_id,
                 a.athlete_name,
                 a.country_code,
+                a.image_url,
                 COUNT(*) AS total_wr
             FROM resultados r
             INNER JOIN atletas a ON a.athlete_id = r.athlete_id
             WHERE a.gender = :gender
               AND (r.record_tags LIKE '%WR%' OR r.record_tags LIKE '%World Record%')
-            GROUP BY a.athlete_id, a.athlete_name, a.country_code
+            GROUP BY a.athlete_id, a.athlete_name, a.country_code, a.image_url
             ORDER BY total_wr DESC
             LIMIT 1
         SQL;
@@ -391,6 +402,7 @@ class StatsService
             'athleteId' => (int) $row['athlete_id'],
             'name' => $row['athlete_name'],
             'countryCode' => $row['country_code'] ?? null,
+            'imageUrl' => $row['image_url'] ?? null,
             'total' => (int) $row['total_wr']
         ];
     }

@@ -52,6 +52,7 @@ interface AthleteSpotlight {
   points?: number;
   profileUrl?: string;
   stroke?: string;
+  imageUrl?: string;
 }
 
 interface RankingEntry {
@@ -86,13 +87,14 @@ interface OlympicLeader {
   name: string;
   countryCode?: string | null;
   records: number;
+  imageUrl?: string | null;
 }
-
 interface MedalLeader {
   athleteId: number;
   name: string;
   countryCode?: string | null;
   value: number;
+  imageUrl?: string | null;
 }
 
 interface GenderLeaders {
@@ -192,6 +194,32 @@ export class EstadisticasComponent implements OnInit {
 
   refresh(): void {
     this.loadData();
+  }
+
+  getAthleteImageUrl(imageUrl?: string | null): string | null {
+    if (!imageUrl) {
+      return null;
+    }
+    // Si la URL ya es completa, la usamos tal cual
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    // Si es una ruta relativa, la convertimos
+    return imageUrl;
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const fallback = img.nextElementSibling as HTMLElement;
+    if (fallback) {
+      fallback.style.display = 'flex';
+    }
+  }
+
+  onSimpleImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 
   formatDateLabel(comp: CompetitionPulse): string {
