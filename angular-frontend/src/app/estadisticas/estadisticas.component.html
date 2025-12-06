@@ -257,6 +257,33 @@
         </div>
       </mat-card>
     }
+
+    @if (topCountries.length > 0) {
+      <mat-card class="panel countries-panel">
+        <div class="panel__header">
+          <div>
+            <p class="eyebrow">Medallero global</p>
+            <h2>Países dominantes</h2>
+          </div>
+        </div>
+        <div class="countries-grid">
+          @for (country of topCountries.slice(0, 5); track country.country_code) {
+            <div class="country-card">
+              <div class="country-flag-xl">{{ country.country_code | countryFlag }}</div>
+              <div class="country-info">
+                <strong>{{ country.country_code }}</strong>
+                <div class="medals-row">
+                  <span class="medal gold" [matTooltip]="'Oro'">🥇 {{ country.gold_count }}</span>
+                  <span class="medal silver" [matTooltip]="'Plata'">🥈 {{ country.silver_count }}</span>
+                  <span class="medal bronze" [matTooltip]="'Bronce'">🥉 {{ country.bronze_count }}</span>
+                </div>
+                <p class="meta">{{ country.unique_athletes }} atletas</p>
+              </div>
+            </div>
+          }
+        </div>
+      </mat-card>
+    }
   </div>
 
   <div class="panel-grid">
@@ -270,6 +297,39 @@
           <mat-icon>refresh</mat-icon>
         </button>
       </div>
+
+      @if (finaPointsLeader) {
+        <div class="fina-leader-highlight">
+          <div class="fina-leader-badge">
+            <mat-icon>emoji_events</mat-icon>
+            <span>Máximo puntos FINA</span>
+          </div>
+          <div class="fina-leader-body">
+            <div class="avatar large">
+              <span>{{ finaPointsLeader.name.charAt(0) }}</span>
+            </div>
+            <div class="fina-leader-info">
+              <div class="name-row">
+                <strong>{{ finaPointsLeader.name }}</strong>
+                @if (finaPointsLeader.country) {
+                  <span class="flag-large">{{ finaPointsLeader.country | countryFlag }}</span>
+                }
+              </div>
+              <p class="event-large">{{ finaPointsLeader.event }}</p>
+              <div class="stats-row">
+                <div class="stat-pill primary">
+                  <mat-icon>timer</mat-icon>
+                  <span>{{ finaPointsLeader.time }}</span>
+                </div>
+                <div class="stat-pill accent">
+                  <mat-icon>star</mat-icon>
+                  <span>{{ finaPointsLeader.points }} puntos FINA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
 
       <div class="athlete-grid">
         @for (athlete of topAthletes; track athlete.name) {
@@ -298,6 +358,77 @@
     </mat-card>
 
   </div>
+
+  @if (youngTalents.length > 0 || versatileAthletes.length > 0) {
+    <div class="panel-grid">
+      @if (youngTalents.length > 0) {
+        <mat-card class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="eyebrow">Promesas del futuro</p>
+              <h2>Jóvenes talentos</h2>
+            </div>
+          </div>
+          <div class="talent-list">
+            @for (talent of youngTalents; track talent.athlete_id) {
+              <div class="talent-card">
+                <div class="avatar">
+                  <span>{{ talent.athlete_name.charAt(0) }}</span>
+                </div>
+                <div class="talent-info">
+                  <div class="name-row">
+                    <strong>{{ talent.athlete_name }}</strong>
+                    @if (talent.country_code) {
+                      <span class="flag">{{ talent.country_code | countryFlag }}</span>
+                    }
+                  </div>
+                  <p class="meta">{{ talent.age }} años • {{ talent.distance }}m {{ talent.stroke }}</p>
+                  <div class="stats-mini">
+                    <span class="pill success">{{ talent.best_points }} pts</span>
+                    <span class="pill muted">{{ talent.competitions_count }} competencias</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card>
+      }
+
+      @if (versatileAthletes.length > 0) {
+        <mat-card class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="eyebrow">Polivalentes</p>
+              <h2>Atletas versátiles</h2>
+            </div>
+          </div>
+          <div class="versatile-list">
+            @for (athlete of versatileAthletes; track athlete.athlete_id) {
+              <div class="versatile-card">
+                <div class="avatar">
+                  <span>{{ athlete.athlete_name.charAt(0) }}</span>
+                </div>
+                <div class="versatile-info">
+                  <div class="name-row">
+                    <strong>{{ athlete.athlete_name }}</strong>
+                    @if (athlete.country_code) {
+                      <span class="flag">{{ athlete.country_code | countryFlag }}</span>
+                    }
+                  </div>
+                  <p class="meta">{{ athlete.total_events }} eventos diferentes</p>
+                  <div class="stats-mini">
+                    <span class="pill primary">{{ athlete.different_strokes }} estilos</span>
+                    <span class="pill accent">{{ athlete.different_distances }} distancias</span>
+                    <span class="pill success">{{ athlete.avg_points | number:'1.0-0' }} pts promedio</span>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </mat-card>
+      }
+    </div>
+  }
 
   <div class="panel-grid">
     <mat-card class="panel scheduled-panel">

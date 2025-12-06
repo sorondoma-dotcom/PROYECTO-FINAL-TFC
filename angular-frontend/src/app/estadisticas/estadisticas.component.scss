@@ -322,6 +322,108 @@
   font-weight: 700;
 }
 
+.fina-leader-highlight {
+  background: linear-gradient(135deg, rgba(27, 117, 240, 0.08), rgba(0, 194, 178, 0.08));
+  border: 2px solid rgba(27, 117, 240, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.fina-leader-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 14px;
+
+  mat-icon {
+    color: #ffc107;
+  }
+}
+
+.fina-leader-body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: center;
+}
+
+.avatar.large {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #1b75f0, #00c2b2);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 28px;
+}
+
+.fina-leader-info {
+  display: grid;
+  gap: 8px;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  strong {
+    font-size: 20px;
+    font-weight: 700;
+  }
+}
+
+.flag-large {
+  font-size: 24px;
+}
+
+.event-large {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 15px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 14px;
+
+  &.primary {
+    background: rgba(27, 117, 240, 0.15);
+    color: var(--color-primary);
+    border: 1px solid rgba(27, 117, 240, 0.3);
+  }
+
+  &.accent {
+    background: rgba(0, 194, 178, 0.15);
+    color: var(--color-accent);
+    border: 1px solid rgba(0, 194, 178, 0.3);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .athlete-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -564,6 +666,102 @@
 .scheduled-metric.accent {
   border-color: rgba(0, 194, 178, 0.35);
   background: rgba(0, 194, 178, 0.08);
+}
+
+// Estilos para países top
+.countries-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.country-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-strong);
+}
+
+.country-flag-xl {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.country-info {
+  flex: 1;
+  display: grid;
+  gap: 6px;
+
+  strong {
+    font-size: 15px;
+  }
+}
+
+.medals-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+
+  .medal {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+}
+
+// Estilos para jóvenes talentos
+.talent-list {
+  display: grid;
+  gap: 10px;
+}
+
+.talent-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-strong);
+}
+
+.talent-info {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+
+.stats-mini {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+// Estilos para atletas versátiles
+.versatile-list {
+  display: grid;
+  gap: 10px;
+}
+
+.versatile-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-strong);
+}
+
+.versatile-info {
+  flex: 1;
+  display: grid;
+  gap: 4px;
 }
 
 .scheduled-metric.success {

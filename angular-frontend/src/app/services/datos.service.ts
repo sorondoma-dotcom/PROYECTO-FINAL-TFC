@@ -149,4 +149,8 @@ export class DatosService {
   getOlympicRecordLeader(): Observable<any> {
     return this.http.get(`${this.phpApiBase}/stats/olympic-records`);
   }
+
+  getDashboardStats(): Observable<any> {
+    return this.http.get(`${this.phpApiBase}/stats/dashboard`);
+  }
 }

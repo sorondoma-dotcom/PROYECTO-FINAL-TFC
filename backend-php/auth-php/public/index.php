@@ -106,7 +106,7 @@ if (empty($uri)) {
 
 // Rutas publicas que NO requieren autenticacion
 $publicRoutes = [
-    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats', '/api/competitions', '/api/stats/olympic-records'],
+    'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats', '/api/competitions', '/api/stats/olympic-records', '/api/stats/dashboard'],
     'POST' => ['/api/login', '/api/logout', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
     'PUT' => ['/api/password-reset']
 ];
@@ -224,6 +224,8 @@ if ($method === 'POST' && $uri === '/api/register') {
     $athleteController->getStats();
 } elseif ($method === 'GET' && $uri === '/api/stats/olympic-records') {
     $statsController->getOlympicRecordLeader();
+} elseif ($method === 'GET' && $uri === '/api/stats/dashboard') {
+    $statsController->getDashboardStats();
 } elseif ($method === 'GET' && $uri === '/api/competitions') {
     $competitionController->getAllCompetitions();
 } elseif ($method === 'POST' && $uri === '/api/competitions') {

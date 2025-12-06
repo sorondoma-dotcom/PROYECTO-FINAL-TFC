@@ -132,6 +132,14 @@ export class EstadisticasComponent implements OnInit {
   goldLeaders: GenderLeaders | null = null;
   silverLeaders: GenderLeaders | null = null;
   worldRecordLeaders: GenderLeaders | null = null;
+  finaPointsLeader: AthleteSpotlight | null = null;
+  
+  // Nuevas estadísticas dinámicas
+  dashboardStats: any = null;
+  topCountries: any[] = [];
+  youngTalents: any[] = [];
+  versatileAthletes: any[] = [];
+  recentRecordBreakers: any[] = [];
 
   summaryCards: SummaryCard[] = [
     {
@@ -172,24 +180,9 @@ export class EstadisticasComponent implements OnInit {
     }
   ];
 
-  paceByStroke: PaceItem[] = [
-    { label: '100 libre', value: '52.8s', progress: 88, icon: 'speed', accent: 'primary' },
-    { label: '100 mariposa', value: '56.9s', progress: 82, icon: 'water', accent: 'accent' },
-    { label: '200 espalda', value: '1:58', progress: 74, icon: 'timeline', accent: 'muted' },
-    { label: '100 braza', value: '1:05', progress: 69, icon: 'waves', accent: 'success' }
-  ];
-
-  competitionPulse: CompetitionPulse[] = [
-    { name: 'Gran Prix Series', city: 'Doha', countryCode: 'QA', startDate: '2025-02-12', status: 'upcoming' },
-    { name: 'Circuito Mediterraneo', city: 'Barcelona', countryCode: 'ES', startDate: '2025-01-28', status: 'recent' },
-    { name: 'NCAA Trials', city: 'Austin', countryCode: 'US', startDate: '2025-02-02', status: 'live' }
-  ];
-
-  topAthletes: AthleteSpotlight[] = [
-    { name: 'Summer McIntosh', country: 'CA', event: '400 libre', time: '3:55.3', points: 980 },
-    { name: 'Leon Marchand', country: 'FR', event: '200 estilos', time: '1:54.6', points: 972 },
-    { name: 'Maggie MacNeil', country: 'CA', event: '100 mariposa', time: '55.0', points: 940 }
-  ];
+  paceByStroke: PaceItem[] = [];
+  competitionPulse: CompetitionPulse[] = [];
+  topAthletes: AthleteSpotlight[] = [];
 
   constructor(private datosService: DatosService, private competitionService: CompetitionService) {}
 
@@ -261,20 +254,19 @@ export class EstadisticasComponent implements OnInit {
             return of(null);
           })
         ),
-      sprint: this.datosService
-        .getRankings({
-          gender: 'F',
-          distance: '100',
-          stroke: 'FREESTYLE',
-          poolConfiguration: 'LCM',
-          limit: 6
-        })
-        .pipe(
-          catchError((err) => {
-            console.error('Fallo al cargar rankings', err);
-            return of(null);
-          })
-        ),
+      // Rankings para atletas destacados (top 5 de cada categoría)
+      rankingFreestyle100M: this.datosService.getRankings({ gender: 'M', distance: '100', stroke: 'FREESTYLE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingFreestyle100F: this.datosService.getRankings({ gender: 'F', distance: '100', stroke: 'FREESTYLE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingButterfly100M: this.datosService.getRankings({ gender: 'M', distance: '100', stroke: 'BUTTERFLY', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingButterfly100F: this.datosService.getRankings({ gender: 'F', distance: '100', stroke: 'BUTTERFLY', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingBackstroke200M: this.datosService.getRankings({ gender: 'M', distance: '200', stroke: 'BACKSTROKE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingBackstroke200F: this.datosService.getRankings({ gender: 'F', distance: '200', stroke: 'BACKSTROKE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingBreaststroke100M: this.datosService.getRankings({ gender: 'M', distance: '100', stroke: 'BREASTSTROKE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingBreaststroke100F: this.datosService.getRankings({ gender: 'F', distance: '100', stroke: 'BREASTSTROKE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingFreestyle50M: this.datosService.getRankings({ gender: 'M', distance: '50', stroke: 'FREESTYLE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingFreestyle50F: this.datosService.getRankings({ gender: 'F', distance: '50', stroke: 'FREESTYLE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingFreestyle200M: this.datosService.getRankings({ gender: 'M', distance: '200', stroke: 'FREESTYLE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
+      rankingFreestyle200F: this.datosService.getRankings({ gender: 'F', distance: '200', stroke: 'FREESTYLE', poolConfiguration: 'LCM', limit: 5 }).pipe(catchError(() => of(null))),
       scheduled: this.competitionService
         .getAllCompetitions()
         .pipe(
@@ -290,18 +282,24 @@ export class EstadisticasComponent implements OnInit {
             console.error('Fallo al calcular records olimpicos', err);
             return of(null);
           })
+        ),
+      dashboardStats: this.datosService
+        .getDashboardStats()
+        .pipe(
+          catchError((err) => {
+            console.error('Fallo al cargar estadisticas del dashboard', err);
+            return of(null);
+          })
         )
-    }).subscribe(({ competitions, sprint, scheduled, olympicLeader }) => {
+    }).subscribe((data) => {
+      const { competitions, scheduled, olympicLeader } = data;
+
       if (scheduled) {
         this.applyScheduledCompetitions(scheduled);
       }
 
       if (competitions) {
         this.applyCompetitionData(competitions);
-      }
-
-      if (sprint) {
-        this.applyAthleteData(sprint);
       }
 
       if (olympicLeader) {
@@ -311,10 +309,60 @@ export class EstadisticasComponent implements OnInit {
         this.goldLeaders = null;
         this.silverLeaders = null;
         this.worldRecordLeaders = null;
+        this.finaPointsLeader = null;
+      }
+
+      // Procesar todos los rankings para atletas destacados
+      const allRankings = [
+        data.rankingFreestyle100M,
+        data.rankingFreestyle100F,
+        data.rankingButterfly100M,
+        data.rankingButterfly100F,
+        data.rankingBackstroke200M,
+        data.rankingBackstroke200F,
+        data.rankingBreaststroke100M,
+        data.rankingBreaststroke100F,
+        data.rankingFreestyle50M,
+        data.rankingFreestyle50F,
+        data.rankingFreestyle200M,
+        data.rankingFreestyle200F
+      ].filter(r => r !== null);
+
+      this.applyAllRankingsData(allRankings);
+      this.applyPaceByStroke(data.rankingFreestyle100M, data.rankingButterfly100M, data.rankingBackstroke200M, data.rankingBreaststroke100M);
+
+      // Procesar estadísticas del dashboard
+      if (data.dashboardStats) {
+        this.applyDashboardStats(data.dashboardStats);
       }
 
       this.loading = false;
     });
+  }
+
+  private applyDashboardStats(stats: any): void {
+    this.dashboardStats = stats;
+    
+    // Actualizar tarjetas de resumen con datos reales
+    if (stats.totalAthletes) {
+      this.summaryCards = this.summaryCards.map((card) => {
+        if (card.key === 'volume') {
+          const total = this.remoteStats.total + this.localStats.total;
+          return { 
+            ...card, 
+            value: `${total || stats.totalCompetitions || 0}`, 
+            helper: `${stats.totalAthletes} atletas registrados` 
+          };
+        }
+        return card;
+      });
+    }
+
+    // Guardar datos para mostrar en el template
+    this.topCountries = stats.topCountries || [];
+    this.youngTalents = stats.upcomingStars || [];
+    this.versatileAthletes = stats.versatileAthletes || [];
+    this.recentRecordBreakers = stats.recordBreakers || [];
   }
 
   formatScheduledDate(value?: string | null): string {
@@ -336,6 +384,85 @@ export class EstadisticasComponent implements OnInit {
       cancelada: 'Cancelada'
     };
     return map[estado ?? 'pendiente'] ?? 'Pendiente';
+  }
+
+  private applyPaceByStroke(freestyle100: any, butterfly100: any, backstroke200: any, breaststroke100: any): void {
+    const paces: PaceItem[] = [];
+
+    if (freestyle100) {
+      const record = this.extractTopRecord(freestyle100);
+      if (record) {
+        paces.push({
+          label: '100 libre',
+          value: record.time,
+          progress: Math.min(100, (record.points || 900) / 11),
+          icon: 'speed',
+          accent: 'primary'
+        });
+      }
+    }
+
+    if (butterfly100) {
+      const record = this.extractTopRecord(butterfly100);
+      if (record) {
+        paces.push({
+          label: '100 mariposa',
+          value: record.time,
+          progress: Math.min(100, (record.points || 850) / 11),
+          icon: 'water',
+          accent: 'accent'
+        });
+      }
+    }
+
+    if (backstroke200) {
+      const record = this.extractTopRecord(backstroke200);
+      if (record) {
+        paces.push({
+          label: '200 espalda',
+          value: record.time,
+          progress: Math.min(100, (record.points || 800) / 11),
+          icon: 'timeline',
+          accent: 'muted'
+        });
+      }
+    }
+
+    if (breaststroke100) {
+      const record = this.extractTopRecord(breaststroke100);
+      if (record) {
+        paces.push({
+          label: '100 braza',
+          value: record.time,
+          progress: Math.min(100, (record.points || 750) / 11),
+          icon: 'waves',
+          accent: 'success'
+        });
+      }
+    }
+
+    this.paceByStroke = paces.length > 0 ? paces : this.getDefaultPaceByStroke();
+  }
+
+  private extractTopRecord(raw: any): { time: string; points?: number } | null {
+    const records = this.mapRankingResponse(raw);
+    if (records.length === 0) {
+      return null;
+    }
+    const top = records[0];
+    return {
+      time: top.time || top.timeText || '--',
+      points: top.points
+    };
+  }
+
+  private getDefaultPaceByStroke(): PaceItem[] {
+    return [
+      { label: '100 libre', value: '--', progress: 0, icon: 'speed', accent: 'primary' },
+      { label: '100 mariposa', value: '--', progress: 0, icon: 'water', accent: 'accent' },
+      { label: '200 espalda', value: '--', progress: 0, icon: 'timeline', accent: 'muted' },
+      { label: '100 braza', value: '--', progress: 0, icon: 'waves', accent: 'success' }
+    ];
   }
 
   private applyCompetitionData(raw: any): void {
@@ -406,31 +533,70 @@ export class EstadisticasComponent implements OnInit {
     this.updateSummaryCards();
   }
 
-  private applyAthleteData(raw: any): void {
-    const mapped = this.mapRankingResponse(raw)
-      .slice(0, 4)
-      .map((item: RankingEntry, idx: number): AthleteSpotlight => ({
-        name: item?.name || `Atleta ${idx + 1}`,
-        country: item?.country || '',
-        event: this.formatEvent(item),
-        time: item?.time || item?.timeText || '--',
-        points: item?.points || undefined,
-        profileUrl: item?.profileUrl || undefined,
-        stroke: item?.stroke
-      }));
+  private applyAllRankingsData(allRankings: any[]): void {
+    // Combinar todos los atletas de todos los rankings
+    const allAthletes: AthleteSpotlight[] = [];
 
-    if (!mapped.length) {
+    allRankings.forEach((rankingData) => {
+      const records = this.mapRankingResponse(rankingData);
+      records.forEach((item: RankingEntry) => {
+        if (item.name && item.points && item.points > 0) {
+          allAthletes.push({
+            name: item.name,
+            country: item.country || '',
+            event: this.formatEvent(item),
+            time: item.time || item.timeText || '--',
+            points: item.points,
+            profileUrl: item.profileUrl || undefined,
+            stroke: item.stroke
+          });
+        }
+      });
+    });
+
+    if (allAthletes.length === 0) {
+      this.topAthletes = [];
       return;
     }
 
-    this.topAthletes = mapped;
+    // Ordenar por puntos FINA descendente
+    const sortedByPoints = [...allAthletes].sort((a, b) => (b.points || 0) - (a.points || 0));
 
-    const topPoints = mapped.find((m) => m.points)?.points;
-    if (topPoints) {
-      this.summaryCards = this.summaryCards.map((card) =>
-        card.key === 'records' ? { ...card, value: `${topPoints}+`, helper: 'Refrescado con ranking' } : card
-      );
+    // Top atletas: seleccionar los 10 mejores, asegurando variedad
+    this.topAthletes = this.selectDiverseTopAthletes(sortedByPoints, 10);
+  }
+
+  private selectDiverseTopAthletes(athletes: AthleteSpotlight[], limit: number): AthleteSpotlight[] {
+    const selected: AthleteSpotlight[] = [];
+    const seenNames = new Set<string>();
+    const seenEvents = new Set<string>();
+
+    // Priorizar variedad: diferentes atletas y diferentes eventos
+    for (const athlete of athletes) {
+      if (selected.length >= limit) break;
+
+      const isDuplicateName = seenNames.has(athlete.name);
+      const isDuplicateEvent = seenEvents.has(athlete.event);
+
+      // Agregar si es nombre o evento único, o si ya tenemos pocos atletas
+      if (!isDuplicateName || !isDuplicateEvent || selected.length < 3) {
+        selected.push(athlete);
+        seenNames.add(athlete.name);
+        seenEvents.add(athlete.event);
+      }
     }
+
+    // Si no llegamos al límite, completar con los mejores restantes
+    if (selected.length < limit) {
+      for (const athlete of athletes) {
+        if (selected.length >= limit) break;
+        if (!selected.find(a => a.name === athlete.name && a.event === athlete.event)) {
+          selected.push(athlete);
+        }
+      }
+    }
+
+    return selected.slice(0, limit);
   }
 
   private updateSummaryCards(): void {
@@ -572,6 +738,38 @@ export class EstadisticasComponent implements OnInit {
     this.goldLeaders = this.mapGenderLeaders(payload?.gold);
     this.silverLeaders = this.mapGenderLeaders(payload?.silver);
     this.worldRecordLeaders = this.mapGenderLeaders(payload?.worldRecords);
+    
+    // Procesar líder de puntos FINA desde el backend
+    if (payload?.finaPointsLeader) {
+      this.finaPointsLeader = this.mapFinaPointsLeader(payload.finaPointsLeader);
+      
+      // Actualizar tarjeta de puntos elite
+      const topPoints = this.finaPointsLeader?.points;
+      if (topPoints) {
+        this.summaryCards = this.summaryCards.map((card) =>
+          card.key === 'records' ? { ...card, value: `${topPoints}`, helper: 'Máximo puntos FINA global' } : card
+        );
+      }
+    }
+  }
+
+  private mapFinaPointsLeader(source: any): AthleteSpotlight | null {
+    if (!source || !source.name) {
+      return null;
+    }
+
+    const distance = source.distance ? String(source.distance) : '';
+    const stroke = this.formatStroke(source.stroke);
+    const event = [distance, stroke].filter(Boolean).join(' ') || source.event || 'Evento';
+
+    return {
+      name: source.name,
+      country: source.countryCode || '',
+      event: event,
+      time: source.time || '--',
+      points: source.finaPoints || 0,
+      stroke: source.stroke
+    };
   }
 
   private mapLeader(source: any, valueKey: 'records' | 'total' = 'records'): OlympicLeader | null {
