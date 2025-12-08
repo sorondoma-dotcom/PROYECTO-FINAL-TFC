@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap, finalize } from 'rxjs/operators';
-import { API_CONFIG } from '../config/api.config';
+import { API_CONFIG, resolvePhpAssetUrl } from '../config/api.config';
 
 interface LoginRequest {
   email: string;
@@ -117,7 +117,23 @@ export class AuthService {
 
   private saveUser(user: any): void {
     if (user) {
-      localStorage.setItem(this.storageKey, JSON.stringify(user));
+      // Clone the user object to avoid side effects
+      const userToSave = { ...user };
+      
+      // Resolve avatar URLs through the proxy
+      if (userToSave.avatarUrl) {
+        userToSave.avatarUrl = resolvePhpAssetUrl(userToSave.avatarUrl);
+      }
+      if (userToSave.avatarThumbUrl) {
+        userToSave.avatarThumbUrl = resolvePhpAssetUrl(userToSave.avatarThumbUrl);
+      }
+      if (userToSave.avatarLargeUrl) {
+        userToSave.avatarLargeUrl = resolvePhpAssetUrl(userToSave.avatarLargeUrl);
+      }
+      if (userToSave.avatarFullUrl) {
+        userToSave.avatarFullUrl = resolvePhpAssetUrl(userToSave.avatarFullUrl);
+      }
+      localStorage.setItem(this.storageKey, JSON.stringify(userToSave));
     }
   }
 

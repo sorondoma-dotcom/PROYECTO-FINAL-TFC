@@ -449,20 +449,8 @@ class AuthService
             return null;
         }
 
-        $configuredBase = rtrim(env('PUBLIC_BASE_URL', ''), '/');
-        if ($configuredBase !== '') {
-            return $configuredBase . $relativePath;
-        }
-
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $basePath = rtrim($this->getPublicBasePath(), '/');
-
-        if ($host === '') {
-            return ($basePath !== '' ? $basePath : '') . $relativePath;
-        }
-
-        return sprintf('%s://%s%s%s', $scheme, $host, $basePath, $relativePath);
+        // Return relative URLs so the frontend can properly proxy them through nginx
+        return $relativePath;
     }
 
     private function extractAvatarPayload(array $avatar): array

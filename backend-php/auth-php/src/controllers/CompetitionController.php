@@ -282,13 +282,8 @@ class CompetitionController
             return null;
         }
 
-        $relativePath = '/' . ltrim($relativePath, '/');
-
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $basePath = rtrim($this->getPublicBasePath(), '/');
-
-        return sprintf('%s://%s%s%s', $scheme, $host, $basePath, $relativePath);
+        // Return relative URLs so the frontend can properly proxy them through nginx
+        return '/' . ltrim($relativePath, '/');
     }
 
     private function getPublicBasePath(): string

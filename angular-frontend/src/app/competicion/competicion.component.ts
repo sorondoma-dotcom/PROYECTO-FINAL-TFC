@@ -196,13 +196,11 @@ export class CompeticionComponent implements OnInit {
   }
 
   getScheduledLogoUrl(comp: ScheduledCompetition): string | null {
-    if (comp.logo_url) {
-      return comp.logo_url;
+    const candidate = comp.logo_url || comp.logo_path;
+    if (!candidate) {
+      return null;
     }
-    if (comp.logo_path) {
-      return resolvePhpAssetUrl(comp.logo_path);
-    }
-    return null;
+    return resolvePhpAssetUrl(candidate);
   }
 
   private getScheduledSortValue(comp: ScheduledCompetition): number {
