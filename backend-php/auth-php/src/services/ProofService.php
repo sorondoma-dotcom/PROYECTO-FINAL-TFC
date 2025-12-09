@@ -113,6 +113,10 @@ class ProofService
             $this->validateGender($data['genero']);
         }
 
+        // Verificar si se está cambiando el género
+        $generoChanged = isset($data['genero']) && $data['genero'] !== $proof['genero'];
+        $newGenero = $data['genero'] ?? $proof['genero'];
+
         // Actualizar
         $fields = [];
         $values = [];
@@ -129,7 +133,39 @@ class ProofService
             $stmt->execute($values);
         }
 
+        // Si el género cambió a M o F (no Mixto), eliminar inscripciones que no coincidan
+        if ($generoChanged && $newGenero !== 'Mixto') {
+            $this->removeIncompatibleInscriptions($proofId, $newGenero);
+        }
+
         return $this->getProof($proofId);
+    }
+
+    /**
+     * Eliminar inscripciones de atletas cuyo género no coincide con el género de la prueba
+     */
+    private function removeIncompatibleInscriptions(int $proofId, string $proofGender): void
+    {
+        // Obtener todas las inscripciones de la prueba con el género del atleta
+        $stmt = $this->pdo->prepare(
+            'SELECT ip.id, a.gender
+            FROM inscripciones_pruebas ip
+            JOIN inscripciones_atleticas ia ON ip.inscripcion_atletica_id = ia.id
+            JOIN atletas a ON ia.athlete_id = a.athlete_id
+            WHERE ip.prueba_id = ?'
+        );
+        $stmt->execute([$proofId]);
+        $inscriptions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Eliminar inscripciones que no coincidan con el género de la prueba
+        $deleteStmt = $this->pdo->prepare('DELETE FROM inscripciones_pruebas WHERE id = ?');
+        
+        foreach ($inscriptions as $inscription) {
+            // Si el género del atleta no coincide con el género de la prueba, eliminar
+            if ($inscription['gender'] !== $proofGender) {
+                $deleteStmt->execute([$inscription['id']]);
+            }
+        }
     }
 
     /**
@@ -151,90 +187,98 @@ class ProofService
         $stmt = $this->pdo->prepare('DELETE FROM competiciones_pruebas WHERE id = ?');
         $stmt->execute([$proofId]);
 
-        return ['success' => true, 'message' => 'Prueba eliminada exitosamente'];
+        return [
+            'success' => true,
+            'message' => 'Prueba eliminada correctamente'
+        ];
     }
 
     /**
-     * Inscribir atleta a una prueba
+     * Inscribir un atleta a una prueba
      */
-    public function registerAthleteToProof(int $proofId, int $inscriptionAtleticaId): array
+    public function registerAthleteToProof(int $proofId, int $inscripcionAtleticaId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id FROM competiciones_pruebas WHERE id = ?');
+        // Verificar que la prueba existe
+        $stmt = $this->pdo->prepare('SELECT * FROM competiciones_pruebas WHERE id = ?');
         $stmt->execute([$proofId]);
-        if (!$stmt->fetch()) {
+        $proof = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$proof) {
             throw new \RuntimeException('Prueba no encontrada');
         }
 
-        $stmt = $this->pdo->prepare('SELECT * FROM inscripciones_atleticas WHERE id = ?');
-        $stmt->execute([$inscriptionAtleticaId]);
-        $inscription = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if (!$inscription) {
+        // Verificar que la inscripción atlética existe
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM inscripciones_atleticas WHERE id = ? LIMIT 1'
+        );
+        $stmt->execute([$inscripcionAtleticaId]);
+        if (!$stmt->fetch()) {
             throw new \RuntimeException('Inscripción atlética no encontrada');
         }
 
-        // Verificar que no existe duplicada
+        // Verificar si ya está inscrito
         $stmt = $this->pdo->prepare(
             'SELECT id FROM inscripciones_pruebas WHERE inscripcion_atletica_id = ? AND prueba_id = ?'
         );
-        $stmt->execute([$inscriptionAtleticaId, $proofId]);
+        $stmt->execute([$inscripcionAtleticaId, $proofId]);
         if ($stmt->fetch()) {
             throw new \RuntimeException('El atleta ya está inscrito en esta prueba');
         }
 
-        // Calcular serie automáticamente (máx 8 atletas por serie)
-        $currentSeries = $this->calculateNextSeries($proofId);
-
+        // Insertar inscripción
         $stmt = $this->pdo->prepare(
             'INSERT INTO inscripciones_pruebas (inscripcion_atletica_id, prueba_id)
             VALUES (?, ?)'
         );
-        $stmt->execute([$inscriptionAtleticaId, $proofId]);
+        $stmt->execute([$inscripcionAtleticaId, $proofId]);
+
+        $inscriptionId = (int) $this->pdo->lastInsertId();
 
         return [
             'success' => true,
-            'message' => 'Atleta inscrito en la prueba exitosamente',
-            'serie' => $currentSeries
+            'message' => 'Atleta inscrito a la prueba correctamente',
+            'inscription_id' => $inscriptionId,
+            'proof_id' => $proofId
         ];
     }
 
     /**
-     * Desinscribir atleta de una prueba
+     * Desinscribir un atleta de una prueba (por ID de inscripción_prueba)
      */
-    public function unregisterAthleteFromProof(int $proofProofId): array
+    public function unregisterAthleteFromProof(int $inscriptionProofId): array
     {
         $stmt = $this->pdo->prepare(
             'SELECT prueba_id, inscripcion_atletica_id FROM inscripciones_pruebas WHERE id = ? LIMIT 1'
         );
-        $stmt->execute([$proofProofId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        if (!$row) {
-            throw new \RuntimeException('Inscripci?n a prueba no encontrada');
+        $stmt->execute([$inscriptionProofId]);
+        $inscription = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if (!$inscription) {
+            throw new \RuntimeException('Inscripción a prueba no encontrada');
         }
 
         $deleteStmt = $this->pdo->prepare('DELETE FROM inscripciones_pruebas WHERE id = ? LIMIT 1');
-        $deleteStmt->execute([$proofProofId]);
-        if ($deleteStmt->rowCount() === 0) {
-            throw new \RuntimeException('No se pudo eliminar la inscripci?n a la prueba');
-        }
+        $deleteStmt->execute([$inscriptionProofId]);
 
         return [
             'success' => true,
             'message' => 'Atleta desinscrito de la prueba',
-            'removed_proof_id' => (int) $row['prueba_id'],
-            'removed_inscripcion_atletica_id' => (int) $row['inscripcion_atletica_id']
+            'removed_proof_id' => $inscription['prueba_id']
         ];
     }
 
-    public function unregisterAthleteFromProofByProofAndInscription(int $proofId, int $inscriptionAtleticaId): array
+    /**
+     * Desinscribir un atleta de una prueba (por IDs de prueba e inscripción atlética)
+     */
+    public function unregisterAthleteFromProofByIds(int $proofId, int $inscriptionAtleticaId): array
     {
-        $deleteStmt = $this->pdo->prepare(
+        $stmt = $this->pdo->prepare(
             'DELETE FROM inscripciones_pruebas WHERE prueba_id = ? AND inscripcion_atletica_id = ? LIMIT 1'
         );
-        $deleteStmt->execute([$proofId, $inscriptionAtleticaId]);
+        $stmt->execute([$proofId, $inscriptionAtleticaId]);
 
-        if ($deleteStmt->rowCount() === 0) {
-            throw new \RuntimeException('Inscripci?n a prueba no encontrada');
+        if ($stmt->rowCount() === 0) {
+            throw new \RuntimeException('No se encontró la inscripción del atleta en esta prueba');
         }
 
         return [
