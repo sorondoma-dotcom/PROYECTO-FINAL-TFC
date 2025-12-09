@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -32,12 +32,12 @@ export class EditCompetitionDialogComponent {
   ) {
     const comp = data.competition;
     this.editForm = this.fb.group({
-      nombre: [comp.nombre],
-      descripcion: [comp.descripcion],
-      pais: [comp.pais],
-      ciudad: [comp.ciudad],
-      estado: [comp.estado],
-      tipo_piscina: [comp.tipo_piscina]
+      nombre: [comp.nombre, [Validators.required, Validators.minLength(3)]],
+      descripcion: [comp.descripcion, Validators.required],
+      pais: [comp.pais, Validators.required],
+      ciudad: [comp.ciudad, Validators.required],
+      estado: [comp.estado, Validators.required],
+      tipo_piscina: [comp.tipo_piscina, Validators.required]
     });
   }
 
