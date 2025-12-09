@@ -356,15 +356,29 @@
                 <mat-icon>assignment</mat-icon>
                 Inscribir en Prueba
               </button>
-              <button mat-raised-button color="accent" (click)="editarCompeticion()">
-                <mat-icon>edit</mat-icon>
-                Editar
+              <button mat-raised-button (click)="imprimirPruebas()" [disabled]="!selectedCompeticion">
+                <mat-icon>print</mat-icon>
+                Imprimir Pruebas
               </button>
             </div>
 
             <!-- Tabla de inscripciones -->
             <div class="inscripciones-section">
-              <h3>Atletas inscritos</h3>
+              <div class="section-header">
+                <h3>Atletas inscritos</h3>
+                @if (inscripciones.length > 0) {
+                  <div class="section-actions">
+                    <button mat-raised-button color="warn" (click)="eliminarTodosAtletas()">
+                      <mat-icon>delete_sweep</mat-icon>
+                      Eliminar Todos
+                    </button>
+                    <button mat-raised-button color="primary" (click)="imprimirAtletas()" [disabled]="!selectedCompetition">
+                      <mat-icon>print</mat-icon>
+                      Imprimir Atletas
+                    </button>
+                  </div>
+                }
+              </div>
               @if (inscripciones.length === 0) {
                 <p class="no-data">No hay atletas inscritos en esta competición</p>
               } @else {

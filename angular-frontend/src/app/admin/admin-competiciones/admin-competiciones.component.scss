@@ -426,8 +426,15 @@ mat-chip.estado-confirmado {
 	margin-top: 32px;
 }
 
+.inscripciones-section .section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+}
+
 .inscripciones-section h3 {
-	margin: 0 0 16px 0;
+	margin: 0;
 	font-size: 16px;
 	font-weight: 600;
 	color: var(--color-text);

@@ -312,6 +312,536 @@ export class AdminCompeticionesComponent implements OnInit, OnDestroy {
     });
   }
 
+  eliminarTodosAtletas(): void {
+    if (!this.selectedCompetition || this.inscripciones.length === 0) return;
+
+    this.confirmation.confirm({
+      title: 'Eliminar todos los atletas',
+      message: `¿Estás seguro de que deseas desinscribir a TODOS los ${this.inscripciones.length} atletas de esta competición? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar Todos',
+      confirmColor: 'warn'
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+
+      this.loading = true;
+      let completedCount = 0;
+      let errorCount = 0;
+      const totalAtletas = this.inscripciones.length;
+
+      // Eliminar cada atleta secuencialmente
+      this.inscripciones.forEach((inscripcion, index) => {
+        if (!inscripcion.id) {
+          completedCount++;
+          errorCount++;
+          return;
+        }
+
+        this.competitionService.unregisterAthlete(inscripcion.id).subscribe({
+          next: () => {
+            completedCount++;
+            if (completedCount === totalAtletas) {
+              this.finalizarEliminacionMasiva(totalAtletas, errorCount);
+            }
+          },
+          error: (error) => {
+            console.error(`Error desinscribiendo a ${inscripcion.athlete_name}:`, error);
+            completedCount++;
+            errorCount++;
+            if (completedCount === totalAtletas) {
+              this.finalizarEliminacionMasiva(totalAtletas, errorCount);
+            }
+          }
+        });
+      });
+    });
+  }
+
+  private finalizarEliminacionMasiva(total: number, errores: number): void {
+    this.loading = false;
+    this.loadInscripciones(this.selectedCompetition!.id!);
+
+    const exitosos = total - errores;
+    let mensaje = '';
+
+    if (errores === 0) {
+      mensaje = `Se desinscribieron correctamente todos los ${total} atletas.`;
+    } else if (exitosos > 0) {
+      mensaje = `Se desinscribieron ${exitosos} atletas correctamente. ${errores} fallaron.`;
+    } else {
+      mensaje = `No se pudo desinscribir ningún atleta. Intenta nuevamente.`;
+    }
+
+    this.confirmation.confirm({
+      title: errores === 0 ? 'Eliminación completada' : 'Eliminación con errores',
+      message: mensaje,
+      confirmText: 'OK'
+    }).subscribe();
+  }
+
+  imprimirAtletas(): void {
+    if (!this.selectedCompetition || this.inscripciones.length === 0) return;
+
+    const printContent = this.generarContenidoImpresionAtletas();
+    const ventanaImpresion = window.open('', '_blank', 'width=800,height=600');
+    
+    if (ventanaImpresion) {
+      ventanaImpresion.document.write(printContent);
+      ventanaImpresion.document.close();
+      ventanaImpresion.focus();
+      
+      // Esperar a que se carguen los estilos antes de imprimir
+      setTimeout(() => {
+        ventanaImpresion.print();
+      }, 250);
+    }
+  }
+
+  private generarContenidoImpresionAtletas(): string {
+    const competition = this.selectedCompetition!;
+    const fechaInicio = competition.fecha_inicio ? new Date(competition.fecha_inicio).toLocaleDateString('es-ES') : '-';
+    const fechaFin = competition.fecha_fin ? new Date(competition.fecha_fin).toLocaleDateString('es-ES') : '-';
+
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Atletas Inscritos - ${competition.nombre}</title>
+        <style>
+          @media print {
+            body { margin: 0; }
+            @page { margin: 1.5cm; }
+          }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 210mm;
+            margin: 0 auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #3f51b5;
+            padding-bottom: 15px;
+          }
+          .header h1 {
+            margin: 0 0 10px 0;
+            color: #3f51b5;
+            font-size: 24px;
+          }
+          .header h2 {
+            margin: 5px 0;
+            color: #666;
+            font-size: 18px;
+            font-weight: normal;
+          }
+          .info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+          }
+          .info p {
+            margin: 5px 0;
+            font-size: 14px;
+          }
+          .info strong {
+            color: #333;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 13px;
+          }
+          th {
+            background-color: #3f51b5;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+          }
+          tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+          }
+          .total {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-left: 4px solid #3f51b5;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${competition.nombre}</h1>
+          <h2>Lista de Atletas Inscritos</h2>
+        </div>
+        
+        <div class="info">
+          <p><strong>Fecha:</strong> ${fechaInicio} - ${fechaFin}</p>
+          <p><strong>Ciudad:</strong> ${competition.ciudad || '-'}</p>
+          <p><strong>Piscina:</strong> ${competition.tipo_piscina}</p>
+          <p><strong>Lugar:</strong> ${competition.lugar_evento || '-'}</p>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 5%;">#</th>
+              <th style="width: 40%;">Nombre del Atleta</th>
+              <th style="width: 15%;">País</th>
+              <th style="width: 15%;">Género</th>
+              <th style="width: 15%;">Dorsal</th>
+              <th style="width: 10%;">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    this.inscripciones.forEach((inscripcion, index) => {
+      html += `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${inscripcion.athlete_name}</td>
+          <td>${inscripcion.country_code}</td>
+          <td>${inscripcion.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
+          <td>${inscripcion.numero_dorsal || '-'}</td>
+          <td>${inscripcion.estado_inscripcion || '-'}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+        
+        <div class="total">
+          Total de atletas inscritos: ${this.inscripciones.length}
+        </div>
+        
+        <div class="footer">
+          <p>Documento generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+          <p>LiveSwim - Sistema de Gestión de Competiciones de Natación</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return html;
+  }
+
+  imprimirPruebas(): void {
+    if (!this.selectedCompetition) return;
+
+    this.proofService.getProofsByCompetition(this.selectedCompetition.id!).subscribe({
+      next: (response: any) => {
+        const proofs = response.proofs || [];
+        
+        if (proofs.length === 0) {
+          this.confirmation.confirm({
+            title: 'Sin pruebas',
+            message: 'No hay pruebas para imprimir en esta competición.',
+            confirmText: 'OK'
+          }).subscribe();
+          return;
+        }
+
+        const printContent = this.generarContenidoImpresionPruebas(proofs);
+        const ventanaImpresion = window.open('', '_blank', 'width=800,height=600');
+        
+        if (ventanaImpresion) {
+          ventanaImpresion.document.write(printContent);
+          ventanaImpresion.document.close();
+          ventanaImpresion.focus();
+          
+          setTimeout(() => {
+            ventanaImpresion.print();
+          }, 250);
+        }
+      },
+      error: (error) => console.error('Error cargando pruebas:', error)
+    });
+  }
+
+  private generarContenidoImpresionPruebas(proofs: any[]): string {
+    const competition = this.selectedCompetition!;
+    const fechaInicio = competition.fecha_inicio ? new Date(competition.fecha_inicio).toLocaleDateString('es-ES') : '-';
+    const fechaFin = competition.fecha_fin ? new Date(competition.fecha_fin).toLocaleDateString('es-ES') : '-';
+
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Pruebas - ${competition.nombre}</title>
+        <style>
+          @media print {
+            body { margin: 0; }
+            @page { margin: 1.5cm; }
+            .proof-block { page-break-before: always; }
+            .proof-block:first-of-type { page-break-before: auto; }
+            .serie-block { page-break-before: always; }
+            .serie-block:first-of-type { page-break-before: auto; }
+          }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 210mm;
+            margin: 0 auto;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #3f51b5;
+            padding-bottom: 15px;
+          }
+          .header h1 {
+            margin: 0 0 10px 0;
+            color: #3f51b5;
+            font-size: 24px;
+          }
+          .header h2 {
+            margin: 5px 0;
+            color: #666;
+            font-size: 18px;
+            font-weight: normal;
+          }
+          .info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+          }
+          .info p {
+            margin: 5px 0;
+            font-size: 14px;
+          }
+          .proof-block {
+            margin-bottom: 30px;
+            border: 2px solid #3f51b5;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #fafafa;
+          }
+          .proof-header {
+            background-color: #3f51b5;
+            color: white;
+            padding: 10px 15px;
+            margin: -15px -15px 15px -15px;
+            border-radius: 6px 6px 0 0;
+          }
+          .proof-header h3 {
+            margin: 0;
+            font-size: 18px;
+          }
+          .proof-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 12px;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+          }
+          .proof-details p {
+            margin: 5px 0;
+            font-size: 13px;
+          }
+          .proof-details strong {
+            color: #3f51b5;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 10px 8px;
+            text-align: left;
+            font-size: 12px;
+          }
+          th {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 11px;
+          }
+          tr:nth-child(even) {
+            background-color: #f9f9f9;
+          }
+          .no-athletes {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            background-color: white;
+            border-radius: 5px;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+          }
+          .summary {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-left: 4px solid #3f51b5;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${competition.nombre}</h1>
+          <h2>Listado de Pruebas e Inscritos</h2>
+        </div>
+        
+        <div class="info">
+          <p><strong>Fecha:</strong> ${fechaInicio} - ${fechaFin}</p>
+          <p><strong>Ciudad:</strong> ${competition.ciudad || '-'}</p>
+          <p><strong>Piscina:</strong> ${competition.tipo_piscina}</p>
+          <p><strong>Lugar:</strong> ${competition.lugar_evento || '-'}</p>
+        </div>
+    `;
+
+    proofs.forEach((proof: any, proofIndex: number) => {
+      const inscripciones = proof.inscripciones || [];
+      const series = proof.series || {};
+      const totalSeries = Object.keys(series).length;
+
+      // Si no hay inscripciones, mostrar mensaje
+      if (inscripciones.length === 0) {
+        html += `
+          <div class="proof-block">
+            <div class="proof-header">
+              <h3>${proof.nombre_prueba}</h3>
+            </div>
+            
+            <div class="proof-details">
+              <p><strong>Distancia:</strong> ${proof.distancia}m</p>
+              <p><strong>Estilo:</strong> ${proof.estilo}</p>
+              <p><strong>Género:</strong> ${proof.genero === 'M' ? 'Masculino' : proof.genero === 'F' ? 'Femenino' : 'Mixto'}</p>
+              <p><strong>Inscritos:</strong> 0</p>
+              <p><strong>Series:</strong> 0</p>
+            </div>
+            <div class="no-athletes">
+              No hay atletas inscritos en esta prueba
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Agrupar atletas por serie (8 por serie)
+      const athletesBySerie: { [key: number]: any[] } = {};
+      inscripciones.forEach((inscripcion: any, index: number) => {
+        const serieNum = Math.floor(index / 8) + 1;
+        if (!athletesBySerie[serieNum]) {
+          athletesBySerie[serieNum] = [];
+        }
+        athletesBySerie[serieNum].push({ ...inscripcion, position: index + 1 });
+      });
+
+      // Imprimir cada serie en una página separada
+      Object.keys(athletesBySerie).forEach((serieKey, serieIndex) => {
+        const serieNum = parseInt(serieKey);
+        const athletesInSerie = athletesBySerie[serieNum];
+
+        html += `
+          <div class="${serieIndex === 0 && proofIndex === 0 ? 'proof-block' : 'serie-block proof-block'}">
+            <div class="proof-header">
+              <h3>${proof.nombre_prueba} - Serie ${serieNum}</h3>
+            </div>
+            
+            <div class="proof-details">
+              <p><strong>Distancia:</strong> ${proof.distancia}m</p>
+              <p><strong>Estilo:</strong> ${proof.estilo}</p>
+              <p><strong>Género:</strong> ${proof.genero === 'M' ? 'Masculino' : proof.genero === 'F' ? 'Femenino' : 'Mixto'}</p>
+              <p><strong>Serie:</strong> ${serieNum} de ${totalSeries}</p>
+              <p><strong>Atletas en serie:</strong> ${athletesInSerie.length}</p>
+              <p><strong>Total inscritos:</strong> ${inscripciones.length}</p>
+            </div>
+            
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 10%;">Carril</th>
+                  <th style="width: 45%;">Atleta</th>
+                  <th style="width: 15%;">País</th>
+                  <th style="width: 15%;">Género</th>
+                  <th style="width: 15%;">Dorsal</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        athletesInSerie.forEach((inscripcion: any, carril: number) => {
+          html += `
+            <tr>
+              <td><strong>${carril + 1}</strong></td>
+              <td>${inscripcion.athlete_name}</td>
+              <td>${inscripcion.country_code}</td>
+              <td>${inscripcion.gender === 'M' ? 'M' : 'F'}</td>
+              <td>${inscripcion.numero_dorsal || '-'}</td>
+            </tr>
+          `;
+        });
+
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+    });
+
+    html += `
+        <div class="summary">
+          Total de pruebas: ${proofs.length}
+        </div>
+        
+        <div class="footer">
+          <p>Documento generado el ${new Date().toLocaleDateString('es-ES')} a las ${new Date().toLocaleTimeString('es-ES')}</p>
+          <p>LiveSwim - Sistema de Gestión de Competiciones de Natación</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return html;
+  }
+
 
   gestionarPruebas(): void {
     if (!this.selectedCompetition) return;
