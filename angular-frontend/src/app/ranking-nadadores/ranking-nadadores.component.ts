@@ -446,7 +446,9 @@ export class RankingNadadoresComponent implements OnInit {
           ...nadador,
           athleteId: nadador?.athleteId || null
         },
-        filters
+        filters,
+        rankingData: this.nadadores,
+        selectedRankingEntry: nadador
       }
     });
   }

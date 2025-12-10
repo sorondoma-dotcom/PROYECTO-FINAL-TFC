@@ -100,4 +100,65 @@ class CompetitionRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ? Competition::fromArray($row) : null;
     }
+
+    /**
+     * Actualiza el estado de las competiciones según sus fechas
+     * - pendiente -> en_curso: cuando la fecha_inicio <= NOW
+     * - en_curso -> finalizada: cuando la fecha_fin < NOW
+     */
+    public function updateCompetitionStatuses(): int
+    {
+        $updated = 0;
+
+        // Actualizar a 'en_curso' las competiciones que ya comenzaron
+        $stmt = $this->pdo->prepare(
+            "UPDATE competiciones_agendadas 
+             SET estado = 'en_curso' 
+             WHERE estado = 'pendiente' 
+               AND fecha_inicio <= NOW()"
+        );
+        $stmt->execute();
+        $updated += $stmt->rowCount();
+
+        // Actualizar a 'finalizada' las competiciones que ya terminaron
+        $stmt = $this->pdo->prepare(
+            "UPDATE competiciones_agendadas 
+             SET estado = 'finalizada' 
+             WHERE estado IN ('pendiente', 'en_curso')
+               AND fecha_fin IS NOT NULL 
+               AND fecha_fin < NOW()"
+        );
+        $stmt->execute();
+        $updated += $stmt->rowCount();
+
+        // Para competiciones sin fecha_fin, usar fecha_inicio + 1 día como límite
+        $stmt = $this->pdo->prepare(
+            "UPDATE competiciones_agendadas 
+             SET estado = 'finalizada' 
+             WHERE estado IN ('pendiente', 'en_curso')
+               AND fecha_fin IS NULL 
+               AND DATE_ADD(fecha_inicio, INTERVAL 1 DAY) < NOW()"
+        );
+        $stmt->execute();
+        $updated += $stmt->rowCount();
+
+        return $updated;
+    }
+
+    /**
+     * Encuentra competiciones que necesitan actualizar su estado
+     */
+    public function findCompetitionsNeedingStatusUpdate(): array
+    {
+        $stmt = $this->pdo->query(
+            "SELECT id, nombre, fecha_inicio, fecha_fin, estado 
+             FROM competiciones_agendadas 
+             WHERE 
+                (estado = 'pendiente' AND fecha_inicio <= NOW())
+                OR (estado IN ('pendiente', 'en_curso') AND fecha_fin IS NOT NULL AND fecha_fin < NOW())
+                OR (estado IN ('pendiente', 'en_curso') AND fecha_fin IS NULL AND DATE_ADD(fecha_inicio, INTERVAL 1 DAY) < NOW())
+             ORDER BY fecha_inicio DESC"
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

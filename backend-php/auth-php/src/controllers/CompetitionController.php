@@ -296,4 +296,22 @@ class CompetitionController
 
         return substr($scriptName, 0, $position + 1);
     }
+
+    /**
+     * Actualiza automáticamente el estado de las competiciones según sus fechas
+     */
+    public function updateStatuses(): void
+    {
+        try {
+            $result = $this->competitionService->autoUpdateCompetitionStatuses();
+            http_response_code(200);
+            echo json_encode($result);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error al actualizar estados: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

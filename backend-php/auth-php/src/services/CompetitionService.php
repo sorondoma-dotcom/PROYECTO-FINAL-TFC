@@ -280,6 +280,22 @@ class CompetitionService
             'message' => 'Inscripción actualizada exitosamente'
         ];
     }
+
+    /**
+     * Actualiza automáticamente el estado de todas las competiciones según sus fechas
+     */
+    public function autoUpdateCompetitionStatuses(): array
+    {
+        $needingUpdate = $this->competitions->findCompetitionsNeedingStatusUpdate();
+        $updated = $this->competitions->updateCompetitionStatuses();
+
+        return [
+            'success' => true,
+            'updated' => $updated,
+            'competitions' => $needingUpdate,
+            'message' => sprintf('Se actualizaron %d competiciones', $updated)
+        ];
+    }
 }
 
 

@@ -169,33 +169,29 @@
   }
 
   <div class="grid">
-    <mat-card class="panel mat-elevation-z3">
+    <mat-card class="panel comparison-panel mat-elevation-z3">
       <div class="panel__header">
         <div>
           <p class="eyebrow">Comparacion</p>
-          <h3>Promedio de su categoria</h3>
+          <h3>Tu marca vs. el ranking</h3>
+          @if (comparisonEventLabel) {
+            <p class="panel__subtitle">{{ comparisonEventLabel }}</p>
+          }
         </div>
+        @if (bestPerformanceRecord) {
+          <div class="best-chip">
+            <span>Mejor marca</span>
+            <strong>{{ bestPerformanceRecord.bestTime }}</strong>
+          </div>
+        }
       </div>
-      @if (averages.athleteBest !== null && averages.categoryAverage !== null) {
-        <div class="average-row">
-          <div>
-            <p class="small-label">Tu mejor</p>
-            <h4>{{ formatSeconds(averages.athleteBest) }}</h4>
-          </div>
-          <div>
-            <p class="small-label">Promedio listado</p>
-            <h4>{{ formatSeconds(averages.categoryAverage) }}</h4>
-          </div>
-        </div>
-        <div class="gap-row">
-          <span class="gap-label" [class.positive]="averages.diff !== null && averages.diff < 0">
-            {{ averageDiffLabel() }} ({{ averageGapSeconds() }})
+      @if (bestPerformanceRecord && comparisonDiffSeconds !== null) {
+        <div class="comparison-indicator"
+             [class.comparison-indicator--positive]="comparisonDiffSeconds < 0"
+             [class.comparison-indicator--negative]="comparisonDiffSeconds > 0">
+          <span class="indicator-label">
+            {{ comparisonDiffLabel }}
           </span>
-          <mat-progress-bar
-            mode="determinate"
-            [color]="averages.diff !== null && averages.diff <= 0 ? 'primary' : 'warn'"
-            [value]="progressValue()">
-          </mat-progress-bar>
         </div>
       } @else {
         <div class="empty">Necesitamos al menos una marca tuya y datos de la prueba para comparar.</div>

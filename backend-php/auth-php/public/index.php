@@ -107,7 +107,7 @@ if (empty($uri)) {
 // Rutas publicas que NO requieren autenticacion
 $publicRoutes = [
     'GET' => ['/api/health', '/', '/index.php', '/api/rankings', '/api/athletes', '/api/athletes/results', '/api/athletes/results/medals', '/api/athletes/results/stats', '/api/competitions', '/api/stats/olympic-records', '/api/stats/dashboard'],
-    'POST' => ['/api/login', '/api/logout', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify'],
+    'POST' => ['/api/login', '/api/logout', '/api/register', '/api/password-reset', '/api/email/send-code', '/api/email/verify', '/api/competitions/update-statuses'],
     'PUT' => ['/api/password-reset']
 ];
 
@@ -154,6 +154,16 @@ if ($requiresAuth && empty($_SESSION['user_id'])) {
         'uri' => $uri,
         'method' => $method
     ]));
+}
+
+// Ejecutar middleware de actualización de estados de competiciones
+require __DIR__ . '/../src/middlewares/CompetitionStatusMiddleware.php';
+use App\Middlewares\CompetitionStatusMiddleware;
+try {
+    $statusMiddleware = new CompetitionStatusMiddleware(getPDO());
+    $statusMiddleware->handle();
+} catch (\Throwable $e) {
+    error_log('Error en CompetitionStatusMiddleware: ' . $e->getMessage());
 }
 
 $userRepository = new UserRepository();
@@ -236,6 +246,8 @@ if ($method === 'POST' && $uri === '/api/register') {
     $competitionController->updateCompetition((int) $matches[1]);
 } elseif (preg_match('/^\/api\/competitions\/(\d+)$/', $uri, $matches) && $method === 'DELETE') {
     $competitionController->deleteCompetition((int) $matches[1]);
+} elseif ($method === 'POST' && $uri === '/api/competitions/update-statuses') {
+    $competitionController->updateStatuses();
 } elseif (preg_match('/^\/api\/competitions\/(\d+)\/athletes$/', $uri, $matches) && $method === 'POST') {
     $competitionController->registerAthlete((int) $matches[1]);
 } elseif (preg_match('/^\/api\/inscriptions\/(\d+)$/', $uri, $matches) && $method === 'DELETE') {

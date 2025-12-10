@@ -19,6 +19,7 @@ import { finalize } from 'rxjs/operators';
 import { DatosService } from '../services/datos.service';
 import { Competition } from '../models/competition.interface';
 import { AuthService } from '../services/auth.service';
+import { RankingFilters } from '../models/filters/ranking-filters.interface';
 
 interface AthleteProfile {
   name: string;
@@ -76,6 +77,16 @@ interface ChartEventOption {
   key: string;
   label: string;
   entries: ChartEventResult[];
+}
+
+interface RankingComparisonRow {
+  position: number | null;
+  name: string;
+  country?: string;
+  timeText: string;
+  diffSeconds: number | null;
+  diffLabel: string;
+  isTarget: boolean;
 }
 
 @Component({
@@ -146,9 +157,16 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   profileRecords: PersonalRecord[] = [];
   eventOptions: ChartEventOption[] = [];
   selectedEventKey: string | null = null;
+  bestPerformanceRecord: PersonalRecord | null = null;
+  bestPerformanceSeconds: number | null = null;
+  comparisonEventLabel: string | null = null;
+  rankingComparisons: RankingComparisonRow[] = [];
+  athleteComparisonRow: RankingComparisonRow | null = null;
+  private rankingFiltersLocked = false;
   private rankingKeyLoaded: string | null = null;
   private rankingInFlight = false;
   private readonly maxRecordEntries = 3;
+  private rankingFallbackEvent: Competition | null = null;
 
   get hasChartData(): boolean {
     const datasets: any[] = (this.lineChartData as any)?.datasets || [];
@@ -185,7 +203,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          label: (ctx) => `Tiempo: ${this.formatSeconds(Number(ctx.parsed.y))}`
+          label: (ctx:any) => `Tiempo: ${this.formatSeconds(Number(ctx.parsed.y))}`
         }
       }
     },
@@ -207,7 +225,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       },
       y: {
         ticks: {
-          callback: (value) => this.formatSeconds(Number(value)),
+          callback: (value:any) => this.formatSeconds(Number(value)),
           padding: 10,
           font: {
             size: 12
@@ -561,45 +579,61 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
   private mapUpcomingCompetitions(schedule: any[]): Competition[] {
     const source = Array.isArray(schedule) ? schedule : [];
-    return source.map((item: any) => {
-      const competition = item?.competition ?? {};
-      const name = competition.nombre || competition.name || '';
-      const country = competition.pais || competition.country || '';
-      const city = competition.ciudad || competition.city || '';
-      const startDate = competition.fecha_inicio || item?.startDate || null;
-      const endDate = competition.fecha_fin || item?.endDate || null;
-      const pool = competition.tipo_piscina || item?.poolType || null;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    return source
+      .map((item: any) => {
+        const competition = item?.competition ?? {};
+        const name = competition.nombre || competition.name || '';
+        const country = competition.pais || competition.country || '';
+        const city = competition.ciudad || competition.city || '';
+        const startDate = competition.fecha_inicio || item?.startDate || null;
+        const endDate = competition.fecha_fin || item?.endDate || null;
+        const pool = competition.tipo_piscina || item?.poolType || null;
 
-      return {
-        id: competition.id ?? item?.competitionId ?? null,
-        competitionId: competition.id ?? item?.competitionId ?? null,
-        nombre: name,
-        name,
-        stage: competition.stage ?? null,
-        date: startDate,
-        pais: country,
-        countryCode: country,
-        ciudad: city,
-        city,
-        fecha_inicio: startDate,
-        startDate,
-        fecha_fin: endDate,
-        endDate,
-        tipo_piscina: pool,
-        poolName: pool,
-        estado: competition.estado || item?.competitionStatus || null,
-        status: item?.status || null,
-        logo_path: competition.logo_path || item?.logoPath || null,
-        logoPath: competition.logo_path || item?.logoPath || null,
-        lugar_evento: competition.lugar_evento || item?.venue || null,
-        flagImage: competition.flagImage ?? null,
-        logo: competition.logo ?? null,
-        url: competition.url ?? null,
-        month: competition.month ?? null,
-        year: competition.year ?? null,
-        monthNumber: competition.monthNumber ?? null
-      } as Competition;
-    });
+        return {
+          id: competition.id ?? item?.competitionId ?? null,
+          competitionId: competition.id ?? item?.competitionId ?? null,
+          nombre: name,
+          name,
+          stage: competition.stage ?? null,
+          date: startDate,
+          pais: country,
+          countryCode: country,
+          ciudad: city,
+          city,
+          fecha_inicio: startDate,
+          startDate,
+          fecha_fin: endDate,
+          endDate,
+          tipo_piscina: pool,
+          poolName: pool,
+          estado: competition.estado || item?.competitionStatus || null,
+          status: item?.status || null,
+          logo_path: competition.logo_path || item?.logoPath || null,
+          logoPath: competition.logo_path || item?.logoPath || null,
+          lugar_evento: competition.lugar_evento || item?.venue || null,
+          flagImage: competition.flagImage ?? null,
+          logo: competition.logo ?? null,
+          url: competition.url ?? null,
+          month: competition.month ?? null,
+          year: competition.year ?? null,
+          monthNumber: competition.monthNumber ?? null,
+          _parsedStart: this.toDate(startDate || endDate)
+        } as Competition & { _parsedStart?: Date | null };
+      })
+      .filter((comp: any) => {
+        // Filtrar solo competiciones futuras o actuales
+        const start = comp._parsedStart;
+        return start && start >= startOfToday;
+      })
+      .sort((a: any, b: any) => {
+        // Ordenar por fecha de inicio
+        const timeA = a._parsedStart?.getTime() || 0;
+        const timeB = b._parsedStart?.getTime() || 0;
+        return timeA - timeB;
+      });
   }
 
   populateFromRoute(): void {
@@ -617,7 +651,9 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
     const paramName = params['name'] ? decodeURIComponent(params['name']) : '';
     const stateAthlete = navState?.performer || {};
-    const filters = navState?.filters || {};
+    const filters: Partial<RankingFilters> = navState?.filters || {};
+    const selectedRankingEntry = navState?.selectedRankingEntry || null;
+    this.prepareRankingFallbackEvent(selectedRankingEntry);
 
     console.log('📍 populateFromRoute - params:', params);
     console.log('📍 populateFromRoute - paramName:', paramName);
@@ -664,9 +700,140 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       this.athlete.pool = normalizedPool;
     }
 
-    console.log('✅ Atleta populado:', this.athlete);
+    if ((filters.distance && filters.stroke && filters.poolConfiguration) || selectedRankingEntry) {
+      this.rankingFiltersLocked = true;
+    }
+
+    const rankingSnapshot = Array.isArray(navState?.rankingData) ? navState.rankingData : null;
+    if (rankingSnapshot?.length) {
+      this.hydrateRankingFromSnapshot(rankingSnapshot, filters, selectedRankingEntry);
+    } else if (selectedRankingEntry) {
+      this.seedFromSelectedRankingEntry(selectedRankingEntry);
+    }
   }
 
+  private hydrateRankingFromSnapshot(entries: any[], filters?: Partial<RankingFilters>, selectedEntry?: any): void {
+    if (!Array.isArray(entries) || !entries.length) {
+      return;
+    }
+    if (filters || selectedEntry) {
+      this.rankingFiltersLocked = true;
+    }
+
+    if (filters?.gender) {
+      const normalizedGender = this.normalizeGender(filters.gender);
+      if (normalizedGender) {
+        this.athlete.gender = normalizedGender;
+      }
+    }
+    if (filters?.distance) {
+      const cleanDistance = this.cleanDistance(filters.distance);
+      if (cleanDistance) {
+        this.athlete.distance = cleanDistance;
+      }
+    }
+    if (filters?.stroke) {
+      const normalizedStroke = this.normalizeStrokeCode(filters.stroke);
+      if (normalizedStroke) {
+        this.athlete.stroke = normalizedStroke;
+      }
+    }
+    if (filters?.poolConfiguration) {
+      const normalizedPool = this.normalizePoolCode(filters.poolConfiguration);
+      if (normalizedPool) {
+        this.athlete.pool = normalizedPool;
+      }
+    }
+
+    this.rankingData = entries;
+
+    const normalizedName = this.normalize(this.athlete.name);
+    const fallbackDistance = this.athlete.distance;
+    const fallbackStroke = this.athlete.stroke;
+    const fallbackPool = this.athlete.pool;
+
+    this.performances = entries
+      .filter((item: any) => this.normalize(item?.name) === normalizedName)
+      .map((item: any) => ({
+        ...item,
+        distance: item?.distance ?? fallbackDistance,
+        stroke: item?.stroke ?? fallbackStroke,
+        poolConfiguration: item?.poolConfiguration ?? fallbackPool
+      }));
+
+    if (selectedEntry && this.performances.length === 0) {
+      this.performances = [
+        {
+          ...selectedEntry,
+          distance: selectedEntry.distance ?? fallbackDistance,
+          stroke: selectedEntry.stroke ?? fallbackStroke,
+          poolConfiguration: selectedEntry.poolConfiguration ?? fallbackPool
+        }
+      ];
+    }
+
+    if (!this.performances.length && entries.length) {
+      const bestEntry = this.selectBestResult(entries);
+      if (bestEntry) {
+        this.performances = [
+          {
+            ...bestEntry,
+            distance: bestEntry.distance ?? fallbackDistance,
+            stroke: bestEntry.stroke ?? fallbackStroke,
+            poolConfiguration: bestEntry.poolConfiguration ?? fallbackPool
+          }
+        ];
+      }
+    }
+
+    this.records = this.buildRecords(this.performances);
+    if (!this.profileRecords.length && this.records.length) {
+      this.profileRecords = [...this.records];
+    }
+    if (!this.records.length && this.profileRecords.length) {
+      this.records = this.profileRecords.slice(0, this.maxRecordEntries);
+    }
+
+    this.averages = this.buildAverages(entries, this.performances);
+    this.updateBestPerformanceContext();
+    this.updateRankingComparisons();
+    this.updateChart();
+  }
+
+  private seedFromSelectedRankingEntry(entry: any): void {
+    if (!entry) {
+      return;
+    }
+    this.rankingFiltersLocked = true;
+
+    const normalizedStroke = this.normalizeStrokeCode(entry.stroke) || this.athlete.stroke;
+    const normalizedPool = this.normalizePoolCode(entry.poolConfiguration) || this.athlete.pool;
+    const cleanDistance = this.cleanDistance(entry.distance) || this.athlete.distance;
+
+    if (normalizedStroke) this.athlete.stroke = normalizedStroke;
+    if (normalizedPool) this.athlete.pool = normalizedPool;
+    if (cleanDistance) this.athlete.distance = cleanDistance;
+
+    this.performances = [
+      {
+        ...entry,
+        distance: cleanDistance,
+        stroke: normalizedStroke,
+        poolConfiguration: normalizedPool
+      }
+    ];
+
+    this.records = this.buildRecords(this.performances);
+    if (!this.records.length) {
+      const formatted = this.performanceToPersonalRecord(entry, entry.time || entry.timeText || entry.bestTime);
+      this.records = formatted ? [formatted] : [];
+    }
+
+    this.updateBestPerformanceContext();
+    this.averages = this.buildAverages(this.rankingData, this.performances);
+    this.updateRankingComparisons();
+    this.updateChart();
+  }
   loadDbResults(): void {
     const athleteId = this.athlete.athleteId;
     const athleteName = this.athlete.name;
@@ -881,9 +1048,14 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
     if (this.athlete.athleteId) {
       this.loadUpcomingCompetitionsFromProfile(this.athlete.athleteId);
-    } else {
-      this.loadSuggestedCalendar();
+      return;
     }
+
+    if (this.applyFallbackEventIfAvailable()) {
+      return;
+    }
+
+    this.loadSuggestedCalendar();
   }
 
   private loadUpcomingCompetitionsFromProfile(athleteId: number): void {
@@ -903,9 +1075,15 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
           return;
         }
 
+        if (this.applyFallbackEventIfAvailable()) {
+          return;
+        }
         this.loadSuggestedCalendar();
       },
       error: () => {
+        if (this.applyFallbackEventIfAvailable()) {
+          return;
+        }
         this.loadSuggestedCalendar();
       }
     });
@@ -932,19 +1110,20 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   private loadSuggestedCalendar(): void {
     this.loadingCompetitions = true;
     this.competitionsError = null;
-    const currentYear = new Date().getFullYear();
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
 
     this.datosService
       .getWorldAquaticsCompetitions({
         group: 'FINA',
         discipline: 'SW',
         year: currentYear,
-        month: 'latest',
+        month: currentMonth.toString(),
       })
       .subscribe({
         next: (res) => {
           const list = Array.isArray(res?.competitions) ? res.competitions : [];
-          const now = new Date();
 
           const normalizedCountry = (this.athlete.country || '').toUpperCase();
           const mapped = list
@@ -952,7 +1131,12 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
               ...c,
               start: this.toDate(c.startDate || c.date || c.endDate)
             }))
-            .filter((c: any) => c.start && c.start >= now);
+            .filter((c: any) => {
+              if (!c.start) return false;
+              // Filtrar solo eventos futuros (incluye hoy)
+              const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              return c.start >= startOfToday;
+            });
 
           const filtered = normalizedCountry
             ? mapped.filter((c: any) => (c.countryCode || '').toUpperCase() === normalizedCountry)
@@ -965,17 +1149,78 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
           this.loadingCompetitions = false;
         },
         error: (err) => {
-          this.competitionsError = err?.message || 'No se pudieron cargar los eventos.';
-          this.loadingCompetitions = false;
-        }
-      });
+        this.competitionsError = err?.message || 'No se pudieron cargar los eventos.';
+        this.loadingCompetitions = false;
+      }
+    });
+  }
+
+  private prepareRankingFallbackEvent(entry: any): void {
+    if (!entry) {
+      this.rankingFallbackEvent = null;
+      return;
+    }
+
+    const eventName = entry.competition || entry.tag || entry.meet || entry.event || 'Competencia';
+    const date = this.toDate(entry.date || entry.raceDate || entry.eventDate || entry.startDate || entry.endDate);
+    const isoDate = date ? date.toISOString() : null;
+    const country =
+      entry.locationCountryCode || entry.countryCode || entry.country || entry.compCountryCode || '';
+    const city = entry.city || entry.location || entry.compCity || '';
+    const pool = entry.poolConfiguration || entry.poolLength || entry.pool || null;
+
+    this.rankingFallbackEvent = {
+      id: entry.competitionId ?? null,
+      competitionId: entry.competitionId ?? null,
+      nombre: eventName,
+      name: eventName,
+      date: isoDate,
+      startDate: isoDate,
+      endDate: isoDate,
+      pais: country,
+      countryCode: country,
+      ciudad: city,
+      city,
+      stage: entry.stage ?? null,
+      poolName: pool,
+      tipo_piscina: pool,
+      status: entry.status ?? entry.phase ?? null,
+      flagImage: entry.flagImage ?? null,
+      logo_path: entry.logoPath ?? null,
+      logoPath: entry.logoPath ?? null,
+      logo: entry.logo ?? null,
+      url: entry.profileUrl ?? entry.eventUrl ?? null,
+      month: date ? date.getMonth() + 1 : null,
+      year: date ? date.getFullYear() : null,
+      monthNumber: date ? date.getMonth() + 1 : null
+    } as Competition;
+  }
+
+  private applyFallbackEventIfAvailable(): boolean {
+    const fallback = this.rankingFallbackEvent;
+    if (!fallback) {
+      return false;
+    }
+
+    const start = this.toDate(fallback.startDate || fallback.date || fallback.endDate);
+    const now = new Date();
+    
+    // Solo aplicar el fallback si la fecha es futura o actual
+    if (!start || start < now) {
+      return false;
+    }
+
+    this.upcomingEvents = [fallback];
+    this.loadingCompetitions = false;
+    this.competitionsError = null;
+    return true;
   }
 
   buildRecords(performances: any[]): PersonalRecord[] {
-    if (this.profileRecords.length) {
+    const hasPerformances = Array.isArray(performances) && performances.length > 0;
+    if (!hasPerformances) {
       return this.profileRecords.slice(0, this.maxRecordEntries);
     }
-    if (!Array.isArray(performances) || performances.length === 0) return [];
 
     const enriched = performances
       .map((p) => ({ ...p, value: this.parseTimeToSeconds(p.time) }))
@@ -1007,6 +1252,110 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       athleteBest,
       categoryAverage,
       diff: athleteBest - categoryAverage
+    };
+  }
+
+  private updateBestPerformanceContext(): void {
+    const primaryRecords = this.records.length ? this.records : this.profileRecords;
+    if (primaryRecords.length) {
+      this.bestPerformanceRecord = primaryRecords[0];
+      const seconds = this.parseTimeToSeconds(this.bestPerformanceRecord.bestTime);
+      this.bestPerformanceSeconds = Number.isFinite(seconds) ? seconds : null;
+      this.comparisonEventLabel = this.buildComparisonEventLabel(this.bestPerformanceRecord);
+    } else {
+      this.bestPerformanceRecord = null;
+      this.bestPerformanceSeconds = null;
+      this.comparisonEventLabel = null;
+    }
+  }
+
+  private buildComparisonEventLabel(record?: PersonalRecord | null): string | null {
+    if (!record) {
+      return null;
+    }
+    const distance = record.distance || this.athlete.distance;
+    const stroke = record.stroke || this.athlete.stroke;
+    const pool = record.course || this.athlete.pool;
+    const parts: string[] = [];
+    if (distance) {
+      parts.push(`${distance}m`);
+    }
+    if (stroke) {
+      parts.push(this.getStrokeLabel(this.normalizeStrokeCode(stroke) || stroke));
+    }
+    if (pool) {
+      parts.push(pool);
+    }
+    return parts.length ? parts.join(' - ') : null;
+  }
+
+  private updateRankingComparisons(): void {
+    if (!Array.isArray(this.rankingData) || !this.rankingData.length) {
+      this.rankingComparisons = [];
+      this.athleteComparisonRow = null;
+      return;
+    }
+
+    const limit = 6;
+    const rows: RankingComparisonRow[] = [];
+    this.rankingData.slice(0, limit).forEach((entry: any, index: number) => {
+      const mapped = this.mapComparisonRow(entry, index);
+      if (mapped) {
+        rows.push(mapped);
+      }
+    });
+
+    const normalizedTarget = this.normalize(this.athlete.name);
+    let athleteRow = rows.find((row) => row.isTarget) ?? null;
+
+    if (!athleteRow) {
+      const athleteEntries = this.rankingData.filter((entry: any) => this.normalize(entry?.name) === normalizedTarget);
+      const bestEntry = this.selectBestResult(athleteEntries);
+      const fallbackRow = this.mapComparisonRow(bestEntry);
+      if (fallbackRow) {
+        fallbackRow.isTarget = true;
+        rows.push(fallbackRow);
+        athleteRow = fallbackRow;
+      }
+    }
+
+    rows.sort((a, b) => {
+      const aPosition = a.position ?? Number.MAX_SAFE_INTEGER;
+      const bPosition = b.position ?? Number.MAX_SAFE_INTEGER;
+      return aPosition - bPosition;
+    });
+
+    this.rankingComparisons = rows;
+    this.athleteComparisonRow = athleteRow;
+  }
+
+  private mapComparisonRow(entry: any, fallbackIndex?: number): RankingComparisonRow | null {
+    if (!entry) {
+      return null;
+    }
+
+    const positionSource = entry?.overallRank ?? entry?.rank ?? entry?.position ?? null;
+    const rawTime = entry?.time ?? entry?.bestTime ?? entry?.timeText ?? entry?.mark ?? entry?.result ?? '';
+    const parsedSeconds = this.parseTimeToSeconds(rawTime);
+    const timeSeconds = Number.isFinite(parsedSeconds) ? parsedSeconds : null;
+    const diffSeconds =
+      this.bestPerformanceSeconds != null && timeSeconds !== null
+        ? timeSeconds - this.bestPerformanceSeconds
+        : null;
+
+    return {
+      position:
+        positionSource != null && !Number.isNaN(Number(positionSource)) && Number(positionSource) > 0
+          ? Number(positionSource)
+          : fallbackIndex != null
+            ? fallbackIndex + 1
+            : null,
+      name: entry?.name ?? entry?.athleteName ?? 'Nadador',
+      country: entry?.country ?? entry?.countryCode ?? entry?.locationCountryCode ?? '',
+      timeText: rawTime || (timeSeconds !== null ? this.formatSeconds(timeSeconds) : '-'),
+      diffSeconds,
+      diffLabel: diffSeconds === null ? '-' : `${diffSeconds > 0 ? '+' : ''}${this.formatSeconds(Math.abs(diffSeconds))}`,
+      isTarget: this.normalize(entry?.name ?? '') === this.normalize(this.athlete.name)
     };
   }
 
@@ -1107,7 +1456,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   }
 
   private applyEventFromSource(source: any): boolean {
-    if (!source) {
+    if (!source || this.rankingFiltersLocked) {
       return false;
     }
 
@@ -1415,6 +1764,48 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     return `${sign}${this.formatSeconds(Math.abs(this.averages.diff))}`;
   }
 
+  get comparisonDiffSeconds(): number | null {
+    if (!this.bestPerformanceRecord) {
+      return null;
+    }
+
+    const bestSeconds =
+      this.bestPerformanceSeconds ??
+      this.parseTimeToSeconds(this.bestPerformanceRecord.bestTime);
+    if (!Number.isFinite(bestSeconds)) {
+      return null;
+    }
+
+    const datasetTimes = (this.rankingData || [])
+      .map((entry: any) =>
+        this.parseTimeToSeconds(entry?.time ?? entry?.bestTime ?? entry?.timeText ?? entry?.mark)
+      )
+      .filter((value) => Number.isFinite(value));
+
+    if (!datasetTimes.length) {
+      return null;
+    }
+
+    const average =
+      datasetTimes.reduce((sum, value) => sum + Number(value), 0) / datasetTimes.length;
+    if (!Number.isFinite(average)) {
+      return null;
+    }
+
+    return Number(bestSeconds) - average;
+  }
+
+  get comparisonDiffLabel(): string {
+    const diff = this.comparisonDiffSeconds;
+    if (diff === null) {
+      return 'Sin datos';
+    }
+    const status = diff <= 0 ? 'Por encima del promedio' : 'Por debajo del promedio';
+    const formatted = this.formatSeconds(Math.abs(diff));
+    const sign = diff > 0 ? '+' : '';
+    return `${status} · ${sign}${formatted}`;
+  }
+
   progressValue(): number {
     if (this.averages.categoryAverage === null || this.averages.categoryAverage <= 0 || this.averages.diff === null) return 0;
     const percent = Math.abs(this.averages.diff) / this.averages.categoryAverage * 100;
@@ -1559,3 +1950,6 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     return null;
   }
 }
+
+
+
