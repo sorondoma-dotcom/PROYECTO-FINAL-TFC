@@ -109,7 +109,7 @@
                 <span class="country-code">{{ n.country }}</span>
                 @if(n.age){
                   <span class="dot">&middot;</span>
-                  <span>{{ n.age }} anios</span>
+                  <span>{{ n.age }} años</span>
                 }
               </div>
               <div class="meta-line detail">
@@ -145,7 +145,7 @@
       </ng-container>
 
       <ng-container matColumnDef="competition">
-        <th mat-header-cell *matHeaderCellDef>Competicion</th>
+        <th mat-header-cell *matHeaderCellDef>Competición</th>
         <td mat-cell *matCellDef="let n" data-label="Competicion">
           <div class="competition">
             <div class="competition-name">{{ n.competition || '-' }}</div>
