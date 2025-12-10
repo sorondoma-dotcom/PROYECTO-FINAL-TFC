@@ -22,7 +22,7 @@
 
     <mat-nav-list>
       @for (item of visibleMenuItems; track item.route) {
-        <a mat-list-item [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: item.route === '/' }" (click)="sidenav.close()">
+        <a mat-list-item [routerLink]="item.route" routerLinkActive="active" [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: item.route === '/' }" (click)="sidenav.close()">
           <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
           <span matListItemTitle>{{ item.label }}</span>
           <mat-icon matListItemMeta>chevron_right</mat-icon>
@@ -62,7 +62,7 @@
               mat-button
               [routerLink]="item.route"
               routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+              [routerLinkActiveOptions]="item.routerLinkActiveOptions || { exact: item.route === '/' }"
               [matTooltip]="item.label"
               matTooltipPosition="below"
             >

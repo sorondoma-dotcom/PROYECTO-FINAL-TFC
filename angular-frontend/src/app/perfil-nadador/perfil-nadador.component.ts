@@ -1795,8 +1795,7 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     const datasetTimes = (this.rankingData || [])
       .map((entry: any) => {
         const timeValue = entry?.time ?? entry?.bestTime ?? entry?.timeText ?? entry?.mark;
-        const parsed = this.parseTimeToSeconds(timeValue);
-        return parsed;
+        return this.parseTimeToSeconds(timeValue);
       })
       .filter((value) => Number.isFinite(value) && value > 0);
 
@@ -1811,17 +1810,6 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     if (!Number.isFinite(average) || average <= 0) {
       return null;
     }
-
-    // DEBUG: Log para verificar cálculos
-    console.log('🔍 COMPARACIÓN DE PROMEDIO:');
-    console.log('  Tiempo del atleta:', bestSeconds, 'segundos =', this.formatSeconds(bestSeconds));
-    console.log('  Promedio del ranking:', average, 'segundos =', this.formatSeconds(average));
-    console.log('  Diferencia:', bestSeconds - average, 'segundos');
-    console.log('  Total de tiempos en ranking:', datasetTimes.length);
-    console.log('  Primer tiempo del ranking:', datasetTimes[0], '=', this.formatSeconds(datasetTimes[0]));
-    console.log('  Último tiempo del ranking:', datasetTimes[datasetTimes.length - 1], '=', this.formatSeconds(datasetTimes[datasetTimes.length - 1]));
-    console.log('  Posición del atleta:', this.rankingData.findIndex((e: any) => 
-      this.normalize(e?.name) === this.normalize(this.athlete.name)) + 1);
 
     // Retornar la diferencia: negativo = mejor que el promedio, positivo = peor que el promedio
     return Number(bestSeconds) - average;

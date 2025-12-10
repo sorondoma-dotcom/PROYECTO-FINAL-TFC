@@ -110,13 +110,17 @@ export class DatosService {
     discipline?: string;
     nationality?: string;
     name?: string;
+    limit?: number;
   } = {}): Observable<any> {
+    // Usar el endpoint de PHP que obtiene atletas desde la base de datos
     let params = new HttpParams();
     if (filters.gender) params = params.set('gender', filters.gender);
-    if (filters.discipline) params = params.set('discipline', filters.discipline);
     if (filters.nationality) params = params.set('nationality', filters.nationality);
     if (filters.name) params = params.set('name', filters.name);
-    return this.http.get(this.athletesUrl, { params });
+    if (filters.limit) params = params.set('limit', String(filters.limit));
+    
+    // Usar el endpoint de PHP que lista atletas desde la BD
+    return this.http.get(`${this.phpApiBase}/athletes`, { params });
   }
 
   postHighlightedRankings(payload: any): Observable<any> {

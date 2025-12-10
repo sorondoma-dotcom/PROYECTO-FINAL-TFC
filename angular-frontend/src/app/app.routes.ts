@@ -13,6 +13,7 @@ export const routes: Routes = [
   { path: 'mi-perfil', loadComponent: () => import('./perfil-usuario/perfil-usuario.component').then(m => m.PerfilUsuarioComponent), canActivate: [authGuard] },
   { path: 'mi-perfil/nadador', loadComponent: () => import('./perfil-nadador/perfil-nadador.component').then(m => m.PerfilNadadorComponent), canActivate: [authGuard, athleteGuard] },
   { path: 'nadadores/perfil/:name', loadComponent: () => import('./perfil-nadador/perfil-nadador.component').then(m => m.PerfilNadadorComponent), canActivate: [authGuard] },
+  { path: 'nadadores/buscar', loadComponent: () => import('./buscar-atletas/buscar-atletas.component').then(m => m.BuscarAtletasComponent), canActivate: [authGuard] },
   { path: 'nadadores', loadComponent: () => import('./ranking-nadadores/ranking-nadadores.component').then(m => m.RankingNadadoresComponent), canActivate: [authGuard], pathMatch: 'full' },
   { path: 'estadisticas', loadComponent: () => import('./estadisticas/estadisticas.component').then(m => m.EstadisticasComponent), canActivate: [authGuard] },
   { path: 'resultado-prueba', loadComponent: () => import('./resultado-prueba/resultado-prueba.component').then(m => m.ResultadoPruebaComponent), canActivate: [authGuard] },

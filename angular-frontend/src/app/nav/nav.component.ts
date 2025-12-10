@@ -47,14 +47,15 @@ export class NavComponent implements OnDestroy, DoCheck {
   private notificationsTimer?: ReturnType<typeof setInterval>;
 
   menuItems = [
-    { label: 'Inicio', icon: 'home', route: '/' },
-    { label: 'Competiciones', icon: 'pool', route: '/competiciones' },
-    { label: 'Nadadores', icon: 'person', route: '/nadadores' },
-    { label: 'Estadisticas', icon: 'analytics', route: '/estadisticas' },
+    { label: 'Inicio', icon: 'home', route: '/', routerLinkActiveOptions: { exact: true } },
+    { label: 'Competiciones', icon: 'pool', route: '/competiciones', routerLinkActiveOptions: { exact: false } },
+    { label: 'Ranking', icon: 'leaderboard', route: '/nadadores', routerLinkActiveOptions: { exact: true } },
+    { label: 'Buscar Atletas', icon: 'person_search', route: '/nadadores/buscar', routerLinkActiveOptions: { exact: false } },
+    { label: 'Estadisticas', icon: 'analytics', route: '/estadisticas', routerLinkActiveOptions: { exact: false } },
   ];
 
   adminMenuItems = [
-    { label: 'Administración', icon: 'admin_panel_settings', route: '/admin/competiciones' }
+    { label: 'Administración', icon: 'admin_panel_settings', route: '/admin/competiciones', routerLinkActiveOptions: { exact: false } }
   ];
 
   constructor(
