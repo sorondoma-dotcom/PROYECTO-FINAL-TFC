@@ -117,23 +117,20 @@ export class AuthService {
 
   private saveUser(user: any): void {
     if (user) {
-      // Clone the user object to avoid side effects
-      const userToSave = { ...user };
       
-      // Resolve avatar URLs through the proxy
-      if (userToSave.avatarUrl) {
-        userToSave.avatarUrl = resolvePhpAssetUrl(userToSave.avatarUrl);
+      if (user.avatarUrl) {
+        user.avatarUrl = resolvePhpAssetUrl(user.avatarUrl);
       }
-      if (userToSave.avatarThumbUrl) {
-        userToSave.avatarThumbUrl = resolvePhpAssetUrl(userToSave.avatarThumbUrl);
+      if (user.avatarThumbUrl) {
+        user.avatarThumbUrl = resolvePhpAssetUrl(user.avatarThumbUrl);
       }
-      if (userToSave.avatarLargeUrl) {
-        userToSave.avatarLargeUrl = resolvePhpAssetUrl(userToSave.avatarLargeUrl);
+      if (user.avatarLargeUrl) {
+        user.avatarLargeUrl = resolvePhpAssetUrl(user.avatarLargeUrl);
       }
-      if (userToSave.avatarFullUrl) {
-        userToSave.avatarFullUrl = resolvePhpAssetUrl(userToSave.avatarFullUrl);
+      if (user.avatarFullUrl) {
+        user.avatarFullUrl = resolvePhpAssetUrl(user.avatarFullUrl);
       }
-      localStorage.setItem(this.storageKey, JSON.stringify(userToSave));
+      localStorage.setItem(this.storageKey, JSON.stringify(user));
     }
   }
 

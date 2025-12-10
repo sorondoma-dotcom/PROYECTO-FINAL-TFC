@@ -1233,21 +1233,33 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
   }
 
   buildAverages(dataset: any[], athletePerformances: any[]): AverageInfo {
+    // Parsear todos los tiempos del dataset (ranking) a segundos
     const categoryTimes = (dataset || [])
-      .map((d) => this.parseTimeToSeconds(d.time))
-      .filter((v) => Number.isFinite(v));
+      .map((d) => {
+        const timeValue = d.time ?? d.bestTime ?? d.timeText ?? d.mark;
+        return this.parseTimeToSeconds(timeValue);
+      })
+      .filter((v) => Number.isFinite(v) && v > 0);
 
+    // Parsear todos los tiempos del atleta a segundos
     const athleteTimes = (athletePerformances || [])
-      .map((p) => this.parseTimeToSeconds(p.time))
-      .filter((v) => Number.isFinite(v));
+      .map((p) => {
+        const timeValue = p.time ?? p.bestTime ?? p.timeText ?? p.mark;
+        return this.parseTimeToSeconds(timeValue);
+      })
+      .filter((v) => Number.isFinite(v) && v > 0);
 
     if (!categoryTimes.length || !athleteTimes.length) {
       return { athleteBest: null, categoryAverage: null, diff: null };
     }
 
+    // Mejor tiempo del atleta (menor es mejor en natación)
     const athleteBest = Math.min(...athleteTimes);
+    
+    // Promedio de la categoría calculado en segundos
     const categoryAverage = categoryTimes.reduce((acc, v) => acc + v, 0) / categoryTimes.length;
 
+    // Diferencia: negativo = más rápido que el promedio, positivo = más lento
     return {
       athleteBest,
       categoryAverage,
@@ -1755,7 +1767,8 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     if (this.averages.diff === null || this.averages.categoryAverage === null) return 'Sin datos';
     const diff = this.averages.diff;
     if (Math.abs(diff) < 0.01) return 'Igual que el promedio de la categoria';
-    return diff < 0 ? 'Por encima del promedio' : 'Por debajo del promedio';
+    // En natación: menor tiempo = mejor
+    return diff < 0 ? 'Mejor que el promedio' : 'Peor que el promedio';
   }
 
   averageGapSeconds(): string {
@@ -1769,29 +1782,48 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
       return null;
     }
 
+    // Obtener el mejor tiempo del atleta en segundos
     const bestSeconds =
       this.bestPerformanceSeconds ??
       this.parseTimeToSeconds(this.bestPerformanceRecord.bestTime);
-    if (!Number.isFinite(bestSeconds)) {
+    
+    if (!Number.isFinite(bestSeconds) || bestSeconds <= 0) {
       return null;
     }
 
+    // Obtener todos los tiempos del ranking y convertirlos a segundos
     const datasetTimes = (this.rankingData || [])
-      .map((entry: any) =>
-        this.parseTimeToSeconds(entry?.time ?? entry?.bestTime ?? entry?.timeText ?? entry?.mark)
-      )
-      .filter((value) => Number.isFinite(value));
+      .map((entry: any) => {
+        const timeValue = entry?.time ?? entry?.bestTime ?? entry?.timeText ?? entry?.mark;
+        const parsed = this.parseTimeToSeconds(timeValue);
+        return parsed;
+      })
+      .filter((value) => Number.isFinite(value) && value > 0);
 
     if (!datasetTimes.length) {
       return null;
     }
 
+    // Calcular el promedio del ranking en segundos
     const average =
       datasetTimes.reduce((sum, value) => sum + Number(value), 0) / datasetTimes.length;
-    if (!Number.isFinite(average)) {
+    
+    if (!Number.isFinite(average) || average <= 0) {
       return null;
     }
 
+    // DEBUG: Log para verificar cálculos
+    console.log('🔍 COMPARACIÓN DE PROMEDIO:');
+    console.log('  Tiempo del atleta:', bestSeconds, 'segundos =', this.formatSeconds(bestSeconds));
+    console.log('  Promedio del ranking:', average, 'segundos =', this.formatSeconds(average));
+    console.log('  Diferencia:', bestSeconds - average, 'segundos');
+    console.log('  Total de tiempos en ranking:', datasetTimes.length);
+    console.log('  Primer tiempo del ranking:', datasetTimes[0], '=', this.formatSeconds(datasetTimes[0]));
+    console.log('  Último tiempo del ranking:', datasetTimes[datasetTimes.length - 1], '=', this.formatSeconds(datasetTimes[datasetTimes.length - 1]));
+    console.log('  Posición del atleta:', this.rankingData.findIndex((e: any) => 
+      this.normalize(e?.name) === this.normalize(this.athlete.name)) + 1);
+
+    // Retornar la diferencia: negativo = mejor que el promedio, positivo = peor que el promedio
     return Number(bestSeconds) - average;
   }
 
@@ -1800,9 +1832,14 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     if (diff === null) {
       return 'Sin datos';
     }
-    const status = diff <= 0 ? 'Por encima del promedio' : 'Por debajo del promedio';
+    
+    // En natación: menor tiempo = mejor rendimiento
+    // diff < 0 = tiempo menor que el promedio = MEJOR (más rápido)
+    // diff > 0 = tiempo mayor que el promedio = PEOR (más lento)
+    const status = diff < 0 ? 'Mejor que el promedio' : 'Peor que el promedio';
     const formatted = this.formatSeconds(Math.abs(diff));
-    const sign = diff > 0 ? '+' : '';
+    const sign = diff > 0 ? '+' : '-';
+    
     return `${status} · ${sign}${formatted}`;
   }
 
@@ -1814,19 +1851,39 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
 
   parseTimeToSeconds(raw: any): number {
     if (!raw) return NaN;
-    const s = String(raw).replace(/WR/gi, '').replace(/[^\d:.]/g, '').trim();
+    
+    // Limpiar el string: eliminar marcas de récord (WR, OR, etc.) y caracteres no numéricos excepto : y .
+    const s = String(raw)
+      .replace(/WR/gi, '')
+      .replace(/OR/gi, '')
+      .replace(/NR/gi, '')
+      .replace(/[^\d:.]/g, '')
+      .trim();
 
+    if (!s) return NaN;
+
+    // Formato con dos puntos: mm:ss.ms o hh:mm:ss.ms
     if (s.includes(':')) {
       const parts = s.split(':').map((p) => p.trim());
-      const nums = parts.map((p) => parseFloat(p));
-      if (parts.length === 2) {
-        return (nums[0] || 0) * 60 + (nums[1] || 0);
+      const nums = parts.map((p) => parseFloat(p)).filter((n) => Number.isFinite(n));
+      
+      // Formato mm:ss.ms (minutos:segundos)
+      if (parts.length === 2 && nums.length === 2) {
+        const minutes = nums[0] || 0;
+        const seconds = nums[1] || 0;
+        return minutes * 60 + seconds;
       }
-      if (parts.length === 3) {
-        return (nums[0] || 0) * 3600 + (nums[1] || 0) * 60 + (nums[2] || 0);
+      
+      // Formato hh:mm:ss.ms (horas:minutos:segundos)
+      if (parts.length === 3 && nums.length === 3) {
+        const hours = nums[0] || 0;
+        const minutes = nums[1] || 0;
+        const seconds = nums[2] || 0;
+        return hours * 3600 + minutes * 60 + seconds;
       }
     }
 
+    // Formato simple: solo segundos (ej: 54.23)
     const numeric = parseFloat(s);
     return Number.isFinite(numeric) ? numeric : NaN;
   }
@@ -1837,9 +1894,11 @@ export class PerfilNadadorComponent implements OnInit, OnDestroy {
     const minutes = Math.floor(total / 60);
     const seconds = total - minutes * 60;
     if (minutes > 0) {
-      return `${minutes}m ${seconds.toFixed(2)}s`;
+      // Formato estándar de natación: MM:ss.ms
+      return `${minutes}:${seconds.toFixed(2).padStart(5, '0')}`;
     }
-    return `${seconds.toFixed(2)}s`;
+    // Si es menos de 1 minuto, solo mostrar segundos
+    return `${seconds.toFixed(2)}`;
   }
 
   calculateAge(birth: string): number | null {
