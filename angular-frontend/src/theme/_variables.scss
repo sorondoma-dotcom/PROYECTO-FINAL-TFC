@@ -32,6 +32,23 @@
   --link-salidas-bg: #e1fff5;
   --link-resultados-bg: #fff4e0;
 
+  /* Estados de competición */
+  --status-pendiente-bg: #fff8e1;
+  --status-pendiente-border: #ffc107;
+  --status-pendiente-text: #f57f17;
+
+  --status-en-curso-bg: #e3f2fd;
+  --status-en-curso-border: #2196f3;
+  --status-en-curso-text: #0d47a1;
+
+  --status-finalizada-bg: #e8f5e9;
+  --status-finalizada-border: #4caf50;
+  --status-finalizada-text: #2e7d32;
+
+  --status-cancelada-bg: #ffebee;
+  --status-cancelada-border: #f44336;
+  --status-cancelada-text: #c62828;
+
   /* Dashboard */
   --dashboard-bg: #e6f1fc;
   --dashboard-surface: #ffffff;
@@ -71,6 +88,23 @@
 
   --link-salidas-bg: #0f2d24;
   --link-resultados-bg: #2d240f;
+
+  /* Estados de competición */
+  --status-pendiente-bg: #2d2510;
+  --status-pendiente-border: #ffb300;
+  --status-pendiente-text: #ffd54f;
+
+  --status-en-curso-bg: #0d1f2d;
+  --status-en-curso-border: #42a5f5;
+  --status-en-curso-text: #90caf9;
+
+  --status-finalizada-bg: #0f2d14;
+  --status-finalizada-border: #66bb6a;
+  --status-finalizada-text: #a5d6a7;
+
+  --status-cancelada-bg: #2d100f;
+  --status-cancelada-border: #ef5350;
+  --status-cancelada-text: #ef9a9a;
 
   /* Dashboard */
   --dashboard-bg: #06101d;

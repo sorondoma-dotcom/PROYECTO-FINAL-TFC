@@ -450,10 +450,63 @@ section > header {
   }
 
   .toggle-athletes-container {
-    .toggle-athletes-button {
-      width: 100%;
-      padding: 16px 24px;
-      font-size: 14px;
-    }
+  .toggle-athletes-button {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 14px;
+  }
+}
+}
+
+/* ===========================================================
+   ESTILOS DE ESTADO DE COMPETICIÓN
+   =========================================================== */
+:host ::ng-deep .status-pendiente .mat-mdc-chip {
+  background-color: var(--status-pendiente-bg) !important;
+  border: 1px solid var(--status-pendiente-border) !important;
+  color: var(--status-pendiente-text) !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .status-en-curso .mat-mdc-chip {
+  background-color: var(--status-en-curso-bg) !important;
+  border: 1px solid var(--status-en-curso-border) !important;
+  color: var(--status-en-curso-text) !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .status-finalizada .mat-mdc-chip {
+  background-color: var(--status-finalizada-bg) !important;
+  border: 1px solid var(--status-finalizada-border) !important;
+  color: var(--status-finalizada-text) !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .status-cancelada .mat-mdc-chip {
+  background-color: var(--status-cancelada-bg) !important;
+  border: 1px solid var(--status-cancelada-border) !important;
+  color: var(--status-cancelada-text) !important;
+  font-weight: 600 !important;
+}
+
+/* ===========================================================
+   MODO OSCURO
+   =========================================================== */
+:host-context(.dark-theme) {
+  .detail-page {
+    background: linear-gradient(to bottom, var(--color-bg) 0%, var(--color-surface) 100%);
+  }
+
+  .hero-card {
+    background: linear-gradient(135deg, #1a237e 0%, #4a148c 100%);
+    box-shadow: 0 10px 40px rgba(26, 35, 126, 0.5);
+  }
+
+  .state-block {
+    color: var(--color-text-soft);
+  }
+
+  .toggle-athletes-container {
+    border-top-color: var(--color-border);
   }
 }

@@ -110,8 +110,11 @@
 
             <div class="scheduled-card__footer">
               <mat-chip-set>
-                <mat-chip [color]="getScheduledStatusChipColor(competition.estado)" selected>
-                  {{ competition.estado | titlecase }}
+                <mat-chip 
+                  [ngClass]="getStatusClass(competition.estado)"
+                  [color]="getScheduledStatusChipColor(competition.estado)" 
+                  selected>
+                  {{ formatEstado(competition.estado) }}
                 </mat-chip>
               </mat-chip-set>
               <div class="footer-stats">

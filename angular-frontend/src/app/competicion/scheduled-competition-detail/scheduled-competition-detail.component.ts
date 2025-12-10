@@ -131,10 +131,41 @@ export class ScheduledCompetitionDetailComponent implements OnInit, OnDestroy {
       case 'en_curso':
         return 'primary';
       case 'finalizada':
+        return 'accent';
       case 'cancelada':
         return 'warn';
       default:
-        return 'accent';
+        return 'primary'; // pendiente
+    }
+  }
+
+  getStatusClass(status?: ScheduledCompetition['estado']): string {
+    switch (status) {
+      case 'en_curso':
+        return 'status-en-curso';
+      case 'finalizada':
+        return 'status-finalizada';
+      case 'cancelada':
+        return 'status-cancelada';
+      case 'pendiente':
+      default:
+        return 'status-pendiente';
+    }
+  }
+
+  formatEstado(estado?: string): string {
+    if (!estado) return 'Pendiente';
+    
+    switch (estado) {
+      case 'en_curso':
+        return 'En Curso';
+      case 'finalizada':
+        return 'Finalizada';
+      case 'cancelada':
+        return 'Cancelada';
+      case 'pendiente':
+      default:
+        return 'Pendiente';
     }
   }
 
