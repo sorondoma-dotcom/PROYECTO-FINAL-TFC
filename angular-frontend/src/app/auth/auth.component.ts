@@ -55,6 +55,7 @@ export class AuthComponent implements OnInit {
 
   private readonly passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
   private readonly namePattern = /^[a-zA-ZÁÉÍÓÚáéíóúÑñ]+(?:\s[a-zA-ZÁÉÍÓÚáéíóúÑñ]+)*$/;
+  private readonly emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
   constructor(
     private authService: AuthService,
@@ -74,7 +75,8 @@ export class AuthComponent implements OnInit {
   private initForm(): void {
     this.authForm = this.fb.group({
       name: [''],
-      email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.email, Validators.pattern(this.emailPattern)]],
+      confirmEmail: [''],
       password: [
         '',
         [
@@ -83,19 +85,32 @@ export class AuthComponent implements OnInit {
           Validators.pattern(this.passwordPattern),
           this.noRepeatedWhitespace
         ]
-      ]
+      ],
+      confirmPassword: ['']
+    }, {
+      validators: [this.emailMatchValidator, this.passwordMatchValidator]
     });
     this.updateNameValidators();
   }
 
   private updateNameValidators(): void {
-    const control = this.authForm.get('name');
+    const nameControl = this.authForm.get('name');
+    const confirmEmailControl = this.authForm.get('confirmEmail');
+    const confirmPasswordControl = this.authForm.get('confirmPassword');
+    
     if (this.mode === 'register') {
-      control?.setValidators([Validators.required, Validators.minLength(3), Validators.pattern(this.namePattern)]);
+      nameControl?.setValidators([Validators.required, Validators.minLength(3), Validators.pattern(this.namePattern)]);
+      confirmEmailControl?.setValidators([Validators.required, Validators.email]);
+      confirmPasswordControl?.setValidators([Validators.required]);
     } else {
-      control?.clearValidators();
+      nameControl?.clearValidators();
+      confirmEmailControl?.clearValidators();
+      confirmPasswordControl?.clearValidators();
     }
-    control?.updateValueAndValidity();
+    
+    nameControl?.updateValueAndValidity();
+    confirmEmailControl?.updateValueAndValidity();
+    confirmPasswordControl?.updateValueAndValidity();
   }
 
   switchMode(newMode: 'login' | 'register') {
@@ -191,6 +206,36 @@ export class AuthComponent implements OnInit {
     return this.authForm.get('password');
   }
 
+  get confirmEmailControl() {
+    return this.authForm.get('confirmEmail');
+  }
+
+  get confirmPasswordControl() {
+    return this.authForm.get('confirmPassword');
+  }
+
+  private emailMatchValidator(group: AbstractControl): ValidationErrors | null {
+    const email = group.get('email')?.value;
+    const confirmEmail = group.get('confirmEmail')?.value;
+    
+    if (!email || !confirmEmail) {
+      return null;
+    }
+    
+    return email === confirmEmail ? null : { emailMismatch: true };
+  }
+
+  private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
+    const password = group.get('password')?.value;
+    const confirmPassword = group.get('confirmPassword')?.value;
+    
+    if (!password || !confirmPassword) {
+      return null;
+    }
+    
+    return password === confirmPassword ? null : { passwordMismatch: true };
+  }
+
   getErrorMessage(controlName: string): string {
     const control = this.authForm.get(controlName);
     if (!control || (!control.touched && !this.formSubmitted)) {
@@ -223,6 +268,15 @@ export class AuthComponent implements OnInit {
       return 'Evita espacios consecutivos.';
     }
 
+    // Errores de coincidencia en nivel de formulario
+    if (controlName === 'confirmEmail' && this.authForm.hasError('emailMismatch')) {
+      return 'Los correos no coinciden';
+    }
+
+    if (controlName === 'confirmPassword' && this.authForm.hasError('passwordMismatch')) {
+      return 'Las contraseñas no coinciden';
+    }
+
     return '';
   }
 
@@ -232,5 +286,31 @@ export class AuthComponent implements OnInit {
       return { whitespace: true };
     }
     return null;
+  }
+
+  emailsMatch(): boolean {
+    const email = this.authForm.get('email')?.value;
+    const confirmEmail = this.authForm.get('confirmEmail')?.value;
+    return !!email && !!confirmEmail && email === confirmEmail;
+  }
+
+  emailsDontMatch(): boolean {
+    const email = this.authForm.get('email')?.value;
+    const confirmEmail = this.authForm.get('confirmEmail')?.value;
+    const confirmTouched = this.authForm.get('confirmEmail')?.touched;
+    return !!confirmEmail && !!confirmTouched && email !== confirmEmail;
+  }
+
+  passwordsMatch(): boolean {
+    const password = this.authForm.get('password')?.value;
+    const confirmPassword = this.authForm.get('confirmPassword')?.value;
+    return !!password && !!confirmPassword && password === confirmPassword;
+  }
+
+  passwordsDontMatch(): boolean {
+    const password = this.authForm.get('password')?.value;
+    const confirmPassword = this.authForm.get('confirmPassword')?.value;
+    const confirmTouched = this.authForm.get('confirmPassword')?.touched;
+    return !!confirmPassword && !!confirmTouched && password !== confirmPassword;
   }
 }

@@ -178,4 +178,26 @@ class ProofController
             jsonResponse(['error' => 'Error al desinscribir atleta'], 500);
         }
     }
+
+    /**
+     * Obtiene sugerencias de inscripción para un atleta en una competición
+     */
+    public function getSuggestionsForAthlete(int $athleteId, int $competicionId): void
+    {
+        try {
+            // Importar el servicio de sugerencias
+            $suggestionService = new \App\Services\ProofSuggestionService();
+            $suggestions = $suggestionService->getSuggestionsForAthlete($athleteId, $competicionId);
+            
+            jsonResponse([
+                'success' => true,
+                'data' => $suggestions
+            ]);
+        } catch (\Throwable $e) {
+            jsonResponse([
+                'error' => 'Error al obtener sugerencias',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

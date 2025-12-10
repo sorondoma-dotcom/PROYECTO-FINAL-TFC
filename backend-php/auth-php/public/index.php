@@ -14,6 +14,7 @@ require __DIR__ . '/../src/services/AthleteResultService.php';
 require __DIR__ . '/../src/services/AthleteProfileService.php';
 require __DIR__ . '/../src/services/CompetitionService.php';
 require __DIR__ . '/../src/services/ProofService.php';
+require __DIR__ . '/../src/services/ProofSuggestionService.php';
 require __DIR__ . '/../src/services/NotificationService.php';
 require __DIR__ . '/../src/services/StatsService.php';
 require __DIR__ . '/../src/repositories/UserRepository.php';
@@ -272,6 +273,8 @@ if ($method === 'POST' && $uri === '/api/register') {
     $proofController->unregisterAthleteFromProofByProofAndInscription((int) $matches[1], (int) $matches[2]);
 } elseif ($method === 'DELETE' && preg_match('/^\/api\/proofs\/athletes\/(\d+)$/', $uri, $matches)) {
     $proofController->unregisterAthleteFromProof((int) $matches[1]);
+} elseif ($method === 'GET' && preg_match('/^\/api\/athletes\/(\d+)\/competitions\/(\d+)\/suggestions$/', $uri, $matches)) {
+    $proofController->getSuggestionsForAthlete((int) $matches[1], (int) $matches[2]);
 } elseif ($method === 'GET' && $uri === '/api/notifications') {
     $notificationController->listForCurrentUser();
 } elseif ($method === 'POST' && preg_match('/^\/api\/notifications\/(\d+)\/mark-read$/', $uri, $matches)) {

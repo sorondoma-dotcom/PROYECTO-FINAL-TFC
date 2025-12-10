@@ -153,4 +153,11 @@ export class DatosService {
   getDashboardStats(): Observable<any> {
     return this.http.get(`${this.phpApiBase}/stats/dashboard`);
   }
+
+  /**
+   * Obtiene sugerencias de inscripción para un atleta en una competición
+   */
+  getInscriptionSuggestions(athleteId: number, competicionId: number): Observable<any> {
+    return this.http.get(`${this.phpApiBase}/athletes/${athleteId}/competitions/${competicionId}/suggestions`);
+  }
 }

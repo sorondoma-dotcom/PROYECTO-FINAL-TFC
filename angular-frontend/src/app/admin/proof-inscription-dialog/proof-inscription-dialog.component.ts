@@ -16,6 +16,22 @@ import { FormsModule } from '@angular/forms';
 import { ProofService, Proof, ProofInscription } from '../../services/proof.service';
 import { CompetitionService, Inscription } from '../../services/competition.service';
 import { ConfirmationService } from '../../shared/services/confirmation.service';
+import { DatosService } from '../../services/datos.service';
+
+interface AthleteSuggestion {
+  athlete_id: number;
+  athlete_name: string;
+  gender: string;
+  country_code: string;
+  suggestion?: {
+    score: number;
+    bestTime: string | null;
+    recentResults: number;
+    medals: number;
+    reasons: string[];
+    recommendation: string;
+  };
+}
 
   @Component({
   selector: 'app-proof-inscription-dialog',
@@ -56,8 +72,10 @@ export class ProofInscriptionDialogComponent implements OnInit {
   loadingAthletes = false;
   registering = false;
   removingAthleteId: number | null = null;
+  loadingSuggestions = false;
+  athleteSuggestions: Map<number, any> = new Map();
 
-  displayedColumns: string[] = ['select', 'name', 'gender', 'country', 'age', 'serie'];
+  displayedColumns: string[] = ['select', 'name', 'gender', 'country', 'age', 'suggestion', 'serie'];
   searchText = '';
 
   get filteredAthletes(): Inscription[] {
@@ -75,7 +93,8 @@ export class ProofInscriptionDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: { proof: Proof; competicion_id: number; competicionAthletes: Inscription[] },
     private proofService: ProofService,
     private competitionService: CompetitionService,
-    private confirmation: ConfirmationService
+    private confirmation: ConfirmationService,
+    private datosService: DatosService
   ) {
     this.proof = data.proof;
     this.competicion_id = data.competicion_id;
@@ -178,6 +197,60 @@ export class ProofInscriptionDialogComponent implements OnInit {
       // Por defecto, no mostrar
       return false;
     });
+
+    // Cargar sugerencias para los atletas disponibles
+    this.loadAthleteSuggestions();
+  }
+
+  private loadAthleteSuggestions(): void {
+    if (this.availableAthletes.length === 0) return;
+
+    this.loadingSuggestions = true;
+    this.athleteSuggestions.clear();
+
+    // Cargar sugerencias para cada atleta
+    const suggestions$ = this.availableAthletes.map(athlete => 
+      this.datosService.getInscriptionSuggestions(athlete.athlete_id, this.competicion_id)
+    );
+
+    // Cargar todas las sugerencias en paralelo
+    Promise.all(suggestions$.map(obs => obs.toPromise()))
+      .then(results => {
+        results.forEach((result: any, index) => {
+          if (result?.success && result?.data?.suggestions) {
+            const athlete = this.availableAthletes[index];
+            // Buscar la sugerencia para la prueba actual
+            const suggestion = result.data.suggestions.find(
+              (s: any) => s.prueba_id === this.proof.id
+            );
+            if (suggestion) {
+              this.athleteSuggestions.set(athlete.athlete_id, suggestion);
+            }
+          }
+        });
+        this.loadingSuggestions = false;
+      })
+      .catch(error => {
+        console.error('Error loading suggestions:', error);
+        this.loadingSuggestions = false;
+      });
+  }
+
+  getSuggestion(athleteId: number): any {
+    return this.athleteSuggestions.get(athleteId);
+  }
+
+  getRecommendationClass(recommendation: string): string {
+    switch (recommendation) {
+      case 'Altamente recomendado':
+        return 'recommendation-high';
+      case 'Recomendado':
+        return 'recommendation-medium';
+      case 'Considerar':
+        return 'recommendation-low';
+      default:
+        return 'recommendation-none';
+    }
   }
 
   private updateSeriesInfo(): void {

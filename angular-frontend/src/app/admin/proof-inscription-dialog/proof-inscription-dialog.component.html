@@ -156,6 +156,29 @@
                   <td mat-cell *matCellDef="let element">{{ element.country_code }}</td>
                 </ng-container>
 
+                <!-- Suggestion Column -->
+                <ng-container matColumnDef="suggestion">
+                  <th mat-header-cell *matHeaderCellDef>Sugerencia</th>
+                  <td mat-cell *matCellDef="let element">
+                    @if (loadingSuggestions) {
+                      <mat-spinner diameter="20"></mat-spinner>
+                    } @else {
+                      @if (getSuggestion(element.athlete_id); as suggestion) {
+                        <div class="suggestion-badge" [ngClass]="getRecommendationClass(suggestion.recommendation)" 
+                             [matTooltip]="suggestion.reasons.join(' · ')">
+                          <mat-icon class="suggestion-icon">{{ suggestion.score >= 100 ? 'recommend' : suggestion.score >= 50 ? 'thumb_up' : 'info' }}</mat-icon>
+                          <span class="suggestion-text">{{ suggestion.recommendation }}</span>
+                          @if (suggestion.bestTime) {
+                            <small class="suggestion-time">{{ suggestion.bestTime }}</small>
+                          }
+                        </div>
+                      } @else {
+                        <span class="no-suggestion">Sin datos</span>
+                      }
+                    }
+                  </td>
+                </ng-container>
+
                 <!-- Age Column -->
                 <ng-container matColumnDef="age">
                   <th mat-header-cell *matHeaderCellDef>Edad</th>

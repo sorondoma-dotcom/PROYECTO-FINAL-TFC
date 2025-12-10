@@ -255,6 +255,79 @@ mat-dialog-actions {
   border-top: 1px solid #e0e0e0;
 }
 
+// Estilos para las sugerencias
+.suggestion-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  max-width: 200px;
+
+  .suggestion-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .suggestion-text {
+    flex: 1;
+    white-space: nowrap;
+  }
+
+  .suggestion-time {
+    display: block;
+    font-size: 10px;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+}
+
+.recommendation-high {
+  background: linear-gradient(135deg, #4caf50 0%, #81c784 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+
+  .suggestion-icon {
+    animation: pulse 2s infinite;
+  }
+}
+
+.recommendation-medium {
+  background: linear-gradient(135deg, #2196f3 0%, #64b5f6 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+.recommendation-low {
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+}
+
+.recommendation-none {
+  background: #f5f5f5;
+  color: #999;
+  border: 1px solid #e0e0e0;
+}
+
+.no-suggestion {
+  color: #999;
+  font-size: 12px;
+  font-style: italic;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
 @media (max-width: 1024px) {
   .inscription-dialog-container {
     min-width: auto;
@@ -263,5 +336,14 @@ mat-dialog-actions {
 
   .athletes-in-serie {
     grid-template-columns: 1fr;
+  }
+
+  .suggestion-badge {
+    max-width: 150px;
+    font-size: 11px;
+
+    .suggestion-text {
+      display: none;
+    }
   }
 }

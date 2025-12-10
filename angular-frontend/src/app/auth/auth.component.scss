@@ -457,3 +457,70 @@
     font-size: 11px;
   }
 }
+
+// Estilos para indicadores de coincidencia
+.match-icon {
+  color: #4caf50 !important;
+  animation: checkIn 0.3s ease-out;
+}
+
+.mismatch-icon {
+  color: #f44336 !important;
+  animation: errorShake 0.3s ease-out;
+}
+
+.match-hint {
+  color: #4caf50 !important;
+  font-weight: 500;
+}
+
+.mismatch-hint {
+  color: #f44336 !important;
+  font-weight: 500;
+}
+
+::ng-deep {
+  .field-match {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: #4caf50 !important;
+      border-width: 2px !important;
+    }
+  }
+
+  .field-mismatch {
+    .mdc-notched-outline__leading,
+    .mdc-notched-outline__notch,
+    .mdc-notched-outline__trailing {
+      border-color: #f44336 !important;
+      border-width: 2px !important;
+    }
+  }
+}
+
+@keyframes checkIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes errorShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}

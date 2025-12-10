@@ -57,6 +57,34 @@
         }
       </mat-form-field>
 
+      <!-- Campo Confirmar Email (solo en registro) -->
+      @if (mode === 'register') {
+        <mat-form-field appearance="outline" class="full-width" [class.field-match]="emailsMatch()" [class.field-mismatch]="emailsDontMatch()">
+          <mat-label>Confirmar correo electrónico</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="confirmEmail"
+            autocomplete="email"
+            placeholder="tu@email.com" />
+          <mat-icon matPrefix>email</mat-icon>
+          @if (emailsMatch() && confirmEmailControl?.value) {
+            <mat-icon matSuffix class="match-icon">check_circle</mat-icon>
+          }
+          @if (emailsDontMatch()) {
+            <mat-icon matSuffix class="mismatch-icon">cancel</mat-icon>
+          }
+          @if ((confirmEmailControl?.invalid || authForm.hasError('emailMismatch')) && (confirmEmailControl?.touched || formSubmitted)) {
+            <mat-error>{{ getErrorMessage('confirmEmail') }}</mat-error>
+          }
+          @if (confirmEmailControl?.value && !confirmEmailControl?.invalid) {
+            <mat-hint [class.match-hint]="emailsMatch()" [class.mismatch-hint]="emailsDontMatch()">
+              {{ emailsMatch() ? '✓ Los correos coinciden' : '✗ Los correos no coinciden' }}
+            </mat-hint>
+          }
+        </mat-form-field>
+      }
+
       <!-- Campo Contraseña -->
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Contraseña</mat-label>
@@ -64,7 +92,7 @@
           matInput
           [type]="passwordVisible ? 'text' : 'password'"
           formControlName="password"
-          autocomplete="current-password"
+          [autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
           placeholder="••••••••" />
         <mat-icon matPrefix>lock</mat-icon>
         <button
@@ -80,6 +108,34 @@
           <mat-error>{{ getErrorMessage('password') }}</mat-error>
         }
       </mat-form-field>
+
+      <!-- Campo Confirmar Contraseña (solo en registro) -->
+      @if (mode === 'register') {
+        <mat-form-field appearance="outline" class="full-width" [class.field-match]="passwordsMatch()" [class.field-mismatch]="passwordsDontMatch()">
+          <mat-label>Confirmar contraseña</mat-label>
+          <input
+            matInput
+            [type]="passwordVisible ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+            placeholder="••••••••" />
+          <mat-icon matPrefix>lock</mat-icon>
+          @if (passwordsMatch() && confirmPasswordControl?.value) {
+            <mat-icon matSuffix class="match-icon">check_circle</mat-icon>
+          }
+          @if (passwordsDontMatch()) {
+            <mat-icon matSuffix class="mismatch-icon">cancel</mat-icon>
+          }
+          @if ((confirmPasswordControl?.invalid || authForm.hasError('passwordMismatch')) && (confirmPasswordControl?.touched || formSubmitted)) {
+            <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
+          }
+          @if (confirmPasswordControl?.value && !confirmPasswordControl?.invalid) {
+            <mat-hint [class.match-hint]="passwordsMatch()" [class.mismatch-hint]="passwordsDontMatch()">
+              {{ passwordsMatch() ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden' }}
+            </mat-hint>
+          }
+        </mat-form-field>
+      }
 
       <!-- Enlace "Olvidé mi contraseña" -->
       @if (mode === 'login') {

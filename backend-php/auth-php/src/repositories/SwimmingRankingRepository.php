@@ -110,4 +110,25 @@ class SwimmingRankingRepository
 
         return [$clause, $params];
     }
+
+    /**
+     * Obtiene todos los rankings de un atleta específico
+     * 
+     * @param int $athleteId
+     * @return SwimmingRanking[]
+     */
+    public function getRankingsByAthleteId(int $athleteId): array
+    {
+        $sql = "SELECT sr.* 
+                FROM swimming_rankings sr
+                WHERE sr.athlete_id = :athlete_id
+                ORDER BY sr.overall_rank ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->bindValue(':athlete_id', $athleteId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(fn ($row) => SwimmingRanking::fromArray($row), $rows);
+    }
 }

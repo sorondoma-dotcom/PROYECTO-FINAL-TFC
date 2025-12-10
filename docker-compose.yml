@@ -50,7 +50,15 @@ services:
       DB_USER: liveswim_user
       DB_PASS: liveswim_pass
       ALLOWED_ORIGINS: http://localhost,http://localhost:8080
-      MAIL_ENABLED: "false"
+      MAIL_ENABLED: "true"
+      MAIL_HOST: smtp.gmail.com
+      MAIL_PORT: 587
+      MAIL_SECURE: tls
+      MAIL_USER: swimlive669@gmail.com
+      MAIL_PASS: "anes ebvk kdcn lcad"
+      MAIL_FROM: swimlive669@gmail.com
+      MAIL_FROM_NAME: "SwimLive"
+      MAIL_DEBUG: "false"
     volumes:
       - ./backend-php/auth-php/public/uploads:/var/www/html/public/uploads
       - ./backend-php/auth-php/data:/var/www/html/data
